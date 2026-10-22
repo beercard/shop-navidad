@@ -1,0 +1,10 @@
+# Test 3 (with skill, Flutter fintech auth) feedback to fix
+- review-system G8 "input cleared on error" has no exception; forms.md §5 exempts password after failed login and OTP -> add exception to G8 (and checklists).
+- motion.md §12 Flutter: iOS Reduce Motion is a separate flag; no API named. Fix: use `MediaQuery.of(context).disableAnimations` on Android and `WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.reduceMotion` (PlatformDispatcher) -- the note (03-motion.md) says `PlatformDispatcher.accessibilityFeatures.reduceMotion`; name it.
+- accessibility.md §13: SemanticsService.announce deprecated for Android API 36 per Flutter 3.32 notes (via Context7) -> prefer liveRegion/Semantics; flag as volatile.
+- motion.md §9 haptics: Flutter HapticFeedback has no CONFIRM/REJECT -> add stack mapping (HapticFeedback.lightImpact/selectionClick etc., memory) or say "map to nearest".
+- product-patterns.md: "no in-app biometric toggle" ambiguous: HIG says don't duplicate system toggle; app-unlock opt-in is common for fintech -> clarify: don't add a duplicate system-level biometric *setting*; an app-lock opt-in is fine/expected, label by biometry name.
+- Missing fintech guidance: KYC deferral, step-up auth for transfers, SIM-swap risk, SCA, OTP attempt/resend caps (NIST: <=100 consecutive failures; GOV.UK 10 wrong entries rate limit) -> add a "high-stakes flows (money)" section: forms.md or states; mark caps as NIST/GOV.UK/heuristic.
+- Flutter OTP autofill: cheat table only AutofillHints.oneTimeCode; add Android SMS consent / SMS Retriever route (from notes 06: SMS Retriever, 5 min, 11-char hash) and RN equivalents.
+- motion.md says override MDC durations <=400ms; no Flutter `animations` package how-to -> add stack note (OpenContainer transitionDuration, SharedAxisTransition etc. (memory)).
+- design-tokens danger #B3261E contrast stated 6.2:1; tester computed 6.54 -> recompute; M3 note said 6.21 on #FEF7FF (surface) -> clarify "on M3 surface #FEF7FF" vs "on white".

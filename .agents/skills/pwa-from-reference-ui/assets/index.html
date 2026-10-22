@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>App</title>
+<style>
+:root{--bg:#fff;--text:#1a1a1a;--accent:#0f62fe;--space-4:16px;--radius-md:12px}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--text:#e6e6e6}}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,sans-serif;min-height:100svh;
+ padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+button,a{touch-action:manipulation;min-height:48px;min-width:48px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<div role="status" aria-live="polite" id="status"></div>
+<script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+/* Mobile-first. Tokens first; dark via prefers-color-scheme. Contrast targets AA but is NOT measured. */
+:root{--bg:#fff;--fg:#151922;--mut:#566070;--line:#dde1e8;--card:#f4f5f8;--acc:#1f4fcf;--on:#fff;--bad:#b3261e;--ok:#146c2e;--warn:#7d5200;--tap:44px}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1217;--fg:#eceff4;--mut:#a2abb9;--line:#2a313b;--card:#1a1f27;--acc:#8fb0ff;--on:#0b1020;--bad:#ff8f86;--ok:#7fd99a;--warn:#f0c46e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,-apple-system,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;min-width:var(--tap);min-height:var(--tap);cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.pad{padding:0 16px}.bad{color:var(--bad)}.err{color:var(--bad);font-size:14px}.grow{flex:1}
+small{color:var(--mut);font-size:14px;font-weight:400}
+
+/* header: search + filter + sort stay on one row */
+.app{min-height:100dvh;padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+.top{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:4px 8px}
+.bar{display:flex;align-items:center;gap:4px}
+.bar h1{margin:0 8px;font-size:20px}
+.bar>button{padding:0 10px;font-weight:600;color:var(--acc)}
+.bar input[type=search]{flex:1;min-width:0;min-height:var(--tap);padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.badge{margin-left:4px;padding:0 6px;border-radius:99px;background:var(--acc);color:var(--on);font-size:13px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0}
+.chip{flex:none;padding:0 12px;border:1px solid var(--line);border-radius:99px;background:var(--card);font-size:14px}
+
+/* student rows: cards-as-list, ~68px; content-visibility keeps long lists cheap (virtualize past ~500) */
+.list{list-style:none;margin:0;padding:0}
+.row{display:flex;align-items:center;border-bottom:1px solid var(--line);content-visibility:auto;contain-intrinsic-size:auto 68px}
+.row.sel{background:var(--card)}
+.row-main{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:8px 0 8px 16px;min-height:68px;text-align:left;user-select:none;-webkit-touch-callout:none}
+.avatar{flex:none;width:44px;height:44px;border-radius:50%;background:var(--card);display:grid;place-items:center;overflow:hidden;font-weight:700;color:var(--acc)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.who{flex:1;min-width:0;display:grid}
+.who b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.who small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta{display:grid;justify-items:end;gap:2px}
+.tag{padding:1px 8px;border:1px solid currentColor;border-radius:99px;font-size:13px;font-weight:600}
+.paid{color:var(--ok)}.due{color:var(--warn)}.overdue,.low{color:var(--bad)}.low{font-weight:600}
+.more{font-size:22px}
+
+/* states */
+.skel{height:56px;margin:12px 16px;border-radius:10px;background:var(--card)}
+.empty{display:grid;justify-items:center;gap:8px;padding:48px 16px;text-align:center}
+@media(prefers-reduced-motion:no-preference){.skel{animation:pulse 1.2s ease-in-out infinite}.sheet{animation:up .2s ease-out}}
+@keyframes pulse{50%{opacity:.5}}@keyframes up{from{transform:translateY(24px);opacity:0}}
+
+/* buttons, bulk bar (replaces tab bar while selecting), toast */
+.btn{padding:0 16px;min-height:48px;border-radius:10px;background:var(--acc);color:var(--on);font-weight:600}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--fg)}
+.btn.danger{background:var(--bad);color:var(--bg)}
+.bulk{position:fixed;inset:auto 0 0;z-index:3;display:flex;justify-content:space-around;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.bulk button{flex:1;min-height:56px;font-weight:600}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:20;display:flex;align-items:center;justify-content:space-between;padding:4px 8px 4px 16px;border-radius:10px;background:var(--fg);color:var(--bg)}
+.toast button{color:var(--bg);font-weight:700;text-decoration:underline}
+
+/* bottom sheet */
+.scrim{position:fixed;inset:0;z-index:10;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.45)}
+.sheet{width:100%;max-height:85dvh;display:flex;flex-direction:column;background:var(--bg);border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom);outline:0}
+.sheet h2{margin:0;padding:16px;font-size:18px}
+.sheet-body{overflow:auto;overscroll-behavior:contain}
+.sheet-foot{display:flex;gap:8px;padding:12px 16px}.sheet-foot .btn{flex:1}
+.opt{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 16px;text-align:left}
+.opt input{width:22px;height:22px}
+
+/* fields + full-screen edit form (single column; inputs 16px+ so iOS does not zoom) */
+.field{display:grid;gap:4px;margin:12px 16px;font-weight:600}
+.field input,.field select,.field textarea{min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-weight:400}
+.field [aria-invalid=true]{border-color:var(--bad)}
+.field [readonly]{background:var(--card);color:var(--mut)}
+.edit{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;background:var(--bg)}
+.edit-form{flex:1;overflow:auto;overscroll-behavior:contain;scroll-padding-bottom:96px}
+.sec{border-bottom:1px solid var(--line)}.sec h2{margin:0}
+.sec-h{width:100%;min-height:52px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;font-size:17px;font-weight:700;text-align:left}
+.edit-foot{position:sticky;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line)}
+.edit-foot .btn{width:100%}
+
+/* tablet+: sheets become centered dialogs, edit becomes a centered panel; >=1024 keeps the desktop grid (not in scope) */
+@media(min-width:768px){.scrim{align-items:center}.sheet{max-width:520px;border-radius:16px}.edit{inset:0 max(0px,calc((100vw - 720px)/2))}.list{max-width:720px;margin:auto}}

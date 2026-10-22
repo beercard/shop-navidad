@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f6fa" media="(prefers-color-scheme:light)">
+<meta name="theme-color" content="#0e1320" media="(prefers-color-scheme:dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="description" content="Attendance, grades and fees for Northfield Academy teachers and parents">
+<title>Northfield Academy · Home</title>
+<!-- Production PWA wiring sits beside this file (see design-notes.md): manifest.webmanifest, sw.js, 192/512/maskable icons, apple-touch-icon. -->
+<style>
+:root{--bg:#f4f6fa;--surface:#fff;--surface-2:#eaeef6;--text:#162033;--muted:#4b5870;--line:#d6dce9;
+--brand:#1d4ed8;--on-brand:#fff;--brand-soft:#e6edff;--hero:#1d4ed8;--on-hero:#fff;--on-hero-2:#dbe5ff;
+--ok:#0f7a4a;--ok-bg:#e1f4ea;--warn:#8a5300;--warn-bg:#fff0cc;--bad:#b42318;--bad-bg:#fde8e6;--mute-bg:#e8ecf4;
+--r-s:12px;--r-m:16px;--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--tap:48px;--nav:64px;
+--shadow:0 1px 2px rgb(16 24 40/.06),0 2px 6px rgb(16 24 40/.06);--ease:cubic-bezier(.2,.8,.2,1);
+--font:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1320;--surface:#171e30;--surface-2:#222b42;--text:#e8edf7;--muted:#a9b4ca;--line:#2c3650;
+--brand:#8fb3ff;--on-brand:#0b1226;--brand-soft:#1f2c52;--hero:#2a49b8;--ok:#5fd39a;--ok-bg:#12382a;--warn:#f5c15a;--warn-bg:#3b2d0e;
+--bad:#ff9d93;--bad-bg:#431a17;--mute-bg:#26304a;--shadow:none}}
+*,::before,::after{box-sizing:border-box}
+body,h1,h2,p,ul,ol,fieldset{margin:0}ul,ol,fieldset{padding:0;list-style:none;border:0}fieldset{min-width:0}
+body{font:1rem/1.5 var(--font);background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+button,a,select{font:inherit;color:inherit}a{color:var(--brand)}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}.hero :focus-visible{outline-color:#fff}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:var(--s4);top:-80px;z-index:40;padding:var(--s3) var(--s4);border-radius:var(--r-s);background:var(--brand);color:var(--on-brand)}.skip:focus{top:var(--s2)}
+.ic{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.num{font-variant-numeric:tabular-nums}.fine{font-size:.8125rem;color:var(--muted)}.grow{flex:1;min-width:0}
+/* layout: bottom tab bar on phones, side rail from 768px */
+.shell{display:grid;grid-template-columns:minmax(0,1fr);min-height:100dvh}
+.col{width:100%;max-width:1120px;margin-inline:auto;padding:0 max(var(--s4),env(safe-area-inset-right)) calc(var(--nav) + var(--s6) + env(safe-area-inset-bottom)) max(var(--s4),env(safe-area-inset-left))}
+.nav{position:fixed;inset:auto 0 0;z-index:20;display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:var(--nav);color:var(--muted);text-decoration:none;font-size:.75rem;font-weight:600}
+.nav .pill{display:grid;place-items:center;width:56px;height:32px;border-radius:16px;transition:background .2s var(--ease)}
+.nav a[aria-current]{color:var(--brand)}.nav a[aria-current] .pill{background:var(--brand-soft)}
+.top{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:var(--s2);background:var(--bg);padding:calc(var(--s3) + env(safe-area-inset-top)) 0 var(--s3)}
+.top h1{font-size:1.375rem;line-height:1.25;font-weight:700}.top .fine{margin-top:2px}
+.icon-btn{position:relative;display:grid;place-items:center;width:var(--tap);height:var(--tap);border:0;border-radius:50%;background:transparent;cursor:pointer}
+.icon-btn:active{background:var(--surface-2)}.spin .ic{animation:spin .8s linear infinite}
+.badge{position:absolute;top:6px;right:6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--brand);color:var(--on-brand);font-size:.6875rem;font-weight:700;line-height:18px}
+.banner{display:flex;gap:var(--s2);align-items:center;justify-content:center;padding:var(--s2) var(--s4);padding-top:calc(var(--s2) + env(safe-area-inset-top));background:var(--warn-bg);color:var(--warn);font-size:.875rem;font-weight:600}
+.banner .ic{width:20px;height:20px}[hidden]{display:none!important}
+main{display:grid;gap:var(--s4);align-items:start;outline:0}
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);padding:var(--s4);box-shadow:var(--shadow)}
+main.enter .card{animation:rise .28s var(--ease) both;animation-delay:calc(var(--i,0)*45ms)}
+.card:not(.hero):not(.sk){content-visibility:auto;contain-intrinsic-size:auto 220px}
+.ch{display:flex;align-items:center;justify-content:space-between;min-height:var(--s5);margin-bottom:var(--s2)}
+.ch h2{font-size:1rem;font-weight:700}
+.ch a{display:inline-flex;align-items:center;min-height:var(--tap);margin:-12px -8px;padding:0 var(--s2);font-size:.875rem;font-weight:600}
+.hero{grid-column:1/-1;display:grid;gap:var(--s2);background:var(--hero);color:var(--on-hero);border-color:transparent}
+.hero p{color:var(--on-hero-2)}.hero .eyebrow{font-size:.8125rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.hero h2{font-size:1.5rem;line-height:1.25}.hero .big{font-size:2.25rem;font-weight:800;line-height:1.1}
+.hero .btn{margin-top:var(--s2);width:100%}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);min-height:var(--tap);padding:0 var(--s5);border:0;border-radius:var(--r-s);background:var(--brand);color:var(--on-brand);font-weight:700;cursor:pointer;transition:transform .12s var(--ease)}
+.btn:active{transform:scale(.98)}.btn.inv{background:#fff;color:#1d3fa8}
+.btn.ghost{background:transparent;color:var(--brand);box-shadow:inset 0 0 0 2px var(--line)}
+.btn[aria-disabled=true]{background:var(--surface-2);color:var(--muted);box-shadow:inset 0 0 0 2px var(--line);cursor:not-allowed}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 10px 2px 6px;border-radius:99px;font-size:.8125rem;font-weight:700;white-space:nowrap}
+.tag .ic{width:16px;height:16px;stroke-width:2.5}.tag.t{padding-left:10px}
+.ok{color:var(--ok);background:var(--ok-bg)}.warn{color:var(--warn);background:var(--warn-bg)}.bad{color:var(--bad);background:var(--bad-bg)}
+.mute{color:var(--muted);background:var(--mute-bg)}.info{color:var(--brand);background:var(--brand-soft)}
+.rows>li+li{border-top:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:var(--s3);min-height:56px;padding:var(--s2) 0;color:inherit;text-decoration:none}
+.row:active{background:var(--surface-2)}.row b{display:block;font-weight:600}.row small{display:block;color:var(--muted);font-size:.8125rem}
+.row .time{width:4.75rem;font-weight:700;white-space:nowrap}.row .grow .tag{margin-top:4px}.score{text-align:right;font-weight:700}.score small span{font-weight:700}
+.row>.ic:last-child{color:var(--muted);width:20px;height:20px}
+.stat{font-size:2rem;font-weight:800;line-height:1.1}
+.bar{height:8px;margin:var(--s2) 0;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.bar i{display:block;height:100%;width:var(--w);border-radius:4px;background:var(--brand);animation:grow .7s var(--ease)}
+.week{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--s2);margin-top:var(--s3);text-align:center}
+.week li{display:grid;justify-items:center;gap:4px;font-size:.8125rem;color:var(--muted)}.week b{color:var(--text)}
+.dot{display:grid;place-items:center;width:36px;height:36px;border-radius:50%}.today .dot{outline:2px solid var(--brand);outline-offset:2px}
+.kids{display:flex;gap:var(--s2);overflow-x:auto;padding:var(--s1) 2px var(--s3);scrollbar-width:none}
+.kid{position:relative}.kid span{display:inline-flex;align-items:center;min-height:var(--tap);padding:0 var(--s4);border:2px solid var(--line);border-radius:99px;background:var(--surface);font-weight:600;white-space:nowrap}
+.kid input:checked+span{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}.kid input:checked+span::before{content:"\2713\00a0"}
+.kid input:focus-visible+span{outline:3px solid var(--brand);outline-offset:2px}
+.state{grid-column:1/-1;display:grid;justify-items:center;gap:var(--s3);padding:var(--s6) var(--s4);text-align:center}
+.state p{max-width:44ch;color:var(--muted)}.ico{display:grid;place-items:center;width:56px;height:56px;border-radius:50%}
+.inline-err{display:flex;align-items:center;gap:var(--s3);min-height:120px;flex-wrap:wrap;color:var(--muted)}.inline-err .ic{color:var(--bad)}
+.sk i{display:block;height:14px;margin:12px 0;border-radius:7px;background:linear-gradient(90deg,var(--surface-2) 25%,var(--line) 37%,var(--surface-2) 63%);background-size:400% 100%;animation:shim 1.4s ease infinite}
+.sk.w{grid-column:1/-1}
+.toast{position:fixed;left:50%;z-index:30;bottom:calc(var(--nav) + var(--s4) + env(safe-area-inset-bottom));max-width:min(92vw,420px);padding:var(--s3) var(--s4);border-radius:var(--r-s);background:var(--text);color:var(--bg);font-weight:600;opacity:0;pointer-events:none;transform:translate(-50%,16px);transition:opacity .2s,transform .2s var(--ease)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.dev{grid-column:1/-1;margin-top:var(--s4);color:var(--muted);font-size:.875rem}.dev summary{display:flex;align-items:center;min-height:var(--tap);cursor:pointer}
+.dev label{display:inline-flex;align-items:center;gap:var(--s2);margin-right:var(--s4)}.dev select{min-height:var(--tap);padding:0 var(--s3);border-radius:var(--r-s);border:2px solid var(--line);background:var(--surface)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}@keyframes grow{from{width:0}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes shim{from{background-position:100% 50%}to{background-position:0 50%}}
+@media(min-width:768px){
+.shell{grid-template-columns:96px minmax(0,1fr)}.col{grid-column:2;padding-bottom:var(--s6)}
+.nav{inset:0 auto 0 0;width:96px;grid-template-columns:none;align-content:start;padding:var(--s5) 0;border:0;border-right:1px solid var(--line)}
+.nav a{min-height:76px}main{grid-template-columns:repeat(2,1fr)}.hero .btn{width:auto;justify-self:start}.toast{bottom:var(--s5);left:calc(50% + 48px)}}
+@media(min-width:1100px){main{grid-template-columns:repeat(3,1fr)}}
+@media(prefers-reduced-motion:reduce){*,::before,::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="offline" class="banner" role="status" hidden><svg class="ic" aria-hidden="true"><use href="#i-wifi"/></svg>You're offline. Showing data saved at 8:05 AM. Changes will sync later.</div>
+<div class="shell">
+<nav class="nav" aria-label="Primary"></nav>
+<div class="col">
+<header class="top">
+ <div class="grow"><h1 id="greet"></h1><p class="fine" id="meta"></p></div>
+ <button class="icon-btn" data-act="refresh" aria-label="Refresh"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+ <button class="icon-btn" data-act="bell" aria-label="Notifications, 2 unread"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg><span class="badge" aria-hidden="true">2</span></button>
+</header>
+<div id="kids"></div>
+<main id="main" tabindex="-1"></main>
+<details class="dev"><summary>Preview controls (prototype only)</summary>
+ <label>Role <select id="role"><option value="parent">Parent</option><option value="teacher">Teacher</option></select></label>
+ <label>State <select id="state"><option>ready</option><option>loading</option><option>empty</option><option>error</option><option>offline</option><option>partial</option></select></label>
+</details>
+</div></div>
+<div id="toast" class="toast" role="status"></div>
+<div id="live" class="sr" aria-live="polite"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+<symbol id="i-attend" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/></symbol>
+<symbol id="i-grades" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></symbol>
+<symbol id="i-fees" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></symbol>
+<symbol id="i-msg" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2 5.3M20 4v7h-7"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2zM12 10v5M12 18v.5"/></symbol>
+<symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 8.8a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M3 3l18 18"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+</defs></svg>
+<script>
+const NOW=new Date('2026-10-06T08:12:00'),SAVED='8:05 AM',$=s=>document.querySelector(s); // fixed "now" keeps the demo deterministic
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ic=n=>`<svg class="ic" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
+const tm=t=>new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit'}).format(new Date('2026-10-06T'+t));
+const dt=(d,o)=>new Intl.DateTimeFormat('en-US',o).format(new Date(d+'T12:00'));
+const eta=m=>m>=60?`${Math.floor(m/60)} h ${m%60} min`:`${m} min`;
+const P=new URLSearchParams(location.search);
+const S={role:P.get('role')==='teacher'?'teacher':'parent',state:P.get('state')||'ready',kid:'aiden'};
+const ST={present:['check','Present','ok'],late:['clock','Late','warn'],absent:['x','Absent','bad'],excused:['minus','Excused','mute']};
+const KIDS={
+ aiden:{short:'Aiden',cls:'Grade 5B',today:['present','7:52 AM'],pct:96,note:'1 late, 1 excused in the last 30 days',avg:'Term 2 average 87% (B+)',
+  week:[['Wed','excused'],['Thu','present'],['Fri','late'],['Mon','present'],['Tue','present']],
+  grades:[{sub:'Mathematics',what:'Fractions quiz',date:'Oct 5',score:18,max:20,d:4},{sub:'Science',what:'Lab report: plant growth',date:'Oct 2',score:41,max:50,d:-3},{sub:'English',what:'Book review',date:'Sep 30',score:27,max:30,d:2}],
+  fee:{label:'Term 2 tuition',total:1680,paid:1260,due:'2026-10-12'}},
+ sofia:{short:'Sofia',cls:'Grade 2A',today:['absent'],pct:91,note:'2 absences, 1 late in the last 30 days',
+  week:[['Wed','present'],['Thu','present'],['Fri','present'],['Mon','late'],['Tue','absent']],grades:[],
+  fee:{label:'Term 2 tuition',total:1680,paid:1680,last:'Sep 3'}}};
+const TCH={classes:[{at:'08:00',sub:'Homeroom',cls:'5B',room:'12',n:28,p:27},{at:'09:30',sub:'Mathematics',cls:'5B',room:'12',n:28},{at:'11:00',sub:'Mathematics',cls:'5A',room:'14',n:26},{at:'13:15',sub:'Science',cls:'6C',room:'Lab 2',n:30}],
+ todo:[{t:'Fractions quiz · 5B',s:'22 of 28 scores entered',pct:79},{t:'Unit test · 5A',s:'0 of 26 scores entered',pct:0}],
+ flags:[['Priya Nair','5B',4],['Jonah Park','5A',3],['Leo Martins','6C',3]]};
+const NEWS=[['Parent-teacher conferences, Oct 14 and 15','Book a 15-minute slot by Fri, Oct 9','New'],['Early dismissal this Friday','Buses leave at 12:30 PM instead of 3:15 PM','']];
+const NAV={home:'Home',attend:'Attendance',grades:'Grades',fees:'Fees',msg:'Messages',more:'More'};
+const TABS={parent:['home','attend','grades','fees','more'],teacher:['home','attend','grades','msg','more']};
+/* ---------- components ---------- */
+const card=(id,title,body,link)=>`<section class="card" aria-labelledby="${id}"><div class="ch"><h2 id="${id}">${title}</h2>${link?`<a href="#${link[1]}">${link[0]}</a>`:''}</div>${body}</section>`;
+const tag=(k,txt)=>`<span class="tag ${ST[k]?ST[k][2]:k}">${ST[k]?ic(ST[k][0]):''}${txt||ST[k][1]}</span>`;
+const bar=p=>`<div class="bar" role="img" aria-label="${p} percent"><i style="--w:${p}%"></i></div>`;
+const stateView=(icon,tone,title,text,btn)=>`<section class="card state" ${tone==='bad'?'role="alert"':''} aria-labelledby="sh"><span class="ico ${tone}">${ic(icon)}</span><h2 id="sh">${title}</h2><p>${text}</p>${btn||''}</section>`;
+const cardErr=(id,title)=>card(id,title,`<div class="inline-err">${ic('alert')}<p>This section didn't load.</p><button class="btn ghost" data-act="retry">Retry</button></div>`);
+const skel=h=>`<div class="card sk" style="min-height:${h}px" aria-hidden="true"><i style="width:40%"></i><i></i><i style="width:75%"></i></div>`;
+const skeleton=()=>`<span class="sr">Loading your dashboard</span><div class="card sk w" style="min-height:176px" aria-hidden="true"><i style="width:30%"></i><i style="width:60%;height:28px"></i><i style="height:48px"></i></div>`+[200,230,180,160].map(skel).join('');
+const news=()=>card('nw','Announcements',`<ul class="rows">${NEWS.map(n=>`<li><a class="row" href="#news"><div class="grow"><b>${esc(n[0])}</b><small>${esc(n[1])}</small></div>${n[2]?tag('info','New'):''}${ic('chev')}</a></li>`).join('')}</ul>`);
+/* ---------- parent ---------- */
+function pHero(k){const f=k.fee,due=f.total-f.paid,off=S.state==='offline';
+ if(k.today[0]==='absent')return `<section class="card hero" aria-labelledby="hh"><p class="eyebrow">Attendance · today</p><h2 id="hh">${esc(k.short)} was marked absent</h2><p>Roll call closed at 8:05 AM and no reason has been reported yet.</p><button class="btn inv" data-act="reason">Report a reason</button></section>`;
+ if(due>0){const d=Math.round((new Date(f.due+'T12:00')-NOW)/864e5);
+  return `<section class="card hero" aria-labelledby="hh"><p class="eyebrow">Fees due in ${d} days</p><h2 id="hh"><span class="sr">Amount due: </span><span class="big num">${money(due)}</span></h2><p>${esc(f.label)} for ${esc(k.short)} · due ${dt(f.due,{weekday:'short',month:'short',day:'numeric'})}</p><button class="btn inv" data-act="${off?'offline':'pay'}" ${off?'aria-disabled="true"':''}>${off?'Reconnect to pay':'Pay '+money(due)}</button></section>`}
+ return `<section class="card hero" aria-labelledby="hh"><p class="eyebrow">Today</p><h2 id="hh">${esc(k.short)} is present</h2><p>Checked in at ${k.today[1]} · ${esc(k.cls)}</p></section>`}
+function pAttend(k){const [s,t]=k.today;
+ return card('at','Attendance',`<div class="num"><span class="stat">${k.pct}%</span> <span class="fine">last 30 days</span></div>${bar(k.pct)}<p class="fine">${k.note}</p>
+ <ol class="week" aria-label="Last five school days">${k.week.map((w,i)=>`<li class="${i===4?'today':''}"><b>${w[0]}${i===4?'<span class="sr"> (today)</span>':''}</b><span class="dot ${ST[w[1]][2]}">${ic(ST[w[1]][0])}</span><span>${ST[w[1]][1]}</span></li>`).join('')}</ol>`,['History','attend'])}
+function pGrades(k){if(S.state==='partial')return cardErr('gr','Recent grades');
+ if(!k.grades.length)return card('gr','Recent grades',`<p class="fine" style="padding:var(--s3) 0">No grades posted yet. ${esc(k.cls)} progress reports are published at the end of each term (next: Dec 18).</p>`);
+ return card('gr','Recent grades',`<p class="fine">${k.avg}</p><ul class="rows">${k.grades.map(g=>{const p=Math.round(g.score/g.max*100),up=g.d>0;
+  return `<li><a class="row" href="#grades"><div class="grow"><b>${esc(g.sub)}</b><small>${esc(g.what)} · ${g.date}</small></div><div class="score num">${g.score}/${g.max}<small>${p}% · <span class="${up?'ok':'bad'}" style="background:none">${up?'▲':'▼'} ${Math.abs(g.d)}<span class="sr"> points ${up?'up':'down'}</span></span></small></div>${ic('chev')}</a></li>`}).join('')}</ul>`,['All grades','grades'])}
+function pFees(k){const f=k.fee,due=f.total-f.paid,p=Math.round(f.paid/f.total*100);
+ return card('fe','Fees',due>0?`<div class="num"><span class="stat">${money(due)}</span> <span class="fine">outstanding</span></div>${bar(p)}<p class="fine">${money(f.paid)} of ${money(f.total)} paid · ${esc(f.label)}</p>`
+  :`<p>${tag('ok','Paid in full')}</p><p class="fine" style="margin-top:var(--s2)">${esc(f.label)} · ${money(f.total)} · last payment ${f.last}. Receipts are in your statement.</p>`,['Statement','fees'])}
+function parentView(){if(S.state==='empty')return stateView('user','info','No students linked yet','Enter the link code from your enrolment letter, or ask the school office to send you a new one.','<button class="btn" data-act="link">Enter link code</button>');
+ const k=KIDS[S.kid];return pHero(k)+pAttend(k)+pGrades(k)+pFees(k)+news()}
+/* ---------- teacher ---------- */
+function teacherView(){const C=TCH.classes,next=C.find(c=>!c.p),empty=S.state==='empty';
+ const mins=next&&Math.round((new Date('2026-10-06T'+next.at)-NOW)/6e4);
+ const hero=empty?stateView('cal','info','No classes today','Enjoy the quiet. Your next class is Wed at 9:30 AM, Mathematics 5B.','<button class="btn ghost" data-act="tt">Open timetable</button>')
+  :`<section class="card hero" aria-labelledby="hh"><p class="eyebrow">Next class · in ${eta(mins)}</p><h2 id="hh">${next.sub} · Grade ${next.cls}</h2><p>${tm(next.at)} · Room ${next.room} · ${next.n} students</p><button class="btn inv" data-act="take">${ic('check')}Take attendance</button><p>Works offline and syncs when you reconnect.</p></section>`;
+ const sched=empty?'':card('sc','Today',`<ul class="rows">${C.map(c=>`<li><a class="row" href="#class"><span class="time num">${tm(c.at)}</span><div class="grow"><b>${c.sub} · ${c.cls}</b><small>Room ${c.room} · ${c.n} students</small>${c.p?tag('ok','Taken '+c.p+'/'+c.n):c===next?tag('info','Next'):''}</div>${ic('chev')}</a></li>`).join('')}</ul>`,['Timetable','tt']);
+ const todo=S.state==='partial'?cardErr('td','Grades to enter'):card('td','Grades to enter',`<ul class="rows">${TCH.todo.map(t=>`<li><a class="row" href="#grades"><div class="grow"><b>${t.t}</b><small>${t.s}</small>${bar(t.pct)}</div>${ic('chev')}</a></li>`).join('')}</ul>`,['Gradebook','grades']);
+ const flags=card('fl','Needs follow-up',`<ul class="rows">${TCH.flags.map(f=>`<li><a class="row" href="#student"><div class="grow"><b>${f[0]}</b><small>Grade ${f[1]}</small></div>${tag('absent',f[2]+' days absent')}${ic('chev')}</a></li>`).join('')}</ul>`);
+ return hero+sched+todo+flags+news()}
+/* ---------- render + state ---------- */
+function renderKids(){const el=$('#kids'),show=S.role==='parent'&&!['empty','error'].includes(S.state);el.hidden=!show;if(!show)return;
+ el.innerHTML=`<div class="kids" role="radiogroup" aria-label="Choose a student">${Object.entries(KIDS).map(([id,v])=>`<label class="kid"><input class="sr" type="radio" name="kid" value="${id}" ${id===S.kid?'checked':''}><span>${esc(v.short)} · ${esc(v.cls)}</span></label>`).join('')}</div>`}
+function renderNav(){$('.nav').innerHTML=TABS[S.role].map(k=>`<a href="#${k}" ${k==='home'?'aria-current="page"':''}><span class="pill">${ic(k)}</span>${NAV[k]}</a>`).join('')}
+function render(focus){const m=$('#main'),st=S.state,t=S.role==='teacher';
+ $('#offline').hidden=st!=='offline';$('[data-act=refresh]').classList.toggle('spin',st==='loading');m.setAttribute('aria-busy',st==='loading');
+ $('#greet').textContent=`Good morning, ${t?'Ms. Okafor':'Maria'}`;
+ $('#meta').textContent=dt('2026-10-06',{weekday:'short',month:'short',day:'numeric'})+' · '+({loading:'Updating…',offline:'Offline, saved '+SAVED,error:'Not updated'}[st]||'Updated 8:12 AM');
+ m.innerHTML=st==='loading'?skeleton():st==='error'?stateView('alert','bad',"We couldn't load your dashboard",'The school server did not respond. Nothing you entered was lost. Try again in a moment.','<button class="btn" data-act="retry">Try again</button><p class="fine">Reference SM-503</p>'):t?teacherView():parentView();
+ m.classList.toggle('enter',st!=='loading');[...m.children].forEach((c,i)=>c.style.setProperty('--i',i));
+ $('#state').value=st;$('#role').value=S.role;if(focus)m.focus({preventScroll:true})}
+const say=s=>{$('#live').textContent=s},toast=s=>{const el=$('#toast');el.textContent=s;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('on'),2600)};
+function load(next){S.state='loading';renderKids();render();say('Updating');setTimeout(()=>{S.state=next;renderKids();render(true);say(next==='error'?'Could not update':'Dashboard updated')},900)}
+const MSG={take:'Opening the roster. Marks are saved on this device if you drop offline.',pay:'Opening secure checkout…',offline:'Payments need a connection. Reconnect and try again.',reason:'Opening the absence form…',link:'Opening link-code entry…',tt:'Opening timetable…',bell:'2 unread: conference sign-up and fee reminder'};
+document.addEventListener('click',e=>{const a=e.target.closest('[data-act],a[href^="#"]:not(.skip)');if(!a)return;const act=a.dataset.act;
+ if(!act){e.preventDefault();return toast('That screen is not part of this prototype')}
+ if(act==='retry')load('ready');else if(act==='refresh'){S.state==='offline'?toast('Still offline. Showing saved data.'):load('ready')}else toast(MSG[act])});
+document.addEventListener('change',e=>{const t=e.target;
+ if(t.name==='kid'){S.kid=t.value;render()}
+ else if(t.id==='role'){S.role=t.value;renderNav();renderKids();render()}
+ else if(t.id==='state'){S.state=t.value;renderKids();render()}});
+addEventListener('offline',()=>{S.state='offline';renderKids();render();say('You are offline. Showing saved data.')});
+addEventListener('online',()=>load('ready'));
+renderNav();renderKids();render();
+// if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');  // production: app-shell precache + stale-while-revalidate for /api
+</script>
+</body>
+</html>
