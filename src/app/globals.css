@@ -251,6 +251,37 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 .site-shell[data-shopping="centenario"] .floating-card{border-radius:4px;box-shadow:0 24px 60px #081c18aa}
 .site-shell[data-shopping="uniplaza"] .hero-art{border-radius:28px 8px 28px 8px;background:linear-gradient(145deg,#254a59 0%,#203e4d 48%,#132e3b 100%);overflow:hidden}
 .site-shell[data-shopping="uniplaza"] .hero-art::before{content:"";position:absolute;inset:12% 8% 9%;border:1px solid #c6d9dc55;border-bottom:0;border-radius:46% 46% 0 0;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0 12%,#b5d2d333 12.2% 12.5%,transparent 12.7% 24%);mask-image:linear-gradient(180deg,#000 10%,transparent 90%)}
+
+/* NFC/QR participation inherits the tenant's campaign art direction too. */
+.participate-shell[data-shopping="centenario"]{background:radial-gradient(ellipse at 50% 0%,color-mix(in srgb,var(--brand-campaign-field) 84%,white) 0%,var(--brand-campaign-field) 55%,var(--brand-campaign-deep) 100%);color:var(--brand-campaign-ink)}
+.participate-shell[data-shopping="centenario"] .participate-header{border-color:color-mix(in srgb,var(--brand-campaign-festive) 40%,transparent);color:var(--brand-campaign-field-raised)}
+.participate-shell[data-shopping="centenario"] .participate-header .brand,.participate-shell[data-shopping="centenario"] .participate-header .brand-shopping-name{color:var(--brand-campaign-field-raised)}
+.participate-shell[data-shopping="centenario"] .participate-header .brand-light{color:var(--brand-campaign-soft)}
+.participate-shell[data-shopping="centenario"] .participate-header>span{color:var(--brand-campaign-field-raised)}
+.participate-shell[data-shopping="centenario"] .participate-card{border:1px solid var(--brand-campaign-festive);border-radius:4px 20px 4px 20px;background:linear-gradient(135deg,var(--brand-campaign-field-raised),var(--brand-campaign-soft));box-shadow:0 24px 58px color-mix(in srgb,var(--brand-campaign-deep) 50%,transparent)}
+.participate-shell[data-shopping="centenario"] .participate-kicker,.participate-shell[data-shopping="centenario"] .participate-card-id>span,.participate-shell[data-shopping="centenario"] .participate-result>span{color:var(--brand-campaign-accent)}
+.participate-shell[data-shopping="centenario"] .participate-card h1,.participate-shell[data-shopping="centenario"] .participate-result h2{color:var(--brand-campaign-ink)}
+.participate-shell[data-shopping="centenario"] .participate-icon{border:1px solid var(--brand-campaign-festive);border-radius:4px 18px 4px 18px;background:var(--brand-campaign-field);color:var(--brand-campaign-soft)}
+.participate-shell[data-shopping="centenario"] .participate-card-id{border-color:var(--brand-campaign-line);border-radius:3px 14px 3px 14px;background:var(--brand-campaign-field-raised)}
+.participate-shell[data-shopping="centenario"] .participate-result{border:1px solid var(--brand-campaign-festive);border-radius:4px 16px 4px 16px;background:var(--brand-campaign-field);color:var(--brand-campaign-field-raised)}
+.participate-shell[data-shopping="centenario"] .participate-result h2{color:var(--brand-campaign-field-raised)}
+.participate-shell[data-shopping="centenario"] .participate-submit{border-radius:4px 14px 4px 14px;background:var(--brand-campaign-field)}
+.participate-shell[data-shopping="centenario"] .participate-back{color:var(--brand-campaign-field)}
+.participate-shell[data-shopping="centenario"] .participate-footer{color:var(--brand-campaign-soft)}
+.participate-shell[data-shopping="uniplaza"]{background:radial-gradient(ellipse at 50% 0%,color-mix(in srgb,var(--brand-primary) 84%,white) 0%,var(--brand-campaign-field) 58%,var(--brand-campaign-deep) 100%);color:var(--brand-text)}
+.participate-shell[data-shopping="uniplaza"] .participate-header{border-color:color-mix(in srgb,var(--brand-campaign-line) 40%,transparent);color:var(--brand-campaign-field-raised)}
+.participate-shell[data-shopping="uniplaza"] .participate-header .brand,.participate-shell[data-shopping="uniplaza"] .participate-header .brand-shopping-name{color:var(--brand-campaign-field-raised)}
+.participate-shell[data-shopping="uniplaza"] .participate-header>span{color:var(--brand-campaign-field-raised)}
+.participate-shell[data-shopping="uniplaza"] .participate-card{border:1px solid var(--brand-campaign-line);border-radius:22px 4px 22px 4px;background:var(--brand-campaign-field-raised);box-shadow:0 24px 58px color-mix(in srgb,var(--brand-campaign-deep) 48%,transparent)}
+.participate-shell[data-shopping="uniplaza"] .participate-kicker,.participate-shell[data-shopping="uniplaza"] .participate-card-id>span,.participate-shell[data-shopping="uniplaza"] .participate-result>span{color:var(--brand-campaign-accent)}
+.participate-shell[data-shopping="uniplaza"] .participate-card h1,.participate-shell[data-shopping="uniplaza"] .participate-result h2{font-family:var(--brand-font-body,Arial,sans-serif);font-weight:750;letter-spacing:-.045em;color:var(--brand-campaign-field)}
+.participate-shell[data-shopping="uniplaza"] .participate-icon{border-radius:20px 3px 20px 3px;background:var(--brand-campaign-soft);color:var(--brand-campaign-accent)}
+.participate-shell[data-shopping="uniplaza"] .participate-card-id{border-style:solid;border-color:var(--brand-campaign-line);border-radius:12px 2px 12px 2px;background:var(--brand-surface)}
+.participate-shell[data-shopping="uniplaza"] .participate-result{border-left:3px solid var(--brand-campaign-festive);border-radius:3px 14px 3px 14px;background:var(--brand-campaign-field);color:var(--brand-on-primary)}
+.participate-shell[data-shopping="uniplaza"] .participate-result h2{color:var(--brand-on-primary)}
+.participate-shell[data-shopping="uniplaza"] .participate-submit{border-radius:3px 13px 3px 13px;background:var(--brand-campaign-accent)}
+.participate-shell[data-shopping="uniplaza"] .participate-back{color:var(--brand-campaign-field)}
+.participate-shell[data-shopping="uniplaza"] .participate-footer{color:var(--brand-campaign-soft)}
 .site-shell[data-shopping="uniplaza"] .tree{display:none}
 .site-shell[data-shopping="uniplaza"] .art-glow{background:radial-gradient(ellipse at 52% 54%,#73a7b044 0%,#203e4d00 68%)}
 .site-shell[data-shopping="uniplaza"] .floating-card{border-radius:12px 3px 12px 3px;box-shadow:0 24px 60px #071e29bb}

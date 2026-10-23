@@ -1,6 +1,6 @@
 /* Campaign app shell: mobile-first, one column, bottom tab bar. Brand tokens come from brandCssVariables(). */
 .stage{--festive:#e4c17c;--wheel-a:#b94f43;--wheel-b:#2f6150;--stage-bg:#1b3a2f;min-height:100svh;background:var(--stage-bg);display:flex;justify-content:center;color:var(--brand-text,#203a31);font-family:var(--brand-font-body,Arial,sans-serif)}
-.stage[data-shopping="uniplaza"]{--festive:#f0c98a;--wheel-a:#93572f;--wheel-b:#2f6e80;--stage-bg:#16303b}
+.stage[data-shopping="uniplaza"]{--festive:var(--brand-campaign-festive,#e4c18b);--wheel-a:var(--brand-campaign-wheel-a,#a25d32);--wheel-b:var(--brand-campaign-wheel-b,#31778a);--stage-bg:var(--brand-campaign-deep,#16303b)}
 .stage *{box-sizing:border-box}
 .stage button,.stage input{font:inherit}
 .stage button{cursor:pointer}
@@ -286,13 +286,13 @@
 /* Centenario's campaign keeps the existing interaction model but follows the approved
    editorial reference: a photographic pine setting, a paper invitation and a stamped passport. */
 .stage[data-shopping="centenario"]{
-  --centenario-pine:#17382b;
-  --centenario-pine-deep:#102c22;
-  --centenario-paper:#f1e4d2;
-  --centenario-paper-light:#faf5ec;
-  --centenario-gold:#d4ad68;
-  --centenario-terracotta:#a34832;
-  --centenario-ink:#18382b;
+  --centenario-pine:var(--brand-campaign-field,#17382b);
+  --centenario-pine-deep:var(--brand-campaign-deep,#102c22);
+  --centenario-paper:var(--brand-campaign-soft,#f1e4d2);
+  --centenario-paper-light:var(--brand-campaign-field-raised,#faf5ec);
+  --centenario-gold:var(--brand-campaign-festive,#d4ad68);
+  --centenario-terracotta:var(--brand-campaign-accent,#a34832);
+  --centenario-ink:var(--brand-campaign-ink,#18382b);
   --stage-bg:var(--centenario-pine-deep);
 }
 .stage[data-shopping="centenario"] .app{background:var(--centenario-paper-light)}
@@ -399,3 +399,143 @@
   .heroPrimaryAction{transition:none}
 }
 @media(prefers-reduced-motion:reduce){.passportSlotFound{animation:none}}
+
+/* Full-screen Centenario art direction: paper invitations, stamped marks and a
+   pine-and-terracotta palette carried through every public destination. */
+.stage[data-shopping="centenario"]{
+  --festive:var(--brand-campaign-festive,#d4ad68);
+  --wheel-a:var(--brand-campaign-wheel-a,#a34832);
+  --wheel-b:var(--brand-campaign-wheel-b,#17382b);
+  --stage-bg:var(--centenario-pine-deep);
+}
+.stage[data-shopping="centenario"] .app:not([data-view="inicio"]){background:var(--centenario-paper-light)}
+.stage[data-shopping="centenario"] .app:not([data-view="inicio"]) .topbar{background:var(--centenario-paper-light);border-bottom:1px solid color-mix(in srgb,var(--centenario-gold) 54%,white)}
+.stage[data-shopping="centenario"] .app:not([data-view="inicio"]) .seal svg{stroke:var(--centenario-terracotta)}
+.stage[data-shopping="centenario"] .app:not([data-view="inicio"]) .seal path{fill:var(--centenario-terracotta)}
+.stage[data-shopping="centenario"] .screenHead{padding:24px 20px 8px}
+.stage[data-shopping="centenario"] .screenHead h2,.stage[data-shopping="centenario"] .sheetTitle{font-family:var(--brand-font-display,Georgia,serif);font-size:clamp(30px,8vw,38px);line-height:1.02;letter-spacing:-.04em;color:var(--centenario-ink)}
+.stage[data-shopping="centenario"] .screenHead p{max-width:36ch;font-size:15px;line-height:1.5}
+.stage[data-shopping="centenario"] .kicker{color:var(--centenario-terracotta);letter-spacing:.16em}
+.stage[data-shopping="centenario"] .primaryAction,.stage[data-shopping="centenario"] .spinButton{border-radius:4px 16px 4px 16px;background:var(--centenario-pine);box-shadow:0 4px 0 var(--centenario-pine-deep);font-family:var(--brand-font-display,Georgia,serif)}
+.stage[data-shopping="centenario"] .secondaryAction,.stage[data-shopping="centenario"] .secondaryWide{border-radius:3px 12px 3px 12px;border-color:var(--centenario-pine);background:var(--centenario-paper-light);color:var(--centenario-pine);font-family:var(--brand-font-body,Arial,sans-serif)}
+.stage[data-shopping="centenario"] .play .screenHead{padding-bottom:10px}
+.stage[data-shopping="centenario"] .wheelWrap{margin:10px 18px 0;padding:23px 8px 20px;border:1px solid var(--centenario-gold);border-radius:4px 24px 4px 24px;background:var(--centenario-pine-deep);box-shadow:inset 0 0 0 6px color-mix(in srgb,var(--centenario-gold) 15%,transparent)}
+.stage[data-shopping="centenario"] .wheel{width:min(286px,78vw)}
+.stage[data-shopping="centenario"] .wheelRim{stroke:var(--centenario-paper-light)}
+.stage[data-shopping="centenario"] .wheelHub{fill:var(--centenario-paper);stroke:var(--centenario-gold)}
+.stage[data-shopping="centenario"] .hubText{fill:var(--centenario-terracotta)!important}
+.stage[data-shopping="centenario"] .pointer{border-top-color:var(--centenario-paper);filter:drop-shadow(0 1px 0 var(--centenario-gold))}
+.stage[data-shopping="centenario"] .wheelState{padding-inline:18px;color:var(--centenario-ink);font-size:13px;font-weight:600}
+.stage[data-shopping="centenario"] .codeForm{margin:16px 20px;padding:17px;border:1px solid color-mix(in srgb,var(--centenario-gold) 70%,white);border-radius:4px 16px 4px 16px;background:var(--centenario-paper)}
+.stage[data-shopping="centenario"] .label{color:var(--centenario-pine);letter-spacing:.12em}
+.stage[data-shopping="centenario"] .codeInput{border:1px dashed color-mix(in srgb,var(--centenario-pine) 55%,white);border-radius:3px;background:var(--centenario-paper-light)}
+.stage[data-shopping="centenario"] .resultWon{border:1px solid var(--centenario-gold);border-radius:4px 18px 4px 18px;background:var(--centenario-pine-deep)}
+.stage[data-shopping="centenario"] .resultNone{border:1px solid var(--centenario-gold);border-radius:4px 18px 4px 18px;background:var(--centenario-paper)}
+.stage[data-shopping="centenario"] .discover .collectionCount{margin:12px 20px 0;padding-bottom:13px;border-bottom:1px solid color-mix(in srgb,var(--centenario-gold) 60%,white)}
+.stage[data-shopping="centenario"] .collectionCount strong{color:var(--centenario-pine);font-size:48px}
+.stage[data-shopping="centenario"] .collectionCount span{color:var(--centenario-terracotta)}
+.stage[data-shopping="centenario"] .slotGrid{margin-inline:20px;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stage[data-shopping="centenario"] .slot{min-width:0;min-height:142px;padding:10px 6px;border:1px dashed color-mix(in srgb,var(--centenario-gold) 76%,var(--centenario-terracotta));border-radius:3px;background:var(--centenario-paper);box-shadow:inset 0 0 0 4px var(--centenario-paper-light)}
+.stage[data-shopping="centenario"] .slotFound{border:1px solid var(--centenario-gold);border-radius:3px;background:var(--centenario-pine);color:var(--centenario-paper-light);box-shadow:inset 0 0 0 4px color-mix(in srgb,var(--centenario-gold) 20%,transparent)}
+.stage[data-shopping="centenario"] .slotMystery{font-size:46px;color:var(--centenario-terracotta)}
+.stage[data-shopping="centenario"] .slotNumber{color:var(--centenario-terracotta)}
+.stage[data-shopping="centenario"] .inset{margin-inline:20px}
+.stage[data-shopping="centenario"] .clueBlock{margin-inline:20px;border:1px solid color-mix(in srgb,var(--centenario-gold) 58%,white);border-radius:4px 14px 4px 14px;background:var(--centenario-paper)}
+.stage[data-shopping="centenario"] .clueBlock button{border-radius:3px 10px 3px 10px;border-color:var(--centenario-terracotta);color:var(--centenario-terracotta)}
+.stage[data-shopping="centenario"] .clueText{border-left:3px solid var(--centenario-terracotta);border-radius:2px;background:var(--centenario-paper-light)}
+.stage[data-shopping="centenario"] .prizes .hero{margin-inline:20px;width:calc(100% - 40px);border:1px solid var(--centenario-gold);border-radius:4px 18px 4px 18px;background:var(--centenario-pine-deep)}
+.stage[data-shopping="centenario"] .prizes .heroThumb{height:210px;background:var(--centenario-paper)}
+.stage[data-shopping="centenario"] .prizes .heroInfo{padding:18px 20px 20px}
+.stage[data-shopping="centenario"] .prizes .heroInfo strong{font-size:27px;line-height:1.05}
+.stage[data-shopping="centenario"] .prizeList{margin-inline:20px}
+.stage[data-shopping="centenario"] .prizeRow{border-color:color-mix(in srgb,var(--centenario-gold) 48%,white);border-radius:3px 12px 3px 12px;background:var(--centenario-paper-light)}
+.stage[data-shopping="centenario"] .prizeRowThumb,.stage[data-shopping="centenario"] .detailImage{border-radius:3px;background:var(--centenario-paper)}
+.stage[data-shopping="centenario"] .prizeRow>span:last-child{color:var(--centenario-terracotta)}
+.stage[data-shopping="centenario"] .detail{padding-top:12px}
+.stage[data-shopping="centenario"] .detailImage{height:230px;border:1px solid color-mix(in srgb,var(--centenario-gold) 50%,white)}
+.stage[data-shopping="centenario"] .conditions{border-left:3px solid var(--centenario-gold);border-radius:3px;background:var(--centenario-paper)}
+.stage[data-shopping="centenario"] .progress .ringCard{margin-inline:20px;border:1px solid var(--centenario-gold);border-radius:4px 18px 4px 18px;background:var(--centenario-pine-deep)}
+.stage[data-shopping="centenario"] .ringText strong{font-family:var(--brand-font-display,Georgia,serif);font-variant-numeric:oldstyle-nums}
+.stage[data-shopping="centenario"] .ringFill{stroke:var(--centenario-gold)}
+.stage[data-shopping="centenario"] .achievements{margin-inline:20px}
+.stage[data-shopping="centenario"] .achievements>div{border-radius:3px;background:var(--centenario-paper);color:var(--centenario-ink)}
+.stage[data-shopping="centenario"] .achievements .achieved{border:1px solid var(--centenario-gold);background:var(--centenario-pine);color:var(--centenario-paper-light)}
+.stage[data-shopping="centenario"] .achievements .locked{border:1px dashed color-mix(in srgb,var(--centenario-gold) 70%,white)}
+.stage[data-shopping="centenario"] .rewardBox{margin-inline:20px;border-left:3px solid var(--centenario-terracotta);border-radius:3px;background:var(--centenario-paper)}
+.stage[data-shopping="centenario"] .steps{margin-inline:26px;line-height:1.6}
+.stage[data-shopping="centenario"] .linkRow{margin-inline:20px}
+.stage[data-shopping="centenario"] .linkRow a,.stage[data-shopping="centenario"] .linkRow button{color:var(--centenario-pine)}
+.stage[data-shopping="centenario"] .sheet{border:1px solid color-mix(in srgb,var(--centenario-gold) 65%,white);border-radius:4px 22px 0 0;background:var(--centenario-paper-light)}
+.stage[data-shopping="centenario"] .sheetClose{border-radius:3px 12px 3px 12px;background:var(--centenario-paper);color:var(--centenario-pine)}
+
+/* UniPlaza has its own open-air, urban-night language: clean geometry, deep
+   blue-green fields and copper wayfinding accents rather than Centenario's paper motif. */
+.stage[data-shopping="uniplaza"]{--wheel-a:var(--brand-campaign-wheel-a,#a25d32);--wheel-b:var(--brand-campaign-wheel-b,#31778a);--festive:var(--brand-campaign-festive,#e4c18b);--uniplaza-deep:var(--brand-campaign-deep,#16303b);--uniplaza-dark:var(--brand-campaign-field,#203e4d);--uniplaza-midnight:color-mix(in srgb,var(--uniplaza-dark) 88%,white);--uniplaza-deeper:color-mix(in srgb,var(--uniplaza-deep) 88%,black);--uniplaza-blue:var(--brand-primary,#315c70);--uniplaza-blue-soft:var(--brand-campaign-soft,#e6eff1);--uniplaza-copper:var(--brand-campaign-accent,#93572f);--uniplaza-copper-strong:var(--brand-campaign-accent-strong,#824a28);--uniplaza-line:var(--brand-campaign-line,#b9d0d5);--uniplaza-paper:var(--brand-campaign-field-raised,#fff)}
+.stage[data-shopping="uniplaza"] .app:not([data-view="inicio"]){background:var(--brand-surface)}
+.stage[data-shopping="uniplaza"] .app:not([data-view="inicio"]) .topbar{background:var(--uniplaza-paper);border-bottom:2px solid color-mix(in srgb,var(--brand-primary) 25%,white)}
+.stage[data-shopping="uniplaza"] .app:not([data-view="inicio"]) .brand strong{font-family:var(--brand-font-body,Arial,sans-serif);font-size:16px;font-weight:750;letter-spacing:-.035em}
+.stage[data-shopping="uniplaza"] .app:not([data-view="inicio"]) .brand small{letter-spacing:.16em;color:var(--brand-primary)}
+.stage[data-shopping="uniplaza"] .app:not([data-view="inicio"]) .seal svg{stroke:var(--uniplaza-copper)}
+.stage[data-shopping="uniplaza"] .app:not([data-view="inicio"]) .seal path{fill:var(--uniplaza-copper)}
+.stage[data-shopping="uniplaza"] .screenHead{padding:22px 20px 11px;border-bottom:1px solid color-mix(in srgb,var(--brand-primary) 18%,white)}
+.stage[data-shopping="uniplaza"] .screenHead h2,.stage[data-shopping="uniplaza"] .sheetTitle{font-family:var(--brand-font-display,Arial,sans-serif);font-size:clamp(28px,7.4vw,36px);line-height:1.03;letter-spacing:-.055em;color:var(--uniplaza-dark)}
+.stage[data-shopping="uniplaza"] .screenHead p{max-width:40ch;font-size:14px;line-height:1.55}
+.stage[data-shopping="uniplaza"] .kicker{color:var(--uniplaza-copper);letter-spacing:.12em}
+.stage[data-shopping="uniplaza"] .primaryAction,.stage[data-shopping="uniplaza"] .spinButton{border-radius:3px 13px 3px 13px;background:var(--uniplaza-copper);box-shadow:0 4px 0 var(--uniplaza-copper-strong);font-family:var(--brand-font-body,Arial,sans-serif);letter-spacing:.01em}
+.stage[data-shopping="uniplaza"] .secondaryAction,.stage[data-shopping="uniplaza"] .secondaryWide{border-radius:3px 13px 3px 13px;border-color:var(--uniplaza-blue);background:var(--uniplaza-paper);color:var(--uniplaza-dark)}
+.stage[data-shopping="uniplaza"] .wheelWrap{margin:12px 20px 0;padding:23px 8px 20px;border:1px solid var(--uniplaza-line);border-radius:22px 4px 22px 4px;background:linear-gradient(150deg,var(--uniplaza-midnight),var(--uniplaza-deeper));box-shadow:inset 0 0 0 1px rgb(255 255 255 / 7%)}
+.stage[data-shopping="uniplaza"] .wheelRim{stroke:var(--uniplaza-paper)}
+.stage[data-shopping="uniplaza"] .wheelHub{fill:var(--uniplaza-paper);stroke:var(--brand-campaign-festive)}
+.stage[data-shopping="uniplaza"] .hubText{fill:var(--uniplaza-copper)!important;font-family:var(--brand-font-body,Arial,sans-serif)!important}
+.stage[data-shopping="uniplaza"] .pointer{border-top-color:var(--uniplaza-paper)}
+.stage[data-shopping="uniplaza"] .wheelState{padding-inline:18px;color:var(--uniplaza-dark);font-weight:600}
+.stage[data-shopping="uniplaza"] .codeForm{margin:16px 20px;padding:16px;border-left:3px solid var(--uniplaza-copper);background:var(--uniplaza-blue-soft)}
+.stage[data-shopping="uniplaza"] .codeInput{border-radius:3px 12px 3px 12px;border-color:var(--uniplaza-line);background:var(--uniplaza-paper)}
+.stage[data-shopping="uniplaza"] .resultWon{border-radius:3px 18px 3px 18px;background:var(--uniplaza-dark)}
+.stage[data-shopping="uniplaza"] .resultNone{border-radius:3px 18px 3px 18px;border:1px solid var(--uniplaza-line);background:var(--uniplaza-blue-soft)}
+.stage[data-shopping="uniplaza"] .discover .collectionCount{margin:14px 20px 0;padding:12px 14px;border-left:3px solid var(--uniplaza-copper);background:var(--uniplaza-blue-soft)}
+.stage[data-shopping="uniplaza"] .collectionCount strong{font:750 44px/1 var(--brand-font-body,Arial,sans-serif);color:var(--uniplaza-dark)}
+.stage[data-shopping="uniplaza"] .collectionCount span{color:var(--uniplaza-copper-strong)}
+.stage[data-shopping="uniplaza"] .slotGrid{margin-inline:20px;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.stage[data-shopping="uniplaza"] .slot{min-width:0;min-height:140px;padding:10px 5px;border:1px solid color-mix(in srgb,var(--uniplaza-line) 76%,white);border-radius:12px 2px 12px 2px;background:var(--uniplaza-paper)}
+.stage[data-shopping="uniplaza"] .slotFound{border:1px solid var(--brand-primary);border-radius:12px 2px 12px 2px;background:var(--brand-primary);color:var(--brand-on-primary);box-shadow:inset 0 -4px 0 var(--brand-primary-strong)}
+.stage[data-shopping="uniplaza"] .slotNumber{color:var(--uniplaza-copper)}
+.stage[data-shopping="uniplaza"] .slotFound .slotNumber{color:var(--brand-campaign-festive)}
+.stage[data-shopping="uniplaza"] .slotMystery{font:500 40px/1 var(--brand-font-body,Arial,sans-serif);color:var(--uniplaza-copper)}
+.stage[data-shopping="uniplaza"] .inset{margin-inline:20px}
+.stage[data-shopping="uniplaza"] .clueBlock{margin-inline:20px;border:1px solid var(--uniplaza-line);border-radius:14px 3px 14px 3px;background:var(--uniplaza-paper)}
+.stage[data-shopping="uniplaza"] .clueBlock button{border-radius:3px 10px 3px 10px;border-color:var(--uniplaza-copper);color:var(--uniplaza-copper-strong)}
+.stage[data-shopping="uniplaza"] .clueText{border-left:3px solid var(--uniplaza-copper);border-radius:2px;background:var(--uniplaza-blue-soft)}
+.stage[data-shopping="uniplaza"] .prizes .hero{margin-inline:20px;width:calc(100% - 40px);border-radius:20px 3px 20px 3px;background:var(--uniplaza-dark)}
+.stage[data-shopping="uniplaza"] .prizes .heroThumb{height:210px;background:color-mix(in srgb,var(--uniplaza-line) 36%,var(--uniplaza-paper))}
+.stage[data-shopping="uniplaza"] .prizes .heroInfo{padding:18px 20px 20px}
+.stage[data-shopping="uniplaza"] .prizes .heroInfo strong{font-family:var(--brand-font-body,Arial,sans-serif);font-size:23px;letter-spacing:-.035em}
+.stage[data-shopping="uniplaza"] .prizeList{margin-inline:20px}
+.stage[data-shopping="uniplaza"] .prizeRow{border-color:color-mix(in srgb,var(--uniplaza-line) 78%,white);border-radius:13px 2px 13px 2px;background:var(--uniplaza-paper)}
+.stage[data-shopping="uniplaza"] .prizeRowThumb,.stage[data-shopping="uniplaza"] .detailImage{border-radius:10px 2px 10px 2px;background:var(--uniplaza-blue-soft)}
+.stage[data-shopping="uniplaza"] .prizeRow>span:last-child{color:var(--uniplaza-copper)}
+.stage[data-shopping="uniplaza"] .detailImage{height:230px;border:1px solid var(--uniplaza-line)}
+.stage[data-shopping="uniplaza"] .conditions{border-left:3px solid var(--brand-primary);border-radius:3px 12px 3px 12px;background:var(--uniplaza-blue-soft)}
+.stage[data-shopping="uniplaza"] .progress .ringCard{margin-inline:20px;border:1px solid var(--uniplaza-blue);border-radius:18px 3px 18px 3px;background:var(--uniplaza-dark)}
+.stage[data-shopping="uniplaza"] .ringText strong{font-family:var(--brand-font-body,Arial,sans-serif);font-weight:750}
+.stage[data-shopping="uniplaza"] .ringFill{stroke:var(--brand-campaign-festive)}
+.stage[data-shopping="uniplaza"] .achievements{margin-inline:20px}
+.stage[data-shopping="uniplaza"] .achievements>div{border-radius:12px 2px 12px 2px;background:var(--uniplaza-blue-soft);color:var(--uniplaza-dark)}
+.stage[data-shopping="uniplaza"] .achievements .achieved{border:1px solid color-mix(in srgb,var(--brand-campaign-festive) 72%,white);background:var(--brand-primary);color:var(--brand-on-primary)}
+.stage[data-shopping="uniplaza"] .achievements .locked{border:1px dashed color-mix(in srgb,var(--uniplaza-line) 82%,white)}
+.stage[data-shopping="uniplaza"] .rewardBox{margin-inline:20px;border-left:3px solid var(--uniplaza-copper);border-radius:3px 12px 3px 12px;background:var(--uniplaza-blue-soft)}
+.stage[data-shopping="uniplaza"] .steps{margin-inline:26px;line-height:1.6}
+.stage[data-shopping="uniplaza"] .linkRow{margin-inline:20px}
+.stage[data-shopping="uniplaza"] .linkRow a,.stage[data-shopping="uniplaza"] .linkRow button{color:var(--uniplaza-dark)}
+.stage[data-shopping="uniplaza"] .sheet{border:1px solid var(--uniplaza-line);border-radius:22px 3px 0 0;background:var(--uniplaza-paper)}
+.stage[data-shopping="uniplaza"] .sheetClose{border-radius:3px 12px 3px 12px;background:var(--uniplaza-blue-soft);color:var(--uniplaza-dark)}
+
+@media(max-width:380px){
+  .stage[data-shopping="centenario"] .screenHead,.stage[data-shopping="uniplaza"] .screenHead{padding-inline:16px}
+  .stage[data-shopping="centenario"] .slotGrid,.stage[data-shopping="uniplaza"] .slotGrid{margin-inline:14px;gap:6px}
+  .stage[data-shopping="centenario"] .slot,.stage[data-shopping="uniplaza"] .slot{min-height:124px;padding-inline:3px}
+  .stage[data-shopping="centenario"] .slotId,.stage[data-shopping="uniplaza"] .slotId{font-size:13px}
+  .stage[data-shopping="centenario"] .prizeList,.stage[data-shopping="uniplaza"] .prizeList{margin-inline:14px}
+  .stage[data-shopping="centenario"] .prizes .hero,.stage[data-shopping="uniplaza"] .prizes .hero{margin-inline:14px;width:calc(100% - 28px)}
+  .stage[data-shopping="centenario"] .wheelWrap,.stage[data-shopping="uniplaza"] .wheelWrap{margin-inline:14px}
+}

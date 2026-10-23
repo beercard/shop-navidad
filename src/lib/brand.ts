@@ -52,6 +52,20 @@ export type BrandTheme = {
     /** Christmas accents belong to the shared campaign, not the corporate logo. */
     seasonalMotif: "star-and-ribbon" | "open-air-lights";
     tone: string;
+    /** Campaign-specific art direction tokens. These are approximations, not official brand colors. */
+    palette: {
+      deep: string;
+      field: string;
+      fieldRaised: string;
+      accent: string;
+      accentStrong: string;
+      festive: string;
+      soft: string;
+      line: string;
+      ink: string;
+      wheelA: string;
+      wheelB: string;
+    };
   };
   experience: {
     navInstructions: string;
@@ -117,6 +131,7 @@ export const shoppingBrands: Record<ShoppingBrandId, BrandTheme> = {
       heroImage: null,
       seasonalMotif: "star-and-ribbon",
       tone: "Cercano, familiar y orientado a compartir experiencias.",
+      palette: { deep: "#102C22", field: "#17382B", fieldRaised: "#FAF5EC", accent: "#A34832", accentStrong: "#18382B", festive: "#D4AD68", soft: "#F1E4D2", line: "#BD9C61", ink: "#18382B", wheelA: "#A34832", wheelB: "#17382B" },
     },
     experience: {
       navInstructions: "Cómo vivirla",
@@ -176,6 +191,7 @@ export const shoppingBrands: Record<ShoppingBrandId, BrandTheme> = {
       heroImage: null,
       seasonalMotif: "open-air-lights",
       tone: "Urbano, contemporáneo y conectado con los espacios al aire libre.",
+      palette: { deep: "#16303B", field: "#203E4D", fieldRaised: "#FFFFFF", accent: "#93572F", accentStrong: "#824A28", festive: "#E4C18B", soft: "#E6EFF1", line: "#B9D0D5", ink: "#243A42", wheelA: "#A25D32", wheelB: "#31778A" },
     },
     experience: {
       navInstructions: "Tu recorrido",
@@ -224,6 +240,17 @@ export function brandCssVariables(brand: BrandTheme, overrides?: Record<string, 
     "--brand-shadow-card": brand.shape.shadowCard,
     "--brand-shadow-popover": brand.shape.shadowPopover,
     "--brand-content-max": brand.shape.contentMax,
+    "--brand-campaign-deep": brand.campaign.palette.deep,
+    "--brand-campaign-field": brand.campaign.palette.field,
+    "--brand-campaign-field-raised": brand.campaign.palette.fieldRaised,
+    "--brand-campaign-accent": brand.campaign.palette.accent,
+    "--brand-campaign-accent-strong": brand.campaign.palette.accentStrong,
+    "--brand-campaign-festive": brand.campaign.palette.festive,
+    "--brand-campaign-soft": brand.campaign.palette.soft,
+    "--brand-campaign-line": brand.campaign.palette.line,
+    "--brand-campaign-ink": brand.campaign.palette.ink,
+    "--brand-campaign-wheel-a": brand.campaign.palette.wheelA,
+    "--brand-campaign-wheel-b": brand.campaign.palette.wheelB,
   };
   const tokens: Record<string, `--brand-${string}`> = { primary: "--brand-primary", accent: "--brand-accent", surface: "--brand-surface", text: "--brand-text" };
   for (const [key, token] of Object.entries(tokens)) {

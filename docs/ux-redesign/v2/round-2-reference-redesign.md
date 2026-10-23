@@ -27,7 +27,7 @@ Fecha: 22-10-2026. Referencia: imagen adjunta por el usuario, 853 × 1844 px. El
 
 ## Production
 
-La versión visual quedó publicada en [Production](https://shop-navidad.vercel.app/centenario), deployment [READY](https://shop-navidad-c6ejs85hl-beercard-7600s-projects.vercel.app/centenario) (ID `dpl_9DevcC8Ai989qahzyt8FvLHRGxgi`). Centenario y UniPlaza responden HTTP 200; la verificación del HTML confirmó que Centenario carga el nuevo asset y UniPlaza no hereda esa portada. El asset WebP devuelve HTTP 200.
+La versión visual quedó publicada en [Production](https://shop-navidad.vercel.app/centenario), deployment [READY](https://shop-navidad-f68tdyfqb-beercard-7600s-projects.vercel.app/centenario) (ID `dpl_FWXJw4VLZ8QsLjzqigp37UbwCJsa`), correspondiente al commit `3427c5e` de `main`. Centenario y UniPlaza responden HTTP 200; la verificación del HTML confirmó que Centenario carga el nuevo asset y UniPlaza no hereda esa portada. El asset WebP devuelve HTTP 200.
 
 La variable secreta `DATABASE_URL` de Production ahora apunta a la base Prisma principal. Se aplicaron las tres migraciones de `prisma/migrations` y se crearon únicamente los registros raíz de Centenario Shopping y UniPlaza Shopping. No se crearon campañas, premios, tarjetas, usuarios ni canjes. El deployment nuevo responde `CAMPAIGN_UNAVAILABLE` (404) para ambas APIs, el estado esperado al no existir una campaña activa; no se observaron logs 500 en este deployment.
 

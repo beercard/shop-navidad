@@ -52,6 +52,38 @@ test('shopping routes keep separate themes and fit the required viewport widths'
   expect(pageErrors).toEqual([]);
 });
 
+test('both shopping art directions carry through every public PWA destination and NFC entry', async ({ page }) => {
+  const observed: Record<string, string[]> = {};
+  for (const shopping of shoppingPaths) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(shopping.path);
+    for (const destination of [
+      { label: 'Jugar', heading: /Girá y descubrí/i, selector: '[data-testid="campaign-wheel"]' },
+      { label: 'Descubrir', heading: /Tu colección/i, selector: '[role="listitem"]' },
+      { label: 'Premios', heading: /Premios/i, selector: null },
+      { label: 'Mi progreso', heading: /Mi progreso/i, selector: 'section[aria-labelledby="progress-title"]' },
+    ]) {
+      await page.getByRole('button', { name: destination.label, exact: true }).click();
+      await expect(page.getByRole('heading', { name: destination.heading }).first()).toBeVisible();
+      if (destination.selector) await expect(page.locator(destination.selector).first()).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+    await page.getByRole('button', { name: 'Jugar', exact: true }).click();
+    observed[shopping.slug] = await page.locator('[data-testid="campaign-wheel"]').evaluate((node) => {
+      const wrap = node.parentElement;
+      if (!wrap) throw new Error('No se encontró el marco de la ruleta');
+      const style = getComputedStyle(wrap);
+      return [style.borderTopLeftRadius, style.borderTopRightRadius, style.backgroundColor];
+    });
+
+    await page.goto(`${shopping.path}/participar/QA-TEST-01`);
+    await expect(page.locator('main[data-shopping]')).toHaveAttribute('data-shopping', shopping.slug);
+    await expect(page.getByRole('link', { name: `Volver a la campaña de ${shopping.name}` })).toHaveAttribute('href', shopping.path);
+    await expectNoHorizontalOverflow(page);
+  }
+  expect(observed.centenario).not.toEqual(observed.uniplaza);
+});
+
 test('admin sign-in and shopping-specific NFC routes remain responsive', async ({ page }) => {
   test.setTimeout(120_000);
   for (const width of widths) {
