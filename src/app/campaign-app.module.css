@@ -48,7 +48,7 @@
 .featuredTicket{margin:0 16px;min-height:88px;padding:10px 12px;display:flex;align-items:center;gap:12px;border:0;border-radius:18px;background:var(--brand-surface-raised,#fffdf8);text-align:left;box-shadow:inset 0 0 0 1.5px var(--festive,#e4c17c)}
 .ticketThumb,.heroThumb,.prizeRowThumb,.detailImage{position:relative;flex:0 0 auto;display:block;overflow:hidden;border-radius:12px;background:var(--brand-accent-soft,#f3e6d1)}
 .ticketThumb{width:68px;height:68px}
-.ticketThumb img,.prizeRowThumb img,.heroThumb img,.detailImage img{object-fit:contain;padding:6px}
+.ticketThumb img,.prizeRowThumb img,.heroThumb img,.detailImage img{object-fit:contain;padding:6px;z-index:1}
 .ticketBody{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
 .ticketBody small,.heroInfo small{font:700 11px var(--brand-font-utility,monospace);letter-spacing:.08em;color:var(--brand-accent,#b94f43)}
 .ticketBody strong{font-size:16px;line-height:1.2}
@@ -190,7 +190,7 @@
 .tabActive svg{color:var(--festive,#e4c17c)}
 
 /* Gift fallback art when a prize has no image */
-.giftArt{display:block;width:70%;height:70%;margin:auto}
+.giftArt{position:absolute;inset:0;display:block;width:70%;height:70%;margin:auto;z-index:0}
 .giftBody{fill:var(--brand-accent,#b94f43)}
 .giftLid{fill:var(--festive,#e4c17c)}
 .giftRibbon{fill:var(--festive,#e4c17c);opacity:.9}

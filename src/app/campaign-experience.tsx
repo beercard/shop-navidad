@@ -159,7 +159,7 @@ function HomeScreen({ brandName, title, emphasis, message, shopping, featured, c
       <button className={styles.homeTextAction} onClick={() => onGo('descubrir')}>Ver pista <Icon name="descubrir" /></button>
     </div>
     {featured && <button className={`${styles.featuredTicket} ${!featured.available || featured.remainingStock <= 0 ? styles.featuredUnavailable : ''}`} onClick={() => onOpenPrize(featured)}>
-      <span className={styles.ticketThumb}>{featured.imageUrl ? <Image src={featured.imageUrl} alt="" fill sizes="72px" unoptimized /> : <GiftArt shopping={shopping} />}</span>
+      <span className={styles.ticketThumb}><GiftArt shopping={shopping} />{featured.imageUrl && <Image src={featured.imageUrl} alt="" fill sizes="72px" unoptimized onError={(event) => { event.currentTarget.style.display = 'none'; }} />}</span>
       <span className={styles.ticketBody}><small>PREMIO DESTACADO</small><strong>{featured.name}</strong><em className={featured.available && featured.remainingStock > 0 ? styles.stockOk : styles.stockOut}>{featured.available && featured.remainingStock > 0 ? `Disponibles: ${featured.remainingStock}` : 'Agotado'}</em></span>
       <span className={styles.ticketGo} aria-hidden="true">›</span>
     </button>}
