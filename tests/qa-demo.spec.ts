@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
 
-test('demo seed is idempotent and QR cards stay within their shopping tenant', async ({ page }) => {
+test('demo seed is idempotent, campaign reads are side-effect free, and QR cards stay in their tenant', async ({ page, request, browser }) => {
   test.skip(process.env.QA_MODE !== 'true' || !process.env.QA_ADMIN_EMAIL || !process.env.QA_ADMIN_PASSWORD, 'Requires the isolated QA database and QA superadmin.');
   test.setTimeout(120_000);
 
@@ -49,6 +50,40 @@ test('demo seed is idempotent and QR cards stay within their shopping tenant', a
   expect(second.prizes).toHaveLength(first.prizes.length);
   expect(second.cards).toHaveLength(first.cards.length);
 
+  const publicCampaign = second.campaigns.find((campaign: { slug: string }) => campaign.slug === 'navidad-demo-centenario');
+  const participantsBeforeRead = await page.request.get(`/api/admin/participants?shoppingSlug=centenario&campaignId=${publicCampaign.id}`);
+  expect(participantsBeforeRead.status()).toBe(200);
+  const participantCountBeforeRead = (await participantsBeforeRead.json()).pagination.total;
+  const anonymousCampaignRead = await request.get('/api/campaigns/centenario/public');
+  expect(anonymousCampaignRead.status()).toBe(200);
+  expect(anonymousCampaignRead.headers()['set-cookie']).toBeUndefined();
+  const participantsAfterRead = await page.request.get(`/api/admin/participants?shoppingSlug=centenario&campaignId=${publicCampaign.id}`);
+  expect((await participantsAfterRead.json()).pagination.total).toBe(participantCountBeforeRead);
+
+  const locationSlug = `qa-scan-${randomUUID().slice(0, 8)}`;
+  const locationCreate = await page.request.post('/api/admin/locations', { data: { shoppingSlug: 'centenario', campaignId: publicCampaign.id, slug: locationSlug, name: 'Entrada QA' } });
+  expect(locationCreate.status()).toBe(201);
+  const location = (await locationCreate.json()).location;
+  if (first.baseUrl) {
+    const qrFile = await page.request.get(`/api/admin/locations/${location.id}/qr?shoppingSlug=centenario`);
+    expect(qrFile.status()).toBe(200);
+    expect(qrFile.headers()['content-type']).toContain('image/svg+xml');
+    expect(await qrFile.text()).toContain('<svg');
+    const crossShopQr = await page.request.get(`/api/admin/locations/${location.id}/qr?shoppingSlug=uniplaza`);
+    expect(crossShopQr.status()).toBe(404);
+  }
+  const visit = await page.request.get(`/nfc/centenario/${locationSlug}`, { maxRedirects: 0 });
+  expect(visit.status()).toBe(307);
+  expect(visit.headers().location).toContain('/centenario?location=');
+  const firstLocationState = await page.request.get('/api/admin/locations?shoppingSlug=centenario');
+  const firstVisitCount = (await firstLocationState.json()).locations.find((item: { id: string }) => item.id === location.id)._count.events;
+  await page.request.get(`/nfc/centenario/${locationSlug}`, { maxRedirects: 0 });
+  const repeatLocationState = await page.request.get('/api/admin/locations?shoppingSlug=centenario');
+  expect((await repeatLocationState.json()).locations.find((item: { id: string }) => item.id === location.id)._count.events).toBe(firstVisitCount);
+  expect((await page.request.patch(`/api/admin/locations/${location.id}`, { data: { shoppingSlug: 'uniplaza', active: false } })).status()).toBe(404);
+  expect((await page.request.patch(`/api/admin/locations/${location.id}`, { data: { shoppingSlug: 'centenario', active: false } })).status()).toBe(200);
+  expect((await page.request.get(`/nfc/centenario/${locationSlug}`, { maxRedirects: 0 })).status()).toBe(404);
+
   const crossTenant = await page.request.post('/api/participations', {
     data: { shoppingSlug: 'uniplaza', cardId: 'CEN-DEMO-001', idempotencyKey: 'e2e00000-0000-4000-8000-000000000001' },
   });
@@ -67,16 +102,50 @@ test('demo seed is idempotent and QR cards stay within their shopping tenant', a
   expect(result.redeemCode).toBeTruthy();
   await expect(page.getByRole('heading', { name: '¡Encontraste tu premio!' })).toBeVisible();
   const redemption = { shoppingSlug: 'centenario', code: result.redeemCode };
-  expect((await page.request.post('/api/redeems/validate', { data: redemption })).status()).toBe(200);
-  const repeatRedeem = await page.request.post('/api/redeems/validate', { data: redemption });
-  expect(repeatRedeem.status()).toBe(409);
-  expect((await repeatRedeem.json()).code).toBe('ALREADY_REDEEMED');
+  const merchantSuffix = randomUUID().slice(0, 8);
+  const merchantResponse = await page.request.post('/api/admin/merchants', { data: { shoppingSlug: 'centenario', slug: `qa-tienda-${merchantSuffix}`, name: 'Comercio de QA' } });
+  expect(merchantResponse.status()).toBe(201);
+  const merchant = (await merchantResponse.json()).merchant;
+  const otherMerchantResponse = await page.request.post('/api/admin/merchants', { data: { shoppingSlug: 'centenario', slug: `qa-otro-${merchantSuffix}`, name: 'Otro comercio de QA' } });
+  expect(otherMerchantResponse.status()).toBe(201);
+  const otherMerchant = (await otherMerchantResponse.json()).merchant;
+  const prizeRows = (await (await page.request.get('/api/admin/prizes?shoppingSlug=centenario')).json()).prizes;
+  const prizeId = prizeRows.find((prize: { name: string }) => prize.name === result.prize.name).id;
+  expect((await page.request.put(`/api/admin/merchants/${merchant.id}/prizes`, { data: { shoppingSlug: 'centenario', prizeIds: [prizeId] } })).status()).toBe(200);
+  const validatorEmail = `qa-${randomUUID()}@example.invalid`;
+  const validatorPassword = `Qa-${randomUUID()}-A1!`;
+  const validatorCreate = await page.request.post('/api/admin/users', { data: { name: 'Validador QA', email: validatorEmail, password: validatorPassword, role: 'MERCHANT_VALIDATOR', shoppingSlugs: ['centenario'], merchantIds: [merchant.id] } });
+  expect(validatorCreate.status()).toBe(201);
+  const merchantContext = await browser.newContext();
+  const merchantPage = await merchantContext.newPage();
+  try {
+    await merchantPage.goto('/merchant');
+    await merchantPage.getByLabel('Correo').fill(validatorEmail);
+    await merchantPage.getByLabel('Contraseña').fill(validatorPassword);
+    const merchantLogin = merchantPage.waitForResponse((response) => response.url().includes('/api/auth/login') && response.request().method() === 'POST');
+    await merchantPage.getByRole('button', { name: 'Ingresar' }).click();
+    expect((await merchantLogin).status()).toBe(200);
+    const merchantLookup = await merchantPage.request.post('/api/merchant/coupons/lookup', { data: { merchantSlug: merchant.slug, code: result.redeemCode } });
+    expect(merchantLookup.status()).toBe(200);
+    expect((await merchantLookup.json()).prize.name).toBe(result.prize.name);
+    const unauthorizedLookup = await merchantPage.request.post('/api/merchant/coupons/lookup', { data: { merchantSlug: otherMerchant.slug, code: result.redeemCode } });
+    expect(unauthorizedLookup.status()).toBe(403);
+    const merchantRedeem = await merchantPage.request.post('/api/merchant/coupons/redeem', { data: { merchantSlug: merchant.slug, code: result.redeemCode } });
+    expect(merchantRedeem.status()).toBe(200);
+    const repeatRedeem = await merchantPage.request.post('/api/merchant/coupons/redeem', { data: { merchantSlug: merchant.slug, code: result.redeemCode } });
+    expect(repeatRedeem.status()).toBe(409);
+    expect((await repeatRedeem.json()).code).toBe('ALREADY_REDEEMED');
+    const history = await merchantPage.request.get(`/api/merchant/coupons/history?merchantSlug=${merchant.slug}`);
+    expect(history.status()).toBe(200);
+    expect((await history.json()).redemptions).toHaveLength(1);
+  } finally { await merchantContext.close(); }
   const crossTenantRedeem = await page.request.post('/api/redeems/validate', { data: { ...redemption, shoppingSlug: 'uniplaza' } });
   expect(crossTenantRedeem.status()).toBe(404);
   expect((await crossTenantRedeem.json()).code).toBe('INVALID_CODE');
 
   // Exercise the redesigned public game as well as the dedicated NFC route.
-  await page.goto('/centenario');
+  await page.goto('/centenario?campaign=navidad-demo-centenario');
+  await page.getByRole('button', { name: 'Encontré una tarjeta' }).click();
   await page.getByLabel('Código de tu tarjeta').fill('CEN-DEMO-005');
   const landingPlayResponse = page.waitForResponse((response) => response.url().endsWith('/api/participations') && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Girar y descubrir' }).click();
@@ -84,10 +153,9 @@ test('demo seed is idempotent and QR cards stay within their shopping tenant', a
   expect(landingPlay.status()).toBe(200);
   const landingResult = await landingPlay.json();
   expect(['won', 'no_prize']).toContain(landingResult.status);
-  const confirmedResult = page.locator('[role="status"][aria-live="polite"]');
-  await expect(confirmedResult).toBeVisible();
-  await expect(confirmedResult).toContainText(landingResult.status === 'won' ? 'PREMIO CONFIRMADO' : 'PARTICIPACIÓN REGISTRADA');
-  await expect(page.getByRole('button', { name: 'Participación confirmada' })).toBeVisible();
+  await expect(page.getByText(landingResult.status === 'won' ? 'Premio confirmado' : 'Participación registrada', { exact: true })).toBeVisible();
+  await expect(page.getByText(landingResult.status === 'won' ? 'PREMIO CONFIRMADO' : 'SIN PREMIO ESTA VEZ', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Buscar otra tarjeta' })).toBeVisible();
 
   const afterPlayResponse = await page.request.get('/api/qa/status');
   const afterPlay = await afterPlayResponse.json();

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'navidad-magica-static-v1';
+const CACHE_NAME = 'navidad-magica-static-v2';
 const OFFLINE_URL = '/offline';
 
 self.addEventListener('install', (event) => {
@@ -21,7 +21,13 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
 
   // Never store participation, account, admin, redemption, or other API responses.
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin') || url.pathname.startsWith('/qa') || url.pathname.startsWith('/participar/')) return;
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/admin') ||
+    url.pathname.startsWith('/qa') ||
+    /^\/(?:centenario|uniplaza)\/participar(?:\/|$)/.test(url.pathname) ||
+    url.pathname.startsWith('/participar/')
+  ) return;
 
   if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(caches.open(CACHE_NAME).then(async (cache) => {

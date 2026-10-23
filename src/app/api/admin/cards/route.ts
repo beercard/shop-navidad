@@ -4,7 +4,7 @@ import { authFailure, getAdminShopping, logAudit } from '@/lib/admin';
 import { prisma } from '@/lib/db';
 import { apiError, serviceUnavailable } from '@/lib/http';
 
-const schema = z.object({ shoppingSlug: z.string(), campaignId: z.string(), publicId: z.string().trim().min(2).max(40).regex(/^[A-Za-z0-9-]+$/), location: z.string().trim().max(120).optional(), kind: z.enum(['ROULETTE', 'COLLECTION', 'SPECIAL']).default('ROULETTE'), status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE') });
+const schema = z.object({ shoppingSlug: z.string(), campaignId: z.string(), publicId: z.string().trim().min(2).max(40).regex(/^[A-Za-z0-9-]+$/), location: z.string().trim().max(120).optional(), locationId: z.string().optional().nullable(), kind: z.enum(['ROULETTE', 'COLLECTION', 'SPECIAL']).default('ROULETTE'), status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE') });
 
 export async function GET(request: NextRequest) {
   if (!process.env.DATABASE_URL) return serviceUnavailable();
@@ -26,8 +26,10 @@ export async function POST(request: NextRequest) {
     if ('error' in scope) { const failure = authFailure(scope.error); return NextResponse.json({ error: failure.error }, { status: failure.statusCode }); }
     const campaign = await prisma.campaign.findFirst({ where: { id: input.campaignId, shoppingId: scope.shopping.id }, select: { id: true } });
     if (!campaign) return NextResponse.json({ error: 'La campaña no pertenece a este shopping.' }, { status: 400 });
+    const place = input.locationId ? await prisma.location.findFirst({ where: { id: input.locationId, shoppingId: scope.shopping.id, active: true }, select: { id: true, name: true } }) : null;
+    if (input.locationId && !place) return NextResponse.json({ error: 'La ubicación no pertenece a este shopping o está desactivada.' }, { status: 400 });
     const card = await prisma.$transaction(async (tx) => {
-      const created = await tx.card.create({ data: { publicId: input.publicId, shoppingId: scope.shopping.id, campaignId: input.campaignId, location: input.location, kind: input.kind, status: input.status } });
+      const created = await tx.card.create({ data: { publicId: input.publicId, shoppingId: scope.shopping.id, campaignId: input.campaignId, location: place?.name ?? input.location, locationId: place?.id, kind: input.kind, status: input.status } });
       await logAudit(tx, { actorId: scope.admin.id, shoppingId: scope.shopping.id, campaignId: input.campaignId, action: 'CARD_CREATED', entityType: 'Card', entityId: created.id, metadata: { publicId: created.publicId, location: created.location, kind: created.kind } });
       return created;
     });

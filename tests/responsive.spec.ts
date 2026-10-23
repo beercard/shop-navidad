@@ -91,6 +91,10 @@ test('admin sign-in and shopping-specific NFC routes remain responsive', async (
     await page.goto('/admin');
     await expect(page.getByRole('heading', { name: /Panel de administración/i })).toBeVisible();
     await expectNoHorizontalOverflow(page);
+    await page.goto('/merchant');
+    await expect(page.getByRole('heading', { name: /Portal de comercios/i })).toBeVisible();
+    await expect(page.getByLabel('Correo')).toBeVisible();
+    await expectNoHorizontalOverflow(page);
   }
   await page.setViewportSize({ width: 844, height: 390 });
   await page.goto('/admin');

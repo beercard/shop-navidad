@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 
 test('capture public campaign mobile and desktop views', async ({ page }) => {
   test.setTimeout(120_000);
-  const output = path.resolve('docs/ux-redesign/v3');
+  const output = path.resolve('docs/ux-redesign/v4');
   await mkdir(output, { recursive: true });
   for (const slug of ['centenario', 'uniplaza']) {
     const destinations = [
@@ -20,6 +20,9 @@ test('capture public campaign mobile and desktop views', async ({ page }) => {
       await page.goto(`/${slug}`);
       await campaignResponse;
       await expect(page.locator('[data-testid="campaign-stage"]')).toHaveAttribute('data-shopping', slug);
+      await expect(page.getByRole('button', { name: slug === 'centenario' ? /Encontré una tarjeta/ : /Tengo una tarjeta/ })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Tu colección' })).toBeVisible();
+      await expect(page.getByRole('list', { name: 'Cómo participar' }).getByRole('listitem')).toHaveCount(3);
       for (const destination of destinations) {
         if (destination.id !== 'inicio') await page.getByRole('button', { name: destination.label, exact: true }).click();
         await expect(page.getByRole('heading', { name: destination.heading }).first()).toBeVisible();

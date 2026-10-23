@@ -41,7 +41,17 @@ export async function getAdmin() {
     if (!payload.sub) return null;
     return await prisma.adminUser.findFirst({
       where: { id: payload.sub, active: true },
-      select: { id: true, email: true, name: true, role: true, shoppingScopes: { select: { shopping: { select: { id: true, slug: true, name: true } } } } },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        shoppingScopes: { select: { shopping: { select: { id: true, slug: true, name: true } } } },
+        merchantScopes: {
+          where: { merchant: { active: true, shopping: { active: true } } },
+          select: { merchant: { select: { id: true, slug: true, name: true, active: true, shoppingId: true, shopping: { select: { slug: true, name: true } } } } },
+        },
+      },
     });
   } catch {
     return null;

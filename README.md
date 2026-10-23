@@ -13,9 +13,19 @@ Plataforma de campaña compartida para experiencias NFC/QR, colección de tarjet
 ```bash
 npm install
 Copy-Item .env.example .env.local
+Copy-Item .env.example .env
 ```
 
-Completá `.env.local` con una base PostgreSQL y secretos propios. Generá `AUTH_SECRET` y `CODE_ENCRYPTION_KEY` con 32 bytes aleatorios cada uno, codificados en Base64; por ejemplo `openssl rand -base64 32`. Nunca uses los valores de ejemplo en un entorno compartido.
+Completá ambos archivos con una base PostgreSQL y secretos propios; Next.js lee `.env.local`, mientras Prisma CLI necesita `.env`. Los scripts QA leen la configuración de Next.js; el bootstrap normal `scripts/bootstrap.mjs` se ejecuta con las variables presentes en el entorno del proceso. Generá `AUTH_SECRET` y `CODE_ENCRYPTION_KEY` con 32 bytes aleatorios codificados en Base64; por ejemplo `openssl rand -base64 32`. Nunca uses los valores de ejemplo en un entorno compartido.
+
+`DATABASE_URL` debe apuntar a una base PostgreSQL vacía o de desarrollo. Con PostgreSQL instalado localmente, creá las dos bases desde PowerShell:
+
+```powershell
+createdb -U postgres navidad_magica
+createdb -U postgres navidad_magica_qa
+```
+
+Si `createdb` no está en `PATH`, ejecutalo desde la carpeta `bin` de PostgreSQL o usá `psql` (`CREATE DATABASE navidad_magica;` y `CREATE DATABASE navidad_magica_qa;`). Configurá las URLs de acuerdo con tu usuario, contraseña, host y puerto locales. La aplicación no instala ni inicia el servidor PostgreSQL.
 
 ```bash
 npm run db:generate
@@ -24,9 +34,9 @@ npm run db:seed
 npm run dev
 ```
 
-Para el primer administrador, agregá temporalmente `ADMIN_EMAIL` y `ADMIN_PASSWORD` (mínimo 12 caracteres) en `.env.local` antes de ejecutar `npm run db:seed`. El script crea los dos shoppings y el administrador general con contraseña bcrypt; las credenciales permanecen fuera del repositorio. Después de crear la cuenta, quitá esas variables.
+Para crear el primer administrador, ejecutá `npm run db:seed` con `DATABASE_URL`, `ADMIN_EMAIL` y `ADMIN_PASSWORD` (mínimo 12 caracteres) exportadas en el entorno de PowerShell. El script crea los dos shoppings y el administrador general con contraseña bcrypt; las credenciales permanecen fuera del repositorio. Luego limpiá del entorno esas variables. El seed no carga automáticamente `.env.local`.
 
-Abrí http://localhost:3000. La portada `/` solo deriva a la experiencia correcta. `/centenario` y `/uniplaza` tienen contexto independiente; las tarjetas apuntan a `/centenario/participar/[cardId]` o `/uniplaza/participar/[cardId]`. El enlace anterior `/participar/[cardId]` sigue disponible por compatibilidad. El panel protegido está en `/admin`.
+Abrí http://localhost:3000. La portada `/` deriva a la experiencia correcta. `/centenario` y `/uniplaza` tienen contexto independiente; las tarjetas apuntan a `/centenario/participar/[cardId]` o `/uniplaza/participar/[cardId]`. También podés imprimir ubicaciones como `/nfc/[shopping]/[slug]`, que abren el shopping y la campaña asociada. El enlace anterior `/participar/[cardId]` sigue disponible por compatibilidad. El panel protegido está en `/admin`; el portal de cupones para usuarios con rol comercial está en `/merchant`.
 
 ## Migraciones y despliegue
 
@@ -35,7 +45,7 @@ Abrí http://localhost:3000. La portada `/` solo deriva a la experiencia correct
 - `npm run db:generate` regenera el cliente Prisma después de cambiar el esquema.
 - `npm run db:seed` inicializa los dos shoppings y, si recibe las variables opcionales, el primer administrador.
 
-Las migraciones versionadas instalan el esquema inicial, el ownership obligatorio por shopping y los metadatos de premios demo (`prisma/migrations/20261022130000_prize_demo_details/migration.sql`). La migración de tenant aborta con un mensaje explícito si encuentra campañas enlazadas a más de un shopping o sin shopping. Aplicá el entorno de desarrollo con `npm run db:migrate:dev`; para QA usá `npm run qa:setup` (primera vez) y `npm run qa:migrate` (cambios posteriores).
+Las migraciones versionadas instalan el esquema inicial, el ownership obligatorio por shopping, metadatos de premios demo, los modelos de ubicación/comercio/OTP (`20261023120000_locations_merchants_otp`) y restricciones relacionales compuestas de tenant (`20261023143000_tenant_composite_constraints`). La migración de tenant inicial aborta si encuentra campañas enlazadas a más de un shopping o sin shopping; la migración compuesta falla de forma segura si hay referencias históricas cruzadas que violan la pertenencia. Aplicá desarrollo con `npm run db:migrate:dev`; para QA usá `npm run qa:setup` (primera vez) y `npm run qa:migrate` (posteriores). Las migraciones nuevas están generadas, pero siguen pendientes de aplicación porque PostgreSQL QA local no estaba disponible.
 
 ## Centro de pruebas QA
 
@@ -44,7 +54,7 @@ Las migraciones versionadas instalan el esquema inicial, el ownership obligatori
 1. Creá una base vacía separada, por ejemplo `navidad_magica_qa`, y configurá `QA_DATABASE_URL` y `DATABASE_URL` en `.env.local` (la base principal solo se usa para comprobar que el destino es distinto).
 2. Configurá secretos locales, `QA_MODE=true`, `QA_ADMIN_EMAIL` y `QA_ADMIN_PASSWORD` (mínimo 12 caracteres).
 3. Ejecutá `npm run qa:setup`; los scripts leen `.env.local`, vuelven a validar el destino y solo migran `QA_DATABASE_URL`, luego crean el superadministrador allí.
-5. Iniciá la aplicación localmente y abrí `/qa`. Usá “Restablecer datos de prueba” para cargar fixtures aislados; los escenarios invocan los servicios reales y sus resultados quedan auditados en la base QA.
+4. Iniciá la aplicación localmente y abrí `/qa`. Usá “Restablecer datos de prueba” para cargar fixtures aislados; los escenarios invocan los servicios reales y sus resultados quedan auditados en la base QA.
 
 ### Datos demo, QR y NFC
 
@@ -65,6 +75,14 @@ No uses datos personales ni credenciales productivas en QA. No configures `QA_MO
 - `x-real-ip` o el primer `x-forwarded-for` alimenta un límite de intentos respaldado por PostgreSQL. En producción, el proxy debe sobrescribir esos encabezados; agregá rate limiting en el borde/CDN para cubrir tráfico automatizado.
 - No se solicita información personal para jugar. El avance anónimo se vincula a una cookie opaca y aleatoria; su hash se guarda en la base y la cookie es HttpOnly.
 - Los canjes se marcan una sola vez de forma atómica, validando expiración y shopping. Cada movimiento administrativo relevante se registra en auditoría.
+
+### Alcance funcional pendiente
+
+- La ruta NFC/QR registra `LANDING_VISIT` con deduplicación por cookie opaca en ventanas de 30 minutos; no equivale a visitantes únicos verificados y una persona puede borrar su cookie.
+- Comercios, relación usuario-comercio, asignación de premios y portal de consulta/canje están implementados. La asociación de validador a comercio y la gestión de usuarios quedan bajo superadministrador; el operador puede administrar solo recursos del shopping.
+- No hay verificación telefónica OTP ni proveedor SMS/WhatsApp configurado. La participación sigue siendo anónima, no se simula verificación.
+- Las rutas y operaciones validan tenant en servidor. Aún falta añadir restricciones compuestas en base de datos para impedir relaciones con shopping discordante aunque una futura ruta interna omita validación.
+- La migración y pruebas de integración nuevas requieren ejecutar contra PostgreSQL QA aislado antes de habilitar la operación.
 
 ## Datos iniciales de campaña
 

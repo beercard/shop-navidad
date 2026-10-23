@@ -39,7 +39,8 @@ export default function ParticipateClient({ cardId, lockedShopping }: { cardId: 
       let temporarilyUnavailable = false;
       for (const shoppingSlug of lockedShopping ? [lockedShopping] : shoppingIds) {
         try {
-          const response = await fetch(`/api/campaigns/${shoppingSlug}/public`, { cache: 'no-store', signal: controller.signal });
+          const query = new URLSearchParams({ cardId });
+          const response = await fetch(`/api/campaigns/${shoppingSlug}/public?${query}`, { cache: 'no-store', signal: controller.signal });
           const data = await response.json();
           if (response.status >= 500) temporarilyUnavailable = true;
           if (!response.ok) continue;

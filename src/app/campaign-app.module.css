@@ -269,6 +269,56 @@
 .stage[data-shopping="uniplaza"] .passport{clip-path:none;border-radius:18px 3px 18px 3px;background:var(--brand-surface-raised,#fff)}
 .stage[data-shopping="uniplaza"] .passportSlot{border-radius:10px 2px 10px 2px}
 .stage[data-shopping="uniplaza"] .featuredTicket{border-radius:14px 3px 14px 3px}
+.uniplazaHome{gap:0;padding-bottom:8px;background:var(--brand-surface,#f3f7f7)}
+.uniplazaHome .heroArt{height:auto;min-height:clamp(470px,62svh,540px);padding:74px 17px 25px;display:flex;align-items:center;justify-content:center;background:var(--uniplaza-deeper,#102733)}
+.uniplazaHome .heroArt img{object-position:center 50%;opacity:.9}
+.uniplazaHome .heroArt::after{inset:0;height:auto;background:linear-gradient(180deg,rgb(9 27 39 / 45%),rgb(9 27 39 / 8%) 32%,rgb(9 27 39 / 22%) 64%,rgb(9 27 39 / 70%))}
+.uniplazaHome .heroText{position:relative;inset:auto;z-index:1;width:100%;max-width:390px;margin:auto;padding:25px 23px 24px;border:1px solid color-mix(in srgb,var(--uniplaza-line) 84%,white);border-radius:22px 4px 22px 4px;background:linear-gradient(145deg,rgb(250 253 252 / 97%),rgb(231 241 243 / 97%));color:var(--uniplaza-dark);clip-path:none;text-align:left;text-shadow:none;box-shadow:0 20px 44px rgb(3 17 25 / 32%)}
+.uniplazaHome .heroText::before{content:"";position:absolute;inset:9px;border:1px solid color-mix(in srgb,var(--uniplaza-blue) 21%,transparent);border-radius:15px 2px 15px 2px;pointer-events:none}
+.uniplazaHome .heroText .chip{position:relative;z-index:1;background:var(--uniplaza-blue-soft);color:var(--uniplaza-dark);border-radius:3px 9px 3px 9px;letter-spacing:.11em;text-transform:uppercase}
+.uniplazaHome .heroText h1{position:relative;z-index:1;max-width:11ch;margin:15px 0 0;font:750 clamp(38px,10.2vw,48px)/.98 var(--brand-font-display,Georgia,serif);letter-spacing:-.045em;color:var(--uniplaza-dark);text-wrap:balance}
+.uniplazaHome .heroText h1 em{display:block;margin-top:3px;color:var(--uniplaza-copper);font-style:normal}
+.uniplazaHome .heroText p{position:relative;z-index:1;max-width:34ch;margin:16px 0 0;font-size:15px;line-height:1.5;color:var(--uniplaza-dark)}
+.stage[data-shopping="uniplaza"] .uniplazaHeroAction{position:relative;z-index:1;width:100%;max-width:330px;margin:19px 0 0;border-radius:4px 16px 4px 16px;border:1px solid color-mix(in srgb,var(--uniplaza-copper) 64%,white);background:var(--uniplaza-dark);color:var(--uniplaza-paper);box-shadow:0 6px 0 color-mix(in srgb,var(--uniplaza-dark) 78%,black);font-family:var(--brand-font-body,Arial,sans-serif)}
+.stage[data-shopping="uniplaza"] .uniplazaHeroAction:hover{background:var(--uniplaza-blue)}
+.uniplazaHome .passport{margin:0;padding:22px 19px 19px;border:0;border-radius:0 0 20px 20px;background:linear-gradient(180deg,var(--uniplaza-paper),var(--uniplaza-blue-soft));color:var(--uniplaza-dark);clip-path:none}
+.uniplazaHome .passportHeading{margin:0 2px 13px}
+.uniplazaHome .passportHeading h2{font:750 clamp(23px,6.6vw,29px)/1.05 var(--brand-font-body,Arial,sans-serif);letter-spacing:-.045em;color:var(--uniplaza-dark)}
+.uniplazaHome .passportHeading>span{font-size:14px;color:var(--uniplaza-blue);white-space:nowrap}
+.uniplazaHome .passportSlots{gap:8px;padding:9px;border:1px solid var(--uniplaza-line);border-radius:18px 3px 18px 3px;background:var(--uniplaza-paper);box-shadow:0 8px 20px rgb(18 44 55 / 9%)}
+.uniplazaHome .passportSlot{min-height:80px;padding:8px 4px;border:1px dashed color-mix(in srgb,var(--uniplaza-blue) 45%,white);border-radius:11px 2px 11px 2px;background:var(--uniplaza-blue-soft);color:var(--uniplaza-dark)}
+.uniplazaHome .passportSlot>span{font:400 32px/1 var(--brand-font-display,Georgia,serif);color:var(--uniplaza-copper)}
+.uniplazaHome .passportSlot small{font-size:11px;color:var(--uniplaza-dark)}
+.uniplazaHome .passportSlotFound{border-style:solid;border-color:var(--uniplaza-copper);background:var(--uniplaza-dark);color:var(--uniplaza-paper)}
+.uniplazaHome .passportSlotFound>span{color:var(--brand-campaign-festive)}
+.uniplazaHome .passportSlotFound small{color:var(--uniplaza-paper)}
+.uniplazaHome .passport>p{margin:10px 2px 0;font-size:13px;line-height:1.45;color:var(--brand-text-muted)}
+.uniplazaHome .howRow{margin:4px 18px 12px;padding:14px 0 0;gap:0;border-top:1px solid var(--uniplaza-line)}
+.uniplazaHome .howRow li{min-width:0;min-height:0;padding:0 7px;display:flex;align-items:center;gap:7px;border:0;border-radius:0;background:transparent;color:var(--uniplaza-dark);font-size:12px;line-height:1.3;text-align:center}
+.uniplazaHome .howRow li+li{border-left:1px solid var(--uniplaza-line)}
+.uniplazaHome .howRow b{font:750 12px/1.15 var(--brand-font-body,Arial,sans-serif);color:var(--uniplaza-dark)}
+.uniplazaHome .howIcon{width:52px;height:52px;flex-basis:52px;border-radius:15px 3px 15px 3px;background:var(--uniplaza-blue-soft);color:var(--uniplaza-copper)}
+.uniplazaHome .howRow li:nth-child(2) .howIcon{color:var(--uniplaza-blue)}
+.uniplazaHome .homeTextAction{min-height:46px;margin:0 20px 12px;align-self:flex-start;color:var(--uniplaza-blue);font-size:14px}
+.uniplazaFeature{position:relative;isolation:isolate;width:calc(100% - 28px);min-height:158px;margin:0 14px 20px;padding:19px;display:flex;align-items:center;justify-content:space-between;gap:14px;overflow:hidden;border:1px solid color-mix(in srgb,var(--uniplaza-line) 76%,white);border-radius:22px 4px 22px 4px;background:linear-gradient(112deg,var(--uniplaza-dark),var(--uniplaza-deeper));color:var(--uniplaza-paper);text-align:left;box-shadow:0 12px 26px rgb(18 44 55 / 16%)}
+.uniplazaFeature::before{content:"";position:absolute;z-index:-1;width:220px;height:220px;right:-54px;top:-52px;border:1px solid color-mix(in srgb,var(--brand-campaign-festive) 42%,transparent);border-radius:50%;box-shadow:0 0 0 16px color-mix(in srgb,var(--uniplaza-blue) 15%,transparent),0 0 0 34px color-mix(in srgb,var(--brand-campaign-festive) 9%,transparent)}
+.uniplazaFeatureCopy{position:relative;min-width:0;max-width:76%;display:grid;grid-template-columns:1fr 46px;align-items:center;gap:7px 12px}
+.uniplazaFeatureCopy small{grid-column:1/-1;font:700 10px/1.2 var(--brand-font-body,Arial,sans-serif);letter-spacing:.16em;color:var(--brand-campaign-festive)}
+.uniplazaFeatureCopy strong{font:750 clamp(20px,5.4vw,25px)/1.04 var(--brand-font-body,Arial,sans-serif);letter-spacing:-.035em}
+.uniplazaFeatureCopy em{grid-column:1/-1;font:400 12px/1.4 var(--brand-font-body,Arial,sans-serif);font-style:normal;color:color-mix(in srgb,var(--uniplaza-paper) 82%,transparent)}
+.uniplazaFeatureCopy>span{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--brand-campaign-festive);border-radius:4px 14px 4px 14px;color:var(--brand-campaign-festive)}
+.uniplazaFeatureCopy>span svg{width:24px;height:24px}
+.uniplazaFeatureGo{position:relative;width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--brand-campaign-festive) 75%,transparent);border-radius:4px 12px 4px 12px;color:var(--brand-campaign-festive);font-size:25px}
+.uniplazaFeatureUnavailable{background:var(--uniplaza-paper);color:var(--uniplaza-dark);box-shadow:inset 0 0 0 1px var(--uniplaza-line)}
+.uniplazaFeatureUnavailable::before{opacity:.35}
+.uniplazaFeatureUnavailable .uniplazaFeatureCopy small{color:var(--uniplaza-copper)}
+.uniplazaFeatureUnavailable .uniplazaFeatureCopy em{color:var(--uniplaza-dark)}
+.uniplazaFeatureUnavailable .uniplazaFeatureCopy>span,.uniplazaFeatureUnavailable .uniplazaFeatureGo{border-color:var(--uniplaza-copper);color:var(--uniplaza-copper)}
+.stage[data-shopping="uniplaza"] .app[data-view="inicio"] .tabbar{border-top:1px solid color-mix(in srgb,var(--uniplaza-paper) 25%,transparent);background:var(--uniplaza-deeper);box-shadow:0 -8px 22px rgb(10 28 37 / 13%)}
+.stage[data-shopping="uniplaza"] .app[data-view="inicio"] .tab{min-height:60px;border-radius:4px 12px 4px 12px;color:color-mix(in srgb,var(--uniplaza-paper) 80%,transparent);font-size:11px}
+.stage[data-shopping="uniplaza"] .app[data-view="inicio"] .tabActive{position:relative;background:transparent;color:var(--brand-campaign-accent)}
+.stage[data-shopping="uniplaza"] .app[data-view="inicio"] .tabActive::after{content:"";position:absolute;right:20%;bottom:0;left:20%;height:3px;border-radius:3px;background:var(--brand-campaign-accent)}
+.stage[data-shopping="uniplaza"] .app[data-view="inicio"] .tabActive svg{color:var(--brand-campaign-accent)}
 @media(max-width:360px){
   .heroArt{height:248px;padding:10px}
   .heroText{padding:12px 13px 14px}
@@ -281,6 +331,19 @@
   .howRow li{padding-inline:5px;font-size:11px}
   .homeActions{padding-inline:12px;gap:2px}
   .homeTextAction{padding-inline:4px;font-size:11px}
+}
+@media(max-width:380px){
+  .uniplazaHome .heroArt{min-height:458px;padding:68px 12px 20px}
+  .uniplazaHome .heroText{padding:22px 18px 21px}
+  .uniplazaHome .heroText h1{font-size:clamp(35px,10vw,40px)}
+  .uniplazaHome .heroText p{font-size:14px}
+  .uniplazaHome .passport{padding:20px 14px 17px}
+  .uniplazaHome .passportSlots{gap:6px;padding:7px}
+  .uniplazaHome .passportSlot{min-height:72px}
+  .uniplazaHome .howRow{margin-inline:11px}
+  .uniplazaHome .howRow li{padding-inline:4px;font-size:11px}
+  .uniplazaHome .howIcon{width:46px;height:46px;flex-basis:46px}
+  .uniplazaFeature{width:calc(100% - 24px);margin-inline:12px;padding:16px}
 }
 
 /* Centenario's campaign keeps the existing interaction model but follows the approved

@@ -10,7 +10,9 @@ export async function POST(request: NextRequest) {
   if (!process.env.DATABASE_URL) return serviceUnavailable();
   try {
     const input = schema.parse(await request.json());
-    const scope = await getAdminShopping(input.shoppingSlug, ['SUPERADMIN', 'SHOPPING_OPERATOR', 'MERCHANT_VALIDATOR']);
+    // Merchant validators must use the merchant-scoped lookup/redeem routes instead.
+    // This shopping-wide endpoint is reserved for administrators and operators.
+    const scope = await getAdminShopping(input.shoppingSlug, ['SUPERADMIN', 'SHOPPING_OPERATOR']);
     if ('error' in scope) { const failure = authFailure(scope.error); return NextResponse.json({ error: failure.error }, { status: failure.statusCode }); }
     return NextResponse.json(await validateRedemption({ shoppingId: scope.shopping.id, actorId: scope.admin.id, code: input.code }));
   } catch (error) {

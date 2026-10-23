@@ -5,6 +5,7 @@ import { ReactNode, useEffect, useState } from "react";
 export type AdminRole = "SUPERADMIN" | "SHOPPING_OPERATOR" | "MERCHANT_VALIDATOR";
 export type ModuleCampaign = { id: string; name: string };
 type ShopOption = { slug: string; name: string };
+type MerchantOption = { id: string; slug: string; name: string; shopping: { slug: string; name: string } };
 type Save = (body: unknown) => void;
 
 function PanelHead({ title, action }: { title: string; action?: ReactNode }) { return <div className="panel-head"><h2>{title}</h2>{action}</div>; }
@@ -15,11 +16,12 @@ function toIso(data: FormData, key: string) { const value = data.get(key); retur
 
 export function roleName(role: AdminRole) { return ({ SUPERADMIN: "Administrador general", SHOPPING_OPERATOR: "Operador de shopping", MERCHANT_VALIDATOR: "Comercio validador" })[role]; }
 
-export function CreateAdminUser({ shops, onSave }: { shops: ShopOption[]; onSave: Save }) {
+export function CreateAdminUser({ shops, merchants = [], onSave }: { shops: ShopOption[]; merchants?: MerchantOption[]; onSave: Save }) {
   const [role, setRole] = useState<AdminRole>("SHOPPING_OPERATOR");
-  return <details className="panel create-panel"><summary>＋ Crear usuario administrativo</summary><form action={(data) => onSave({ name: data.get("name"), email: data.get("email"), password: data.get("password"), role, shoppingSlugs: role === "SUPERADMIN" ? [] : data.getAll("shoppingSlugs") })}>
+  return <details className="panel create-panel"><summary>＋ Crear usuario administrativo</summary><form action={(data) => { const merchantIds = data.getAll("merchantIds").map(String); const selectedMerchants = merchants.filter((merchant) => merchantIds.includes(merchant.id)); const shoppingSlugs = role === "SUPERADMIN" ? [] : role === "MERCHANT_VALIDATOR" ? Array.from(new Set(selectedMerchants.map((merchant) => merchant.shopping.slug))) : data.getAll("shoppingSlugs"); onSave({ name: data.get("name"), email: data.get("email"), password: data.get("password"), role, shoppingSlugs, merchantIds: role === "MERCHANT_VALIDATOR" ? merchantIds : [] }); }}>
     <div className="form-grid"><Field name="name" label="Nombre" required/><Field name="email" label="Correo" type="email" required/><Field name="password" label="Contraseña temporal (mínimo 12 caracteres)" type="password" required minLength={12}/><label>Rol<select value={role} onChange={(event) => setRole(event.target.value as AdminRole)}><option value="SUPERADMIN">Administrador general</option><option value="SHOPPING_OPERATOR">Operador de shopping</option><option value="MERCHANT_VALIDATOR">Comercio validador</option></select></label></div>
-    {role !== "SUPERADMIN" && <fieldset className="scope-options"><legend>Acceso a shopping</legend>{shops.map((shop) => <label key={shop.slug}><input type="checkbox" name="shoppingSlugs" value={shop.slug}/>{shop.name}</label>)}</fieldset>}
+    {role === "SHOPPING_OPERATOR" && <fieldset className="scope-options"><legend>Acceso a shopping</legend>{shops.map((shop) => <label key={shop.slug}><input type="checkbox" name="shoppingSlugs" value={shop.slug}/>{shop.name}</label>)}</fieldset>}
+    {role === "MERCHANT_VALIDATOR" && <fieldset className="scope-options"><legend>Comercios asignados</legend>{merchants.length ? merchants.map((merchant) => <label key={merchant.id}><input type="checkbox" name="merchantIds" value={merchant.id}/>{merchant.name} · {merchant.shopping.name}</label>) : <p className="hint">Primero registrá los comercios; la cuenta debe quedar vinculada a uno o más.</p>}</fieldset>}
     <button className="primary">Crear usuario</button>
   </form></details>;
 }

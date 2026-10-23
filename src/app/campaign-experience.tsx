@@ -63,7 +63,9 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
   useEffect(() => {
     const controller = new AbortController();
     setCampaignLoading(true); setCampaignError('');
-    fetch(`/api/campaigns/${shopping}/public`, { signal: controller.signal, cache: 'no-store' })
+    const campaignSlug = new URLSearchParams(window.location.search).get('campaign');
+    const query = campaignSlug ? `?campaign=${encodeURIComponent(campaignSlug)}` : '';
+    fetch(`/api/campaigns/${shopping}/public${query}`, { signal: controller.signal, cache: 'no-store' })
       .then(async (response) => { const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'No pudimos consultar la campaña.'); setCampaign(payload); setCollectedIds(payload.collectionProgress?.cardIds ?? []); })
       .catch((error: unknown) => { if (!(error instanceof Error && error.name === 'AbortError')) { setCampaignError('La campaña no está disponible en este momento.'); setCampaign(null); } })
       .finally(() => { if (!controller.signal.aborted) setCampaignLoading(false); });
@@ -127,14 +129,14 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
 function HomeScreen({ brandName, title, emphasis, message, primaryAction, shopping, featured, collectedIds, cards, collected, target, campaignName, loading, error, onRetry, onGo, onOpenPrize }: { brandName: string; title: string; emphasis: string; message: string; primaryAction: string; shopping: ShoppingBrandId; featured?: Prize; collectedIds: string[]; cards: PublicCard[]; collected: number; target: number; campaignName?: string; loading: boolean; error: string; onRetry: () => void; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void }) {
   const collectedCards = new Set(collectedIds);
   const centenario = shopping === 'centenario';
-  return <section className={`${styles.home} ${centenario ? styles.centenarioHome : ''}`} aria-labelledby="home-title">
+  return <section className={`${styles.home} ${centenario ? styles.centenarioHome : styles.uniplazaHome}`} aria-labelledby="home-title">
     <div className={styles.heroArt}>
       <Image src={centenario ? '/campaign/centenario/hero-photo.webp' : `/campaign/${shopping}/hero.svg`} alt="" fill sizes="(max-width: 900px) 100vw, 430px" priority unoptimized />
       <div className={`${styles.heroText} ${centenario ? styles.centenarioHeroText : ''}`}>
-        {!centenario && <span className={styles.chip}>{loading ? 'Cargando campaña' : campaignName ?? brandName}</span>}
+        {!centenario && <span className={styles.chip}>{loading ? 'Cargando campaña' : campaignName ?? `${brandName} · Navidad`}</span>}
         <h1 id="home-title">{title} <em>{emphasis}</em></h1>
         <p>{message}</p>
-        {centenario && <button className={styles.heroPrimaryAction} onClick={() => onGo('jugar')}>{primaryAction}<span aria-hidden="true">›</span></button>}
+        <button className={`${styles.heroPrimaryAction} ${!centenario ? styles.uniplazaHeroAction : ''}`} onClick={() => onGo('jugar')}>{primaryAction}<span aria-hidden="true">›</span></button>
       </div>
     </div>
     <section className={styles.passport} aria-labelledby="passport-title">
@@ -152,21 +154,17 @@ function HomeScreen({ brandName, title, emphasis, message, primaryAction, shoppi
       <p id="passport-hint">{collected >= target ? 'Colección completa. Revisá qué beneficio habilitó esta campaña.' : `Descubrí ${Math.max(0, target - collected)} tarjetas distintas para completar el recorrido.`}</p>
     </section>
     <ol className={styles.howRow} aria-label="Cómo participar">
-      <li>{centenario && <StepIcon kind="search" />}<b>Buscá</b><span>una tarjeta en el shopping</span></li>
-      <li>{centenario && <StepIcon kind="scan" />}<b>Escaneá</b><span>su QR o acercá el celular al NFC</span></li>
-      <li>{centenario && <StepIcon kind="gift" />}<b>Descubrí</b><span>tu resultado confirmado</span></li>
+      <li><StepIcon kind="search" /><b>Buscá</b><span>una tarjeta en el shopping</span></li>
+      <li><StepIcon kind="scan" /><b>Escaneá</b><span>su QR o acercá el celular al NFC</span></li>
+      <li><StepIcon kind="gift" /><b>Descubrí</b><span>tu resultado confirmado</span></li>
     </ol>
-    {!centenario && <div className={styles.homeActions}>
-      <button className={styles.primaryAction} onClick={() => onGo('jugar')}>Tengo una tarjeta<Icon name="jugar" /></button>
-      <button className={styles.homeTextAction} onClick={() => onGo('descubrir')}>Ver pista <Icon name="descubrir" /></button>
-    </div>}
+    {!centenario && <button className={styles.homeTextAction} onClick={() => onGo('descubrir')}>Ver la pista de la campaña <Icon name="descubrir" /></button>}
     {centenario ? <button className={`${styles.centenarioFeature} ${featured && (!featured.available || featured.remainingStock <= 0) ? styles.centenarioFeatureUnavailable : ''}`} onClick={() => featured ? onOpenPrize(featured) : onGo('premios')} aria-label={featured ? `Ver premio destacado: ${featured.name}` : 'Conocé los regalos de campaña'}>
       <Image src="/campaign/centenario/featured-gift.webp" alt="" fill sizes="(max-width: 430px) 100vw, 430px" unoptimized />
       <span className={styles.centenarioFeatureCopy}><small>{featured ? 'PREMIO DESTACADO' : 'PREMIOS DE CAMPAÑA'}</small><strong>{featured?.name ?? 'Conocé los regalos de campaña'}</strong><em>{featured ? (featured.available && featured.remainingStock > 0 ? `Disponibles: ${featured.remainingStock}` : 'Agotado') : 'Se mostrarán cuando haya una campaña activa.'}</em><span aria-hidden="true">›</span></span>
-    </button> : featured && <button className={`${styles.featuredTicket} ${!featured.available || featured.remainingStock <= 0 ? styles.featuredUnavailable : ''}`} onClick={() => onOpenPrize(featured)}>
-      <span className={styles.ticketThumb}><GiftArt shopping={shopping} />{featured.imageUrl && <Image src={featured.imageUrl} alt="" fill sizes="72px" unoptimized onError={(event) => { event.currentTarget.style.display = 'none'; }} />}</span>
-      <span className={styles.ticketBody}><small>PREMIO DESTACADO</small><strong>{featured.name}</strong><em className={featured.available && featured.remainingStock > 0 ? styles.stockOk : styles.stockOut}>{featured.available && featured.remainingStock > 0 ? `Disponibles: ${featured.remainingStock}` : 'Agotado'}</em></span>
-      <span className={styles.ticketGo} aria-hidden="true">›</span>
+    </button> : <button className={`${styles.uniplazaFeature} ${featured && (!featured.available || featured.remainingStock <= 0) ? styles.uniplazaFeatureUnavailable : ''}`} onClick={() => error ? onRetry() : featured ? onOpenPrize(featured) : onGo('premios')} aria-label={error ? 'Reintentar carga de campaña' : featured ? `Ver premio destacado: ${featured.name}` : 'Consultar premios de campaña'}>
+      <span className={styles.uniplazaFeatureCopy}><small>{featured ? 'PREMIO DESTACADO' : 'CAMPAÑA NAVIDEÑA'}</small><strong>{featured?.name ?? (loading ? 'Estamos preparando la experiencia' : error ? 'No pudimos cargar la campaña' : campaignName ? 'No hay premios publicados todavía' : 'Los premios se anuncian acá')}</strong><em>{featured ? (featured.available && featured.remainingStock > 0 ? `Disponibles: ${featured.remainingStock}` : 'Agotado') : loading ? 'Consultando disponibilidad…' : error ? 'Tocá para volver a intentar.' : campaignName ? 'Encontrá acá las novedades y condiciones de la campaña.' : 'Cuando haya una campaña activa, vas a encontrar acá sus premios y condiciones.'}</em><span aria-hidden="true">{featured ? <GiftArt shopping={shopping} /> : <Icon name="premios" />}</span></span>
+      <span className={styles.uniplazaFeatureGo} aria-hidden="true">›</span>
     </button>}
     {centenario && error && <div className={styles.centenarioCampaignError} role="alert"><span>La campaña no está disponible en este momento.</span><button type="button" onClick={onRetry}>Reintentar</button></div>}
   </section>;

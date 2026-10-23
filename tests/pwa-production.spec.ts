@@ -23,6 +23,19 @@ test('production PWA installs, controls routes, and falls back offline without c
   expect(installed.cachedPaths.some((path) => path.startsWith('/participar/'))).toBe(false);
 
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  for (const shopping of ['centenario', 'uniplaza']) {
+    await page.goto(`/${shopping}/participar/QA-CACHE-ROUTE`);
+    await expect(page.locator(`main[data-shopping="${shopping}"]`)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Encontraste una tarjeta' })).toBeVisible();
+  }
+  const participationPaths = await page.evaluate(async () =>
+    (await Promise.all((await caches.keys()).map(async (key) => (await caches.open(key)).keys())))
+      .flat()
+      .map((request) => new URL(request.url).pathname)
+      .filter((path) => /^\/(?:centenario|uniplaza)\/participar(?:\/|$)/.test(path)),
+  );
+  expect(participationPaths).toEqual([]);
+
   await context.setOffline(true);
   try {
     await page.goto('/uniplaza');

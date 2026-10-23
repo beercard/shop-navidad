@@ -33,13 +33,17 @@ export async function playCard(input: { token: string; shoppingSlug: string; car
       return await prisma.$transaction(async (tx) => {
         const shopping = await tx.shopping.findUnique({ where: { slug: input.shoppingSlug } });
         if (!shopping?.active) throw new GameError('CAMPAIGN_NOT_FOUND', 'No encontramos este shopping.', 404);
-        const campaign = await tx.campaign.findFirst({
-          where: { shoppingId: shopping.id, status: 'ACTIVE', startsAt: { lte: new Date() }, endsAt: { gt: new Date() } },
+        const card = await tx.card.findFirst({
+          where: { publicId: input.cardId, shoppingId: shopping.id },
+          include: { campaign: true },
         });
-        if (!campaign) throw new GameError('CAMPAIGN_CLOSED', 'La campaña no está activa ahora.', 409);
-        const card = await tx.card.findFirst({ where: { publicId: input.cardId, shoppingId: shopping.id, campaignId: campaign.id } });
         if (!card) throw new GameError('CARD_NOT_FOUND', 'No encontramos esa tarjeta en este shopping.', 404);
         if (card.status !== 'ACTIVE') throw new GameError('CARD_INACTIVE', 'Esta tarjeta no está activa.', 410);
+        const campaign = card.campaign;
+        const now = new Date();
+        if (campaign.status !== 'ACTIVE' || campaign.startsAt > now || campaign.endsAt <= now) {
+          throw new GameError('CAMPAIGN_CLOSED', 'La campaña de esta tarjeta no está activa ahora.', 409);
+        }
         const participant = await findOrCreateParticipant(tx, input.token, campaign.id, shopping.id);
 
         const priorByKey = await tx.participation.findFirst({
@@ -53,7 +57,6 @@ export async function playCard(input: { token: string; shoppingSlug: string; car
         });
         if (priorCard) return existingResult(priorCard, participant.id, campaign.id);
 
-        const now = new Date();
         const candidates = await tx.prize.findMany({
           where: {
             campaignId: campaign.id, shoppingId: shopping.id, active: true, remainingStock: { gt: 0 },

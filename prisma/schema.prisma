@@ -43,70 +43,80 @@ enum RedeemCodeStatus {
 }
 
 model Shopping {
-  id         String             @id @default(cuid())
-  slug       String             @unique
-  name       String
-  active     Boolean            @default(true)
-  brandSettings Json             @default("{}")
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  campaigns  Campaign[]
-  cards      Card[]
-  prizes     Prize[]
-  clues      Clue[]
-  users      UserShopping[]
-  participants Participant[]
-  participations Participation[]
-  redeemCodes RedeemCode[]
-  auditLogs  AuditLog[]
-  events     Event[]
+  id                 String              @id @default(cuid())
+  slug               String              @unique
+  name               String
+  active             Boolean             @default(true)
+  brandSettings      Json                @default("{}")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  campaigns          Campaign[]
+  cards              Card[]
+  prizes             Prize[]
+  clues              Clue[]
+  users              UserShopping[]
+  participants       Participant[]
+  participations     Participation[]
+  redeemCodes        RedeemCode[]
+  auditLogs          AuditLog[]
+  events             Event[]
   inventoryMovements InventoryMovement[]
+  locations          Location[]
+  merchants          Merchant[]
+  otpChallenges      OtpChallenge[]
+
   @@map("shoppings")
 }
 
 model Campaign {
-  id          String             @id @default(cuid())
-  shoppingId  String
-  slug        String             @unique
-  name        String
-  description String?
-  status      CampaignStatus     @default(DRAFT)
-  startsAt    DateTime
-  endsAt      DateTime
-  rulesUrl    String?
-  settings    Json               @default("{}")
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  shopping    Shopping           @relation(fields: [shoppingId], references: [id])
-  cards       Card[]
-  prizes      Prize[]
-  clues       Clue[]
-  participants Participant[]
-  participations Participation[]
-  redeemCodes RedeemCode[]
-  collections CollectionProgress[]
-  auditLogs   AuditLog[]
-  events      Event[]
-  @@index([shoppingId, status, startsAt, endsAt])
+  id                 String               @id @default(cuid())
+  shoppingId         String
+  slug               String               @unique
+  name               String
+  description        String?
+  status             CampaignStatus       @default(DRAFT)
+  startsAt           DateTime
+  endsAt             DateTime
+  rulesUrl           String?
+  settings           Json                 @default("{}")
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  shopping           Shopping             @relation(fields: [shoppingId], references: [id])
+  cards              Card[]
+  prizes             Prize[]
+  clues              Clue[]
+  participants       Participant[]
+  participations     Participation[]
+  redeemCodes        RedeemCode[]
+  collections        CollectionProgress[]
+  auditLogs          AuditLog[]
+  events             Event[]
   inventoryMovements InventoryMovement[]
+  locations          Location[]
+  otpChallenges      OtpChallenge[]
+
+  @@unique([id, shoppingId])
+  @@index([shoppingId, status, startsAt, endsAt])
   @@index([status, startsAt, endsAt])
   @@map("campaigns")
 }
 
 model AdminUser {
-  id           String         @id @default(cuid())
-  email        String         @unique
-  name         String
-  passwordHash String
-  role         Role           @default(SHOPPING_OPERATOR)
-  active       Boolean        @default(true)
-  lastLoginAt  DateTime?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  shoppingScopes UserShopping[]
-  auditLogs    AuditLog[]
-  redemptions  RedeemCode[]   @relation("RedeemedBy")
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  name               String
+  passwordHash       String
+  role               Role                @default(SHOPPING_OPERATOR)
+  active             Boolean             @default(true)
+  lastLoginAt        DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  shoppingScopes     UserShopping[]
+  auditLogs          AuditLog[]
+  redemptions        RedeemCode[]        @relation("RedeemedBy")
   inventoryMovements InventoryMovement[]
+  merchantScopes     MerchantUser[]
+
   @@map("admin_users")
 }
 
@@ -114,132 +124,149 @@ model UserShopping {
   userId     String
   shoppingId String
   user       AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-  shopping   Shopping @relation(fields: [shoppingId], references: [id], onDelete: Cascade)
+  shopping   Shopping  @relation(fields: [shoppingId], references: [id], onDelete: Cascade)
+
   @@id([userId, shoppingId])
   @@map("user_shoppings")
 }
 
 model Card {
-  id          String      @id @default(cuid())
-  publicId    String
-  shoppingId  String
-  campaignId  String
-  location    String?
-  kind        String      @default("ROULETTE")
-  status      CardStatus  @default(ACTIVE)
-  activatedAt DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  shopping    Shopping   @relation(fields: [shoppingId], references: [id])
-  campaign    Campaign   @relation(fields: [campaignId], references: [id])
+  id             String           @id @default(cuid())
+  publicId       String
+  shoppingId     String
+  campaignId     String
+  location       String?
+  locationId     String?
+  place          Location?        @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  kind           String           @default("ROULETTE")
+  status         CardStatus       @default(ACTIVE)
+  activatedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  shopping       Shopping         @relation(fields: [shoppingId], references: [id])
+  campaign       Campaign         @relation(fields: [campaignId, shoppingId], references: [id, shoppingId])
   participations Participation[]
-  clues       Clue[]
-  collections CollectionCard[]
-  events      Event[]
+  clues          Clue[]
+  collections    CollectionCard[]
+  events         Event[]
+
   @@unique([shoppingId, publicId])
+  @@unique([id, shoppingId, campaignId])
   @@index([campaignId, status])
   @@map("cards")
 }
 
 model Prize {
-  id             String   @id @default(cuid())
-  campaignId     String
-  shoppingId     String
-  name           String
-  description    String?
-  imageUrl       String?
-  details        Json     @default("{}")
-  totalStock     Int
-  remainingStock Int
-  weight         Int      @default(1)
-  startsAt       DateTime?
-  endsAt         DateTime?
-  active         Boolean  @default(true)
-  maxPerPerson   Int      @default(1)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  campaign       Campaign @relation(fields: [campaignId], references: [id])
-  shopping       Shopping @relation(fields: [shoppingId], references: [id])
-  participations Participation[]
-  redeemCodes    RedeemCode[]
+  id                 String              @id @default(cuid())
+  campaignId         String
+  shoppingId         String
+  name               String
+  description        String?
+  imageUrl           String?
+  details            Json                @default("{}")
+  totalStock         Int
+  remainingStock     Int
+  weight             Int                 @default(1)
+  startsAt           DateTime?
+  endsAt             DateTime?
+  active             Boolean             @default(true)
+  maxPerPerson       Int                 @default(1)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  campaign           Campaign            @relation(fields: [campaignId, shoppingId], references: [id, shoppingId])
+  shopping           Shopping            @relation(fields: [shoppingId], references: [id])
+  participations     Participation[]
+  redeemCodes        RedeemCode[]
   inventoryMovements InventoryMovement[]
+  merchants          PrizeMerchant[]
+
+  @@unique([id, shoppingId, campaignId])
   @@index([campaignId, shoppingId, active])
   @@map("prizes")
 }
 
 model Participant {
-  id            String   @id @default(cuid())
-  sessionHash   String
-  campaignId    String
-  shoppingId    String
-  consentAt     DateTime?
-  createdAt     DateTime @default(now())
-  campaign      Campaign @relation(fields: [campaignId], references: [id])
-  shopping      Shopping @relation(fields: [shoppingId], references: [id])
+  id             String               @id @default(cuid())
+  sessionHash    String
+  campaignId     String
+  shoppingId     String
+  consentAt      DateTime?
+  createdAt      DateTime             @default(now())
+  campaign       Campaign             @relation(fields: [campaignId, shoppingId], references: [id, shoppingId])
+  shopping       Shopping             @relation(fields: [shoppingId], references: [id])
   participations Participation[]
-  collections   CollectionProgress[]
-  events        Event[]
+  collections    CollectionProgress[]
+  events         Event[]
+
   @@unique([sessionHash, campaignId, shoppingId])
+  @@unique([id, shoppingId, campaignId])
   @@map("participants")
 }
 
 model Participation {
-  id            String              @id @default(cuid())
-  participantId String
-  cardId        String
-  campaignId    String
-  shoppingId    String
-  prizeId       String?
-  status        ParticipationStatus
+  id             String              @id @default(cuid())
+  participantId  String
+  cardId         String
+  campaignId     String
+  shoppingId     String
+  prizeId        String?
+  status         ParticipationStatus
   idempotencyKey String
-  createdAt     DateTime            @default(now())
-  participant   Participant @relation(fields: [participantId], references: [id])
-  card          Card        @relation(fields: [cardId], references: [id])
-  campaign      Campaign    @relation(fields: [campaignId], references: [id])
-  shopping      Shopping    @relation(fields: [shoppingId], references: [id])
-  prize         Prize?      @relation(fields: [prizeId], references: [id])
-  redeemCode    RedeemCode?
+  createdAt      DateTime            @default(now())
+  participant    Participant         @relation(fields: [participantId, shoppingId, campaignId], references: [id, shoppingId, campaignId])
+  card           Card                @relation(fields: [cardId, shoppingId, campaignId], references: [id, shoppingId, campaignId])
+  campaign       Campaign            @relation(fields: [campaignId, shoppingId], references: [id, shoppingId])
+  shopping       Shopping            @relation(fields: [shoppingId], references: [id])
+  prize          Prize?              @relation(fields: [prizeId, shoppingId, campaignId], references: [id, shoppingId, campaignId])
+  redeemCode     RedeemCode?
+
   @@unique([participantId, cardId, campaignId])
   @@unique([participantId, idempotencyKey])
+  @@unique([id, shoppingId, campaignId])
   @@index([campaignId, shoppingId, createdAt])
   @@map("participations")
 }
 
 model RedeemCode {
-  id              String           @id @default(cuid())
-  codeHash        String           @unique
-  codeEncrypted   String
-  participationId String           @unique
-  prizeId         String
-  campaignId      String
-  shoppingId      String
-  status          RedeemCodeStatus @default(ISSUED)
-  expiresAt       DateTime
-  redeemedAt      DateTime?
-  redeemedById    String?
-  createdAt       DateTime         @default(now())
-  participation   Participation @relation(fields: [participationId], references: [id])
-  prize           Prize         @relation(fields: [prizeId], references: [id])
-  campaign        Campaign      @relation(fields: [campaignId], references: [id])
-  shopping        Shopping      @relation(fields: [shoppingId], references: [id])
-  redeemedBy      AdminUser?    @relation("RedeemedBy", fields: [redeemedById], references: [id])
+  id                 String           @id @default(cuid())
+  codeHash           String           @unique
+  codeEncrypted      String
+  participationId    String           @unique
+  prizeId            String
+  campaignId         String
+  shoppingId         String
+  status             RedeemCodeStatus @default(ISSUED)
+  expiresAt          DateTime
+  redeemedAt         DateTime?
+  redeemedById       String?
+  redeemedMerchantId String?
+  createdAt          DateTime         @default(now())
+  participation      Participation    @relation(fields: [participationId, shoppingId, campaignId], references: [id, shoppingId, campaignId])
+  prize              Prize            @relation(fields: [prizeId, shoppingId, campaignId], references: [id, shoppingId, campaignId])
+  campaign           Campaign         @relation(fields: [campaignId, shoppingId], references: [id, shoppingId])
+  shopping           Shopping         @relation(fields: [shoppingId], references: [id])
+  redeemedBy         AdminUser?       @relation("RedeemedBy", fields: [redeemedById], references: [id])
+  redeemedMerchant   Merchant?        @relation("MerchantRedemptions", fields: [redeemedMerchantId], references: [id], onDelete: SetNull)
+
+  @@unique([participationId, shoppingId, campaignId])
   @@index([shoppingId, status, expiresAt])
   @@map("redeem_codes")
 }
 
 model InventoryMovement {
-  id          String   @id @default(cuid())
-  prizeId     String
-  actorId     String?
-  campaignId  String
-  shoppingId  String
-  delta       Int
-  reason      String
-  createdAt   DateTime @default(now())
-  prize       Prize    @relation(fields: [prizeId], references: [id])
-  actor       AdminUser? @relation(fields: [actorId], references: [id])
-  campaign    Campaign @relation(fields: [campaignId], references: [id])
-  shopping    Shopping @relation(fields: [shoppingId], references: [id])
+  id         String     @id @default(cuid())
+  prizeId    String
+  actorId    String?
+  campaignId String
+  shoppingId String
+  delta      Int
+  reason     String
+  createdAt  DateTime   @default(now())
+  prize      Prize      @relation(fields: [prizeId, shoppingId, campaignId], references: [id, shoppingId, campaignId])
+  actor      AdminUser? @relation(fields: [actorId], references: [id])
+  campaign   Campaign   @relation(fields: [campaignId, shoppingId], references: [id, shoppingId])
+  shopping   Shopping   @relation(fields: [shoppingId], references: [id])
+
   @@index([prizeId, createdAt])
   @@index([shoppingId, createdAt])
   @@map("inventory_movements")
@@ -258,63 +285,156 @@ model Clue {
   campaign   Campaign @relation(fields: [campaignId], references: [id])
   shopping   Shopping @relation(fields: [shoppingId], references: [id])
   card       Card?    @relation(fields: [cardId], references: [id])
+
   @@index([shoppingId, startsAt, endsAt, active])
   @@map("clues")
 }
 
 model CollectionProgress {
-  id            String   @id @default(cuid())
+  id            String           @id @default(cuid())
   participantId String
   campaignId    String
-  updatedAt     DateTime @updatedAt
-  participant   Participant @relation(fields: [participantId], references: [id])
-  campaign      Campaign    @relation(fields: [campaignId], references: [id])
+  updatedAt     DateTime         @updatedAt
+  participant   Participant      @relation(fields: [participantId], references: [id])
+  campaign      Campaign         @relation(fields: [campaignId], references: [id])
   cards         CollectionCard[]
+
   @@unique([participantId, campaignId])
   @@map("collection_progress")
 }
 
 model CollectionCard {
-  progressId String
-  cardId     String
-  collectedAt DateTime @default(now())
-  progress   CollectionProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
-  card       Card @relation(fields: [cardId], references: [id])
+  progressId  String
+  cardId      String
+  collectedAt DateTime           @default(now())
+  progress    CollectionProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+  card        Card               @relation(fields: [cardId], references: [id])
+
   @@id([progressId, cardId])
   @@map("collection_cards")
 }
 
 model Event {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   eventType     String
-  campaignId    String
+  campaignId    String?
   shoppingId    String
   cardId        String?
   participantId String?
-  metadata      Json     @default("{}")
-  createdAt     DateTime @default(now())
-  campaign      Campaign @relation(fields: [campaignId], references: [id])
-  shopping      Shopping @relation(fields: [shoppingId], references: [id])
-  card          Card? @relation(fields: [cardId], references: [id])
+  locationId    String?
+  dedupeKey     String?      @unique
+  metadata      Json         @default("{}")
+  createdAt     DateTime     @default(now())
+  campaign      Campaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  shopping      Shopping     @relation(fields: [shoppingId], references: [id])
+  card          Card?        @relation(fields: [cardId], references: [id])
+  location      Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
   participant   Participant? @relation(fields: [participantId], references: [id])
+
   @@index([campaignId, shoppingId, eventType, createdAt])
   @@index([cardId, createdAt])
   @@map("events")
 }
 
+model Location {
+  id         String    @id @default(cuid())
+  shoppingId String
+  campaignId String?
+  slug       String
+  name       String
+  sector     String?
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  shopping   Shopping  @relation(fields: [shoppingId], references: [id], onDelete: Cascade)
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  cards      Card[]
+  events     Event[]
+
+  @@unique([shoppingId, slug])
+  @@index([shoppingId, active])
+  @@index([campaignId])
+  @@map("locations")
+}
+
+model Merchant {
+  id          String          @id @default(cuid())
+  shoppingId  String
+  slug        String
+  name        String
+  sector      String?
+  active      Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  shopping    Shopping        @relation(fields: [shoppingId], references: [id], onDelete: Cascade)
+  users       MerchantUser[]
+  prizes      PrizeMerchant[]
+  redemptions RedeemCode[]    @relation("MerchantRedemptions")
+
+  @@unique([shoppingId, slug])
+  @@index([shoppingId, active])
+  @@map("merchants")
+}
+
+model MerchantUser {
+  userId     String
+  merchantId String
+  user       AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  merchant   Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+
+  @@id([userId, merchantId])
+  @@index([merchantId])
+  @@map("merchant_users")
+}
+
+model PrizeMerchant {
+  prizeId    String
+  merchantId String
+  prize      Prize    @relation(fields: [prizeId], references: [id], onDelete: Cascade)
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@id([prizeId, merchantId])
+  @@index([merchantId])
+  @@map("prize_merchants")
+}
+
+model OtpChallenge {
+  id             String    @id @default(cuid())
+  shoppingId     String
+  campaignId     String
+  phoneHash      String
+  phoneLast4     String
+  otpHash        String
+  attempts       Int       @default(0)
+  consentAt      DateTime
+  consentVersion String
+  expiresAt      DateTime
+  verifiedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  shopping       Shopping  @relation(fields: [shoppingId], references: [id], onDelete: Cascade)
+  campaign       Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([shoppingId, phoneHash, createdAt])
+  @@index([campaignId, expiresAt])
+  @@map("otp_challenges")
+}
+
 model AuditLog {
-  id         String   @id @default(cuid())
+  id         String     @id @default(cuid())
   actorId    String?
   shoppingId String?
   campaignId String?
   action     String
   entityType String
   entityId   String
-  metadata   Json     @default("{}")
-  createdAt  DateTime @default(now())
+  metadata   Json       @default("{}")
+  createdAt  DateTime   @default(now())
   actor      AdminUser? @relation(fields: [actorId], references: [id])
-  shopping   Shopping? @relation(fields: [shoppingId], references: [id])
-  campaign   Campaign? @relation(fields: [campaignId], references: [id])
+  shopping   Shopping?  @relation(fields: [shoppingId], references: [id])
+  campaign   Campaign?  @relation(fields: [campaignId], references: [id])
+
   @@index([shoppingId, createdAt])
   @@index([actorId, createdAt])
   @@map("audit_logs")
@@ -325,6 +445,7 @@ model RateLimitBucket {
   count     Int      @default(0)
   resetAt   DateTime
   updatedAt DateTime @updatedAt
+
   @@index([resetAt])
   @@map("rate_limit_buckets")
 }
