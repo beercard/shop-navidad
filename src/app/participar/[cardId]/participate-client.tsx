@@ -83,7 +83,7 @@ export default function ParticipateClient({ cardId, lockedShopping }: { cardId: 
   const brand = getShoppingBrand(shopping);
   return (
     <main className="site-shell participate-shell" data-shopping={shopping} style={brandCssVariables(brand, payload?.shopping?.brandSettings) as CSSProperties}>
-      <header className="participate-header"><Link className="brand" href="/" aria-label="Volver a Navidad Mágica"><span className="brand-mark">✳</span><span>NAVIDAD<span className="brand-light">MÁGICA</span></span></Link><span>{payload?.shopping?.name ?? brand.name}</span></header>
+      <header className="participate-header"><Link className="brand" href={`/${shopping}`} aria-label={`Volver a la campaña de ${brand.name}`}><span className="brand-mark" aria-hidden="true">✳</span><span>NAVIDAD<span className="brand-light">MÁGICA</span><small className="brand-shopping-name">{brand.name}</small></span></Link><span>{payload?.shopping?.name ?? brand.name}</span></header>
       <section className="participate-card" aria-live="polite">
         <span className="participate-kicker">NAVIDAD MÁGICA · {payload?.shopping?.name ?? brand.name}</span>
         <div className="participate-icon" aria-hidden="true">{result?.status === 'won' ? '🎁' : '✳'}</div>
@@ -95,7 +95,7 @@ export default function ParticipateClient({ cardId, lockedShopping }: { cardId: 
         {error && !payload?.campaign && !loading && <button className="participate-retry" onClick={() => setReloadKey(key => key + 1)}>Reintentar verificación ↻</button>}
         {result?.status === 'won' && <div className="participate-result"><span>PREMIO CONFIRMADO</span><h2>{result.prize?.name}</h2>{result.prize?.description && <p>{result.prize.description}</p>}{result.redeemCode && <code>{result.redeemCode}</code>}{result.expiresAt && <small>Válido hasta {new Date(result.expiresAt).toLocaleString('es-AR')}</small>}</div>}
         {!result && <button className="button button-primary participate-submit" onClick={participate} disabled={loading || submitting || !payload?.campaign}>{submitting ? 'Confirmando con el servidor…' : loading ? 'Verificando…' : payload?.campaign ? 'Participar ↗' : 'Participación no disponible'}</button>}
-        <Link className="participate-back" href="/">Volver a la campaña</Link>
+        <Link className="participate-back" href={`/${shopping}`}>Volver a la campaña</Link>
       </section>
       <footer className="participate-footer">Una campaña para compartir la magia.</footer>
     </main>

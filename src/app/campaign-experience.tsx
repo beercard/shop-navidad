@@ -109,7 +109,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
         {view === 'inicio' && <HomeScreen brandName={brand.name} title={brand.experience.heroTitle} emphasis={brand.experience.heroEmphasis} message={brand.experience.heroMessage} primaryAction={brand.experience.primaryAction} shopping={shopping} featured={featuredPrize} collectedIds={collectedIds} cards={campaign?.cards ?? []} collected={collected} target={collectionTarget} campaignName={campaign?.campaign?.name} loading={campaignLoading} error={campaignError} onRetry={() => setReloadKey((key) => key + 1)} onGo={goTo} onOpenPrize={(prize) => { goTo('premios'); setSelectedPrize(prize); }} />}
         {view === 'jugar' && <PlayScreen shopping={shopping} loading={campaignLoading} hasCampaign={Boolean(campaign?.campaign)} error={campaignError} participating={participating} participationError={participationError} result={result} cardCode={cardCode} codeStatus={codeStatus} canSpin={canSpin} collectedCount={collected} target={collectionTarget} onChange={(value) => { setCardId(value.toUpperCase()); setResult(null); setParticipationError(''); }} onSpin={spin} onRetry={() => setReloadKey((key) => key + 1)} onGo={goTo} rulesUrl={campaign?.campaign?.rulesUrl} />}
         {view === 'descubrir' && <DiscoverScreen campaign={campaign} collectedIds={collectedIds} target={collectionTarget} showClue={showClue} onToggleClue={() => setShowClue((value) => !value)} loading={campaignLoading} onGo={goTo} />}
-        {view === 'premios' && <PrizesScreen prizes={campaign?.prizes ?? []} loading={campaignLoading} error={campaignError} onOpen={setSelectedPrize} onGo={goTo} />}
+        {view === 'premios' && <PrizesScreen shopping={shopping} prizes={campaign?.prizes ?? []} loading={campaignLoading} error={campaignError} onOpen={setSelectedPrize} onGo={goTo} />}
         {view === 'progreso' && <ProgressScreen collected={collected} target={collectionTarget} complete={complete} unlockText={unlockText} wonPrize={result?.status === 'won' ? result.prize?.name : undefined} rulesUrl={campaign?.campaign?.rulesUrl} shoppingName={brand.name} onGo={goTo} />}
       </div>
 
@@ -119,7 +119,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
       </nav>
     </main>
 
-    {selectedPrize && <Sheet label={selectedPrize.name} onClose={() => setSelectedPrize(null)}><PrizeDetail prize={selectedPrize} rulesUrl={campaign?.campaign?.rulesUrl} /></Sheet>}
+    {selectedPrize && <Sheet label={selectedPrize.name} onClose={() => setSelectedPrize(null)}><PrizeDetail prize={selectedPrize} shopping={shopping} rulesUrl={campaign?.campaign?.rulesUrl} /></Sheet>}
     {showAdmin && <Sheet label="Acceso al panel" onClose={() => setShowAdmin(false)}><span className={styles.kicker}>Acceso privado</span><h2 className={styles.sheetTitle}>Administración</h2><p className={styles.muted}>El panel requiere una sesión autorizada.</p><a className={styles.primaryAction} href="/admin">Ir al acceso seguro</a></Sheet>}
   </div>;
 }
@@ -264,7 +264,7 @@ function DiscoverScreen({ campaign, collectedIds, target, showClue, onToggleClue
   </section>;
 }
 
-function PrizesScreen({ prizes, loading, error, onOpen, onGo }: { prizes: Prize[]; loading: boolean; error: string; onOpen: (prize: Prize) => void; onGo: (view: View) => void }) {
+function PrizesScreen({ shopping, prizes, loading, error, onOpen, onGo }: { shopping: ShoppingBrandId; prizes: Prize[]; loading: boolean; error: string; onOpen: (prize: Prize) => void; onGo: (view: View) => void }) {
   const ordered = prizes.slice().sort((a, b) => Number(b.available && b.remainingStock > 0) - Number(a.available && a.remainingStock > 0));
   const [featured, ...rest] = ordered;
   if (loading) return <section className={styles.prizes}><p className={styles.muted}>Consultando disponibilidad…</p></section>;
@@ -273,21 +273,21 @@ function PrizesScreen({ prizes, loading, error, onOpen, onGo }: { prizes: Prize[
   return <section className={styles.prizes} aria-labelledby="prizes-title">
     <div className={styles.screenHead}><span className={styles.kicker}>Catálogo</span><h2 id="prizes-title">Premios</h2><p>Disponibilidad real según la campaña activa.</p></div>
     {featured && <button className={styles.hero} onClick={() => onOpen(featured)}>
-      <span className={styles.heroThumb}>{featured.imageUrl ? <Image src={featured.imageUrl} alt="" fill sizes="(max-width: 430px) 100vw, 430px" unoptimized /> : <GiftArt shopping="centenario" />}</span>
+      <span className={styles.heroThumb}>{featured.imageUrl ? <Image src={featured.imageUrl} alt="" fill sizes="(max-width: 430px) 100vw, 430px" unoptimized /> : <GiftArt shopping={shopping} />}</span>
       <span className={styles.heroInfo}><small>DESTACADO</small><strong>{featured.name}</strong><em className={isAvailable(featured) ? styles.stockOk : styles.stockOut}>{isAvailable(featured) ? `Quedan ${featured.remainingStock}` : 'Agotado'}</em></span>
     </button>}
     <ul className={styles.prizeList}>{rest.map((prize) => <li key={prize.id}><button className={`${styles.prizeRow} ${isAvailable(prize) ? '' : styles.prizeSoldOut}`} onClick={() => onOpen(prize)}>
-      <span className={styles.prizeRowThumb}>{prize.imageUrl ? <Image src={prize.imageUrl} alt="" fill sizes="76px" unoptimized /> : <GiftArt shopping="uniplaza" />}</span>
+      <span className={styles.prizeRowThumb}>{prize.imageUrl ? <Image src={prize.imageUrl} alt="" fill sizes="76px" unoptimized /> : <GiftArt shopping={shopping} />}</span>
       <span className={styles.prizeRowBody}><strong>{prize.name}</strong><em className={isAvailable(prize) ? styles.stockOk : styles.stockOut}>{isAvailable(prize) ? `Quedan ${prize.remainingStock}` : 'Agotado'}</em></span>
       <span aria-hidden="true">›</span>
     </button></li>)}</ul>
   </section>;
 }
 
-function PrizeDetail({ prize, rulesUrl }: { prize: Prize; rulesUrl?: string | null }) {
+function PrizeDetail({ prize, shopping, rulesUrl }: { prize: Prize; shopping: ShoppingBrandId; rulesUrl?: string | null }) {
   const available = prize.available && prize.remainingStock > 0;
   return <div className={styles.detail}>
-    <span className={styles.detailImage}>{prize.imageUrl ? <Image src={prize.imageUrl} alt={prize.name} fill sizes="400px" unoptimized /> : <GiftArt shopping="centenario" />}</span>
+    <span className={styles.detailImage}>{prize.imageUrl ? <Image src={prize.imageUrl} alt={prize.name} fill sizes="400px" unoptimized /> : <GiftArt shopping={shopping} />}</span>
     <span className={available ? styles.stockOk : styles.stockOut}>{available ? `Quedan ${prize.remainingStock} disponibles` : 'Agotado'}</span>
     <h2 className={styles.sheetTitle}>{prize.name}</h2>
     <p className={styles.muted}>{prize.description || 'Consultá las condiciones de participación.'}</p>
