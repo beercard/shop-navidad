@@ -94,7 +94,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
 
   return <div className={styles.stage} data-testid="campaign-stage" data-shopping={shopping} style={brandCssVariables(brand, campaign?.shopping?.brandSettings) as CSSProperties}>
     <div className={styles.stageArt} aria-hidden="true"><Image src={`/campaign/${shopping}/hero.svg`} alt="" fill sizes="50vw" unoptimized /></div>
-    <main className={styles.app}>
+    <main className={styles.app} data-view={view}>
       <header className={styles.topbar}>
         <a className={styles.brand} href="#inicio" onClick={(event) => { event.preventDefault(); goTo('inicio'); }}>
           <span><strong>{brand.name}</strong><small>Navidad mágica</small></span>
@@ -106,7 +106,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
       </header>
 
       <div className={styles.screen}>
-        {view === 'inicio' && <HomeScreen brandName={brand.name} title={brand.experience.heroTitle} emphasis={brand.experience.heroEmphasis} message={brand.experience.heroMessage} shopping={shopping} featured={featuredPrize} collectedIds={collectedIds} cards={campaign?.cards ?? []} collected={collected} target={collectionTarget} campaignName={campaign?.campaign?.name} loading={campaignLoading} onGo={goTo} onOpenPrize={(prize) => { goTo('premios'); setSelectedPrize(prize); }} />}
+        {view === 'inicio' && <HomeScreen brandName={brand.name} title={brand.experience.heroTitle} emphasis={brand.experience.heroEmphasis} message={brand.experience.heroMessage} primaryAction={brand.experience.primaryAction} shopping={shopping} featured={featuredPrize} collectedIds={collectedIds} cards={campaign?.cards ?? []} collected={collected} target={collectionTarget} campaignName={campaign?.campaign?.name} loading={campaignLoading} error={campaignError} onRetry={() => setReloadKey((key) => key + 1)} onGo={goTo} onOpenPrize={(prize) => { goTo('premios'); setSelectedPrize(prize); }} />}
         {view === 'jugar' && <PlayScreen shopping={shopping} loading={campaignLoading} hasCampaign={Boolean(campaign?.campaign)} error={campaignError} participating={participating} participationError={participationError} result={result} cardCode={cardCode} codeStatus={codeStatus} canSpin={canSpin} collectedCount={collected} target={collectionTarget} onChange={(value) => { setCardId(value.toUpperCase()); setResult(null); setParticipationError(''); }} onSpin={spin} onRetry={() => setReloadKey((key) => key + 1)} onGo={goTo} rulesUrl={campaign?.campaign?.rulesUrl} />}
         {view === 'descubrir' && <DiscoverScreen campaign={campaign} collectedIds={collectedIds} target={collectionTarget} showClue={showClue} onToggleClue={() => setShowClue((value) => !value)} loading={campaignLoading} onGo={goTo} />}
         {view === 'premios' && <PrizesScreen prizes={campaign?.prizes ?? []} loading={campaignLoading} error={campaignError} onOpen={setSelectedPrize} onGo={goTo} />}
@@ -124,15 +124,17 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
   </div>;
 }
 
-function HomeScreen({ brandName, title, emphasis, message, shopping, featured, collectedIds, cards, collected, target, campaignName, loading, onGo, onOpenPrize }: { brandName: string; title: string; emphasis: string; message: string; shopping: ShoppingBrandId; featured?: Prize; collectedIds: string[]; cards: PublicCard[]; collected: number; target: number; campaignName?: string; loading: boolean; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void }) {
+function HomeScreen({ brandName, title, emphasis, message, primaryAction, shopping, featured, collectedIds, cards, collected, target, campaignName, loading, error, onRetry, onGo, onOpenPrize }: { brandName: string; title: string; emphasis: string; message: string; primaryAction: string; shopping: ShoppingBrandId; featured?: Prize; collectedIds: string[]; cards: PublicCard[]; collected: number; target: number; campaignName?: string; loading: boolean; error: string; onRetry: () => void; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void }) {
   const collectedCards = new Set(collectedIds);
-  return <section className={styles.home} aria-labelledby="home-title">
+  const centenario = shopping === 'centenario';
+  return <section className={`${styles.home} ${centenario ? styles.centenarioHome : ''}`} aria-labelledby="home-title">
     <div className={styles.heroArt}>
-      <Image src={`/campaign/${shopping}/hero.svg`} alt="" fill sizes="(max-width: 900px) 100vw, 430px" priority unoptimized />
-      <div className={styles.heroText}>
-        <span className={styles.chip}>{loading ? 'Cargando campaña' : campaignName ?? brandName}</span>
+      <Image src={centenario ? '/campaign/centenario/hero-photo.webp' : `/campaign/${shopping}/hero.svg`} alt="" fill sizes="(max-width: 900px) 100vw, 430px" priority unoptimized />
+      <div className={`${styles.heroText} ${centenario ? styles.centenarioHeroText : ''}`}>
+        {!centenario && <span className={styles.chip}>{loading ? 'Cargando campaña' : campaignName ?? brandName}</span>}
         <h1 id="home-title">{title} <em>{emphasis}</em></h1>
         <p>{message}</p>
+        {centenario && <button className={styles.heroPrimaryAction} onClick={() => onGo('jugar')}>{primaryAction}<span aria-hidden="true">›</span></button>}
       </div>
     </div>
     <section className={styles.passport} aria-labelledby="passport-title">
@@ -142,7 +144,7 @@ function HomeScreen({ brandName, title, emphasis, message, shopping, featured, c
           const cardId = [...collectedCards][index];
           const card = cardId ? cards.find((item) => item.publicId === cardId) : undefined;
           return <span key={index} className={`${styles.passportSlot} ${card ? styles.passportSlotFound : ''}`}>
-            <span aria-hidden="true">{card ? '✦' : '·'}</span>
+            <span aria-hidden="true">{card ? '✦' : '☆'}</span>
             <small>{card ? card.location || `Tarjeta ${index + 1}` : `Tarjeta ${index + 1}`}</small>
           </span>;
         })}
@@ -150,20 +152,33 @@ function HomeScreen({ brandName, title, emphasis, message, shopping, featured, c
       <p id="passport-hint">{collected >= target ? 'Colección completa. Revisá qué beneficio habilitó esta campaña.' : `Descubrí ${Math.max(0, target - collected)} tarjetas distintas para completar el recorrido.`}</p>
     </section>
     <ol className={styles.howRow} aria-label="Cómo participar">
-      <li><b>Buscá</b><span>una tarjeta en el shopping</span></li>
-      <li><b>Escaneá</b><span>su QR o acercá el celular al NFC</span></li>
-      <li><b>Descubrí</b><span>tu resultado confirmado</span></li>
+      <li>{centenario && <StepIcon kind="search" />}<b>Buscá</b><span>una tarjeta en el shopping</span></li>
+      <li>{centenario && <StepIcon kind="scan" />}<b>Escaneá</b><span>su QR o acercá el celular al NFC</span></li>
+      <li>{centenario && <StepIcon kind="gift" />}<b>Descubrí</b><span>tu resultado confirmado</span></li>
     </ol>
-    <div className={styles.homeActions}>
+    {!centenario && <div className={styles.homeActions}>
       <button className={styles.primaryAction} onClick={() => onGo('jugar')}>Tengo una tarjeta<Icon name="jugar" /></button>
       <button className={styles.homeTextAction} onClick={() => onGo('descubrir')}>Ver pista <Icon name="descubrir" /></button>
-    </div>
-    {featured && <button className={`${styles.featuredTicket} ${!featured.available || featured.remainingStock <= 0 ? styles.featuredUnavailable : ''}`} onClick={() => onOpenPrize(featured)}>
+    </div>}
+    {centenario ? <button className={`${styles.centenarioFeature} ${featured && (!featured.available || featured.remainingStock <= 0) ? styles.centenarioFeatureUnavailable : ''}`} onClick={() => featured ? onOpenPrize(featured) : onGo('premios')} aria-label={featured ? `Ver premio destacado: ${featured.name}` : 'Conocé los regalos de campaña'}>
+      <Image src="/campaign/centenario/featured-gift.webp" alt="" fill sizes="(max-width: 430px) 100vw, 430px" unoptimized />
+      <span className={styles.centenarioFeatureCopy}><small>{featured ? 'PREMIO DESTACADO' : 'PREMIOS DE CAMPAÑA'}</small><strong>{featured?.name ?? 'Conocé los regalos de campaña'}</strong><em>{featured ? (featured.available && featured.remainingStock > 0 ? `Disponibles: ${featured.remainingStock}` : 'Agotado') : 'Se mostrarán cuando haya una campaña activa.'}</em><span aria-hidden="true">›</span></span>
+    </button> : featured && <button className={`${styles.featuredTicket} ${!featured.available || featured.remainingStock <= 0 ? styles.featuredUnavailable : ''}`} onClick={() => onOpenPrize(featured)}>
       <span className={styles.ticketThumb}><GiftArt shopping={shopping} />{featured.imageUrl && <Image src={featured.imageUrl} alt="" fill sizes="72px" unoptimized onError={(event) => { event.currentTarget.style.display = 'none'; }} />}</span>
       <span className={styles.ticketBody}><small>PREMIO DESTACADO</small><strong>{featured.name}</strong><em className={featured.available && featured.remainingStock > 0 ? styles.stockOk : styles.stockOut}>{featured.available && featured.remainingStock > 0 ? `Disponibles: ${featured.remainingStock}` : 'Agotado'}</em></span>
       <span className={styles.ticketGo} aria-hidden="true">›</span>
     </button>}
+    {centenario && error && <div className={styles.centenarioCampaignError} role="alert"><span>La campaña no está disponible en este momento.</span><button type="button" onClick={onRetry}>Reintentar</button></div>}
   </section>;
+}
+
+function StepIcon({ kind }: { kind: 'search' | 'scan' | 'gift' }) {
+  const paths = {
+    search: <><circle cx="10.8" cy="10.8" r="6.2" /><path d="m15.3 15.3 4.2 4.2" /></>,
+    scan: <><path d="M8 4H5a1 1 0 0 0-1 1v3m12-4h3a1 1 0 0 1 1 1v3M4 16v3a1 1 0 0 0 1 1h3m12-4v3a1 1 0 0 1-1 1h-3M8 12h8" /></>,
+    gift: <><rect x="4" y="10" width="16" height="10" rx="1.5" /><path d="M3 7.5h18V10H3zM12 7.5V20m0-12.5c-2-4-5.5-3-4.5-1S10.5 7.5 12 7.5zm0 0c2-4 5.5-3 4.5-1S13.5 7.5 12 7.5z" /></>,
+  };
+  return <span className={styles.howIcon} aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[kind]}</svg></span>;
 }
 
 function PlayScreen(props: { shopping: ShoppingBrandId; loading: boolean; hasCampaign: boolean; error: string; participating: boolean; participationError: string; result: SpinResult | null; cardCode: string; codeStatus: 'invalid' | 'repeated' | 'new' | null; canSpin: boolean; collectedCount: number; target: number; onChange: (value: string) => void; onSpin: () => void; onRetry: () => void; onGo: (view: View) => void; rulesUrl?: string | null }) {

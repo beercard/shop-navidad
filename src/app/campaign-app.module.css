@@ -282,4 +282,120 @@
   .homeActions{padding-inline:12px;gap:2px}
   .homeTextAction{padding-inline:4px;font-size:11px}
 }
+
+/* Centenario's campaign keeps the existing interaction model but follows the approved
+   editorial reference: a photographic pine setting, a paper invitation and a stamped passport. */
+.stage[data-shopping="centenario"]{
+  --centenario-pine:#17382b;
+  --centenario-pine-deep:#102c22;
+  --centenario-paper:#f1e4d2;
+  --centenario-paper-light:#faf5ec;
+  --centenario-gold:#d4ad68;
+  --centenario-terracotta:#a34832;
+  --centenario-ink:#18382b;
+  --stage-bg:var(--centenario-pine-deep);
+}
+.stage[data-shopping="centenario"] .app{background:var(--centenario-paper-light)}
+.stage[data-shopping="centenario"] .app[data-view="inicio"] .topbar{
+  position:absolute;inset:0 0 auto;z-index:5;min-height:100px;padding:17px 16px 8px;
+  justify-content:center;border:0;background:transparent;color:var(--centenario-paper-light)
+}
+.stage[data-shopping="centenario"] .app[data-view="inicio"] .brand{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center}
+.stage[data-shopping="centenario"] .app[data-view="inicio"] .brand strong{font:600 11px/1.2 var(--brand-font-body,Arial,sans-serif);letter-spacing:.32em;text-transform:uppercase;color:var(--centenario-paper-light)}
+.stage[data-shopping="centenario"] .app[data-view="inicio"] .brand small{margin:0;font:600 clamp(25px,7.4vw,34px)/1.05 var(--brand-font-display,Georgia,serif);letter-spacing:-.035em;text-transform:none;color:var(--centenario-paper);text-shadow:0 2px 18px rgb(0 0 0 / 32%)}
+.stage[data-shopping="centenario"] .app[data-view="inicio"] .topActions{position:absolute;top:12px;right:12px}
+.stage[data-shopping="centenario"] .app[data-view="inicio"] .progressChip{display:none}
+.stage[data-shopping="centenario"] .app[data-view="inicio"] .iconButton{width:44px;height:44px;border-color:rgb(241 228 210 / 56%);background:rgb(16 44 34 / 36%);color:var(--centenario-paper-light)}
+.stage[data-shopping="centenario"] .app[data-view="inicio"] .screen{padding-bottom:0}
+.centenarioHome{gap:0;padding-bottom:0}
+.centenarioHome .heroArt{
+  height:auto;min-height:clamp(492px,60svh,570px);padding:105px 16px 25px;
+  display:flex;align-items:center;justify-content:center;background:var(--centenario-pine-deep)
+}
+.centenarioHome .heroArt img{object-fit:cover;object-position:center 48%;opacity:1}
+.centenarioHome .heroArt::after{inset:0;height:auto;background:linear-gradient(180deg,rgb(10 30 22 / 48%) 0%,transparent 27%,rgb(10 30 22 / 8%) 68%,rgb(10 30 22 / 28%) 100%)}
+.centenarioHeroText{
+  position:relative;inset:auto;z-index:1;width:100%;max-width:390px;margin:auto;padding:31px clamp(18px,5.5vw,27px) 25px;
+  border:1px solid color-mix(in srgb,var(--centenario-gold) 72%,white);border-radius:5px 18px 5px 18px;
+  background:linear-gradient(135deg,var(--centenario-paper-light),var(--centenario-paper));color:var(--centenario-ink);
+  clip-path:none;text-align:center;text-shadow:none;box-shadow:0 18px 38px rgb(7 20 14 / 28%);isolation:isolate
+}
+.centenarioHeroText::before{content:"";position:absolute;z-index:-1;inset:10px;border:1px solid color-mix(in srgb,var(--centenario-gold) 58%,transparent);border-radius:2px 12px 2px 12px;pointer-events:none}
+.centenarioHeroText .chip{display:none}
+.centenarioHeroText h1{max-width:10ch;margin:0 auto;font:700 clamp(39px,10.8vw,50px)/.94 var(--brand-font-display,Georgia,serif);letter-spacing:-.055em;color:var(--centenario-ink);text-wrap:balance}
+.centenarioHeroText h1 em{display:block;margin-top:2px;color:var(--centenario-terracotta);font-style:normal}
+.centenarioHeroText p{max-width:34ch;margin:19px auto 0;font:400 15px/1.5 var(--brand-font-body,Arial,sans-serif);color:var(--centenario-ink);text-shadow:none}
+.heroPrimaryAction{
+  width:min(100%,320px);min-height:58px;margin:21px auto 0;padding:12px 21px;display:flex;align-items:center;justify-content:center;gap:18px;
+  border:1px solid color-mix(in srgb,var(--centenario-gold) 76%,white);border-radius:999px;background:var(--centenario-pine);color:var(--centenario-paper-light);
+  box-shadow:0 7px 14px rgb(18 42 31 / 18%);font:600 18px/1.2 var(--brand-font-display,Georgia,serif);transition:transform .18s ease,background-color .18s ease
+}
+.heroPrimaryAction span{font:400 30px/1 var(--brand-font-body,Arial,sans-serif)}
+.heroPrimaryAction:hover{background:var(--centenario-pine-deep)}
+.heroPrimaryAction:active{transform:translateY(1px)}
+.centenarioHome .passport{margin:0;padding:24px 20px 20px;border:0;border-radius:0;background:var(--centenario-paper-light);color:var(--centenario-ink);clip-path:none}
+.centenarioHome .passportHeading{margin:0 2px 14px;align-items:baseline}
+.centenarioHome .passportHeading h2{font:700 clamp(23px,6.8vw,30px)/1.05 var(--brand-font-display,Georgia,serif);letter-spacing:-.035em;color:var(--centenario-ink)}
+.centenarioHome .passportHeading>span{font:600 14px/1.2 var(--brand-font-body,Arial,sans-serif);color:var(--centenario-ink);white-space:nowrap}
+.centenarioHome .passportSlots{gap:9px;padding:9px 8px;border:1px solid color-mix(in srgb,var(--centenario-gold) 62%,white);border-radius:4px;background:var(--centenario-paper);box-shadow:0 7px 18px rgb(46 35 20 / 8%)}
+.centenarioHome .passportSlot{min-height:86px;padding:8px 4px;border:1px dashed color-mix(in srgb,var(--centenario-gold) 80%,var(--centenario-terracotta));border-radius:3px;background:var(--centenario-paper-light);color:var(--centenario-ink)}
+.centenarioHome .passportSlot>span{font:400 34px/1 var(--brand-font-display,Georgia,serif);color:color-mix(in srgb,var(--centenario-gold) 74%,var(--centenario-paper))}
+.centenarioHome .passportSlot small{font:600 11px/1.2 var(--brand-font-body,Arial,sans-serif);color:var(--brand-text-muted)}
+.centenarioHome .passportSlotFound{border-style:solid;border-color:var(--centenario-gold);background:var(--centenario-pine);color:var(--centenario-paper-light)}
+.centenarioHome .passportSlotFound>span{color:var(--centenario-gold)}
+.centenarioHome .passportSlotFound small{color:var(--centenario-paper-light)}
+.centenarioHome .passport>p{margin:10px 2px 0;font:400 13px/1.45 var(--brand-font-body,Arial,sans-serif);color:var(--brand-text-muted)}
+.centenarioHome .howRow{margin:2px 20px 20px;padding:12px 0 0;gap:0;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid color-mix(in srgb,var(--centenario-gold) 46%,transparent);border-bottom:0}
+.centenarioHome .howRow li{min-width:0;min-height:0;padding:0 7px;display:flex;align-items:center;gap:8px;border:0;border-radius:0;background:transparent;color:var(--centenario-ink);font:400 12px/1.3 var(--brand-font-body,Arial,sans-serif);text-align:center}
+.centenarioHome .howRow li+li{border-left:1px solid color-mix(in srgb,var(--centenario-gold) 46%,transparent)}
+.centenarioHome .howRow b{margin:0 0 2px;font:700 12px/1.15 var(--brand-font-body,Arial,sans-serif);color:var(--centenario-ink)}
+.howIcon{width:58px;height:58px;flex:0 0 58px;display:grid;place-items:center;border-radius:50%;background:var(--centenario-paper);color:var(--centenario-terracotta)}
+.centenarioHome .howRow li:nth-child(2) .howIcon{color:var(--centenario-pine)}
+.centenarioHome .howRow li span:last-child{min-width:0}
+.centenarioFeature{
+  position:relative;isolation:isolate;width:calc(100% - 28px);min-height:178px;margin:0 14px 20px;padding:0;display:flex;align-items:stretch;overflow:hidden;
+  border:0;border-radius:14px;background:var(--centenario-pine-deep);color:var(--centenario-paper-light);text-align:left;box-shadow:0 12px 28px rgb(21 43 31 / 16%)
+}
+.centenarioFeature>img{position:absolute;z-index:-2;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 47%}
+.centenarioFeature::after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,rgb(12 40 29 / 96%) 0%,rgb(12 40 29 / 85%) 42%,rgb(12 40 29 / 8%) 100%);pointer-events:none}
+.centenarioFeatureCopy{width:min(73%,290px);padding:19px 18px;display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+.centenarioFeatureCopy small{font:600 10px/1.25 var(--brand-font-body,Arial,sans-serif);letter-spacing:.2em;color:var(--centenario-gold)}
+.centenarioFeatureCopy strong{font:600 clamp(22px,6vw,28px)/1.02 var(--brand-font-display,Georgia,serif);letter-spacing:-.025em;color:var(--centenario-paper-light)}
+.centenarioFeatureCopy em{font:400 12px/1.35 var(--brand-font-body,Arial,sans-serif);font-style:normal;color:color-mix(in srgb,var(--centenario-paper-light) 82%,transparent)}
+.centenarioFeatureCopy>span{width:44px;height:44px;margin-top:2px;display:grid;place-items:center;border:1.5px solid var(--centenario-gold);border-radius:50%;color:var(--centenario-gold);font:400 25px/1 var(--brand-font-body,Arial,sans-serif)}
+.centenarioFeatureUnavailable>img{filter:saturate(.65)}
+.centenarioCampaignError{margin:0 14px 16px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--brand-danger);border-radius:8px;background:var(--brand-surface-raised);color:var(--brand-danger);font-size:13px;line-height:1.4}
+.centenarioCampaignError button{min-height:44px;padding:0 12px;border:1px solid currentColor;border-radius:6px;background:transparent;color:inherit;font-weight:700;white-space:nowrap}
+.stage[data-shopping="centenario"] .tabbar{min-height:78px;padding:6px 8px calc(6px + env(safe-area-inset-bottom));border-top:1px solid color-mix(in srgb,var(--centenario-paper-light) 20%,transparent);border-radius:0;background:var(--centenario-pine-deep);box-shadow:0 -5px 18px rgb(13 38 27 / 12%)}
+.stage[data-shopping="centenario"] .tab{min-height:58px;gap:4px;border-radius:4px;color:color-mix(in srgb,var(--centenario-paper-light) 80%,transparent);font-size:11px}
+.stage[data-shopping="centenario"] .tab svg{width:23px;height:23px}
+.stage[data-shopping="centenario"] .tab span{font-size:11px;line-height:1.1}
+.stage[data-shopping="centenario"] .tabActive{position:relative;background:transparent;color:var(--centenario-terracotta)}
+.stage[data-shopping="centenario"] .tabActive::after{content:"";position:absolute;right:20%;bottom:0;left:20%;height:3px;border-radius:3px;background:var(--centenario-terracotta)}
+.stage[data-shopping="centenario"] .tabActive svg{color:var(--centenario-terracotta)}
+@media(min-width:900px){
+  .stage[data-shopping="centenario"] .app[data-view="inicio"] .topbar{border-radius:36px 36px 0 0}
+  .centenarioHome .heroArt{min-height:530px;padding:112px 18px 26px}
+  .centenarioHeroText{padding:34px 28px 27px}
+  .centenarioHome .passport{padding:25px 22px 20px}
+}
+@media(max-width:380px){
+  .centenarioHome .heroArt{min-height:480px;padding:100px 12px 22px}
+  .centenarioHeroText{padding:28px 17px 21px}
+  .centenarioHeroText h1{font-size:clamp(36px,10.2vw,40px)}
+  .centenarioHeroText p{font-size:14px}
+  .heroPrimaryAction{min-height:54px;font-size:16px}
+  .centenarioHome .passport{padding:22px 14px 18px}
+  .centenarioHome .passportSlots{gap:6px;padding:7px 6px}
+  .centenarioHome .passportSlot{min-height:74px}
+  .centenarioHome .howRow{margin-inline:12px}
+  .centenarioHome .howRow li{padding-inline:4px;font-size:11px}
+  .howIcon{width:48px;height:48px;flex-basis:48px}
+  .howIcon svg{width:24px;height:24px}
+  .centenarioFeatureCopy{width:77%;padding:17px 15px}
+  .centenarioFeatureCopy strong{font-size:21px}
+}
+@media(prefers-reduced-motion:reduce){
+  .heroPrimaryAction{transition:none}
+}
 @media(prefers-reduced-motion:reduce){.passportSlotFound{animation:none}}

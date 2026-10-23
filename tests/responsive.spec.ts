@@ -29,7 +29,9 @@ test('shopping routes keep separate themes and fit the required viewport widths'
     await expect(shell).toHaveAttribute('data-shopping', shopping.slug);
     await expect(page.getByRole('link', { name: new RegExp(shopping.name) })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Tu colección/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Tengo una tarjeta/ })).toBeVisible();
+    await expect(page.getByRole('button', {
+      name: shopping.slug === 'centenario' ? /Encontré una tarjeta/ : /Tengo una tarjeta/,
+    })).toBeVisible();
     observedTokens.push(await shell.evaluate((node, tokens) => {
       const style = getComputedStyle(node);
       return tokens.map((token) => style.getPropertyValue(token).trim());
