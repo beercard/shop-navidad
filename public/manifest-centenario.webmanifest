@@ -1,0 +1,16 @@
+{
+  "id": "/centenario",
+  "name": "Navidad Mágica · Centenario Shopping",
+  "short_name": "Centenario",
+  "description": "Recorré Centenario con quienes más querés. Una tarjeta puede esconder una sorpresa para compartir.",
+  "start_url": "/centenario",
+  "scope": "/centenario",
+  "display": "standalone",
+  "background_color": "#fffdf8",
+  "theme_color": "#203f34",
+  "icons": [
+    { "src": "/pwa/centenario-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa/centenario-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa/centenario-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

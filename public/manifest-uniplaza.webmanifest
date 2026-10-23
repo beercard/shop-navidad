@@ -1,0 +1,16 @@
+{
+  "id": "/uniplaza",
+  "name": "Navidad Mágica · UniPlaza Shopping",
+  "short_name": "UniPlaza",
+  "description": "Recorré los espacios abiertos de UniPlaza. Seguí las pistas y descubrí qué sorpresa te espera.",
+  "start_url": "/uniplaza",
+  "scope": "/uniplaza",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#203e4d",
+  "icons": [
+    { "src": "/pwa/uniplaza-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa/uniplaza-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa/uniplaza-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

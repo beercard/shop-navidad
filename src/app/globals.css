@@ -258,3 +258,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 .site-shell[data-shopping="uniplaza"] .section-heading h2{font-family:var(--brand-font-display,"DM Sans",Arial,sans-serif);font-weight:700}
 .site-shell[data-shopping="uniplaza"] .step-card,.site-shell[data-shopping="uniplaza"] .prize-card{border-radius:var(--brand-radius-card,12px 3px)}
 .site-shell[data-shopping="uniplaza"] .collection-banner{border-radius:20px 4px 20px 4px}
+.offline-page{min-height:100svh;padding:max(28px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));display:flex;flex-direction:column;align-items:flex-start;justify-content:center;background:#fffdf8;color:#203a31;font-family:Arial,sans-serif}
+.offline-page>*{width:min(100%,560px);margin-inline:auto}
+.offline-page>p:first-child{font-weight:700;color:#315d4b}
+.offline-page h1{font:700 clamp(32px,8vw,48px)/1.05 Georgia,serif;letter-spacing:-.04em}
+.offline-page p{font-size:16px;line-height:1.6;color:#4f5d53}
+.offline-page a{min-height:48px;margin-top:16px;padding:12px 18px;display:inline-flex;align-items:center;justify-content:center;background:#315d4b;color:#fff;border-radius:10px;font-weight:700}
+.offline-page a:focus-visible,.pwa-update button:focus-visible{outline:3px solid #a86e28;outline-offset:3px}
+.pwa-update{position:fixed;z-index:50;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));margin-inline:auto;width:min(calc(100% - 24px),440px);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #dfe2d8;background:#fffdf8;color:#203a31;box-shadow:0 6px 24px rgb(0 0 0 / 16%);font:14px/1.4 Arial,sans-serif}
+.pwa-update button{min-height:44px;padding:8px 14px;flex:0 0 auto;border:0;border-radius:8px;background:#315d4b;color:#fff;font:700 14px Arial,sans-serif}
+@media(max-width:360px){.pwa-update{align-items:stretch;flex-direction:column}.pwa-update button{width:100%}}

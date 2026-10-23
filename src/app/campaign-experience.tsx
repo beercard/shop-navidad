@@ -92,13 +92,12 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
     finally { setParticipating(false); }
   }
 
-  return <div className={styles.stage} data-shopping={shopping} style={brandCssVariables(brand, campaign?.shopping?.brandSettings) as CSSProperties}>
+  return <div className={styles.stage} data-testid="campaign-stage" data-shopping={shopping} style={brandCssVariables(brand, campaign?.shopping?.brandSettings) as CSSProperties}>
     <div className={styles.stageArt} aria-hidden="true"><Image src={`/campaign/${shopping}/hero.svg`} alt="" fill sizes="50vw" unoptimized /></div>
     <main className={styles.app}>
       <header className={styles.topbar}>
-        <a className={styles.brand} href="#inicio" onClick={(event) => { event.preventDefault(); goTo('inicio'); }} aria-label={`${brand.name}, inicio`}>
-          <span className={styles.seal} aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" /><path d="M20 9l2.6 6.4 6.9.5-5.3 4.4 1.7 6.7L20 23.4l-5.9 3.6 1.7-6.7-5.3-4.4 6.9-.5z" /></svg></span>
-          <span><strong>{brand.shortName}</strong><small>Navidad mágica</small></span>
+        <a className={styles.brand} href="#inicio" onClick={(event) => { event.preventDefault(); goTo('inicio'); }}>
+          <span><strong>{brand.name}</strong><small>Navidad mágica</small></span>
         </a>
         <div className={styles.topActions}>
           <span className={styles.progressChip} aria-label={`Colección: ${collected} de ${collectionTarget} tarjetas`}>{collected}/{collectionTarget}</span>
@@ -107,7 +106,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
       </header>
 
       <div className={styles.screen}>
-        {view === 'inicio' && <HomeScreen brandName={brand.name} title={brand.experience.heroTitle} emphasis={brand.experience.heroEmphasis} shopping={shopping} featured={featuredPrize} collected={collected} target={collectionTarget} campaignName={campaign?.campaign?.name} loading={campaignLoading} onGo={goTo} onOpenPrize={(prize) => { goTo('premios'); setSelectedPrize(prize); }} />}
+        {view === 'inicio' && <HomeScreen brandName={brand.name} title={brand.experience.heroTitle} emphasis={brand.experience.heroEmphasis} message={brand.experience.heroMessage} shopping={shopping} featured={featuredPrize} collectedIds={collectedIds} cards={campaign?.cards ?? []} collected={collected} target={collectionTarget} campaignName={campaign?.campaign?.name} loading={campaignLoading} onGo={goTo} onOpenPrize={(prize) => { goTo('premios'); setSelectedPrize(prize); }} />}
         {view === 'jugar' && <PlayScreen shopping={shopping} loading={campaignLoading} hasCampaign={Boolean(campaign?.campaign)} error={campaignError} participating={participating} participationError={participationError} result={result} cardCode={cardCode} codeStatus={codeStatus} canSpin={canSpin} collectedCount={collected} target={collectionTarget} onChange={(value) => { setCardId(value.toUpperCase()); setResult(null); setParticipationError(''); }} onSpin={spin} onRetry={() => setReloadKey((key) => key + 1)} onGo={goTo} rulesUrl={campaign?.campaign?.rulesUrl} />}
         {view === 'descubrir' && <DiscoverScreen campaign={campaign} collectedIds={collectedIds} target={collectionTarget} showClue={showClue} onToggleClue={() => setShowClue((value) => !value)} loading={campaignLoading} onGo={goTo} />}
         {view === 'premios' && <PrizesScreen prizes={campaign?.prizes ?? []} loading={campaignLoading} error={campaignError} onOpen={setSelectedPrize} onGo={goTo} />}
@@ -125,37 +124,45 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
   </div>;
 }
 
-function HomeScreen({ brandName, title, emphasis, shopping, featured, collected, target, campaignName, loading, onGo, onOpenPrize }: { brandName: string; title: string; emphasis: string; shopping: ShoppingBrandId; featured?: Prize; collected: number; target: number; campaignName?: string; loading: boolean; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void }) {
+function HomeScreen({ brandName, title, emphasis, message, shopping, featured, collectedIds, cards, collected, target, campaignName, loading, onGo, onOpenPrize }: { brandName: string; title: string; emphasis: string; message: string; shopping: ShoppingBrandId; featured?: Prize; collectedIds: string[]; cards: PublicCard[]; collected: number; target: number; campaignName?: string; loading: boolean; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void }) {
+  const collectedCards = new Set(collectedIds);
   return <section className={styles.home} aria-labelledby="home-title">
     <div className={styles.heroArt}>
       <Image src={`/campaign/${shopping}/hero.svg`} alt="" fill sizes="(max-width: 900px) 100vw, 430px" priority unoptimized />
       <div className={styles.heroText}>
         <span className={styles.chip}>{loading ? 'Cargando campaña' : campaignName ?? brandName}</span>
         <h1 id="home-title">{title} <em>{emphasis}</em></h1>
+        <p>{message}</p>
       </div>
     </div>
-    {featured && <button className={styles.featuredTicket} onClick={() => onOpenPrize(featured)} aria-label={`Premio destacado: ${featured.name}`}>
+    <section className={styles.passport} aria-labelledby="passport-title">
+      <div className={styles.passportHeading}><h2 id="passport-title">Tu colección</h2><span>{collected} de {target}</span></div>
+      <button className={styles.passportSlots} onClick={() => onGo('progreso')} aria-describedby="passport-hint">
+        {Array.from({ length: target }, (_, index) => {
+          const cardId = [...collectedCards][index];
+          const card = cardId ? cards.find((item) => item.publicId === cardId) : undefined;
+          return <span key={index} className={`${styles.passportSlot} ${card ? styles.passportSlotFound : ''}`}>
+            <span aria-hidden="true">{card ? '✦' : '·'}</span>
+            <small>{card ? card.location || `Tarjeta ${index + 1}` : `Tarjeta ${index + 1}`}</small>
+          </span>;
+        })}
+      </button>
+      <p id="passport-hint">{collected >= target ? 'Colección completa. Revisá qué beneficio habilitó esta campaña.' : `Descubrí ${Math.max(0, target - collected)} tarjetas distintas para completar el recorrido.`}</p>
+    </section>
+    <ol className={styles.howRow} aria-label="Cómo participar">
+      <li><b>Buscá</b><span>una tarjeta en el shopping</span></li>
+      <li><b>Escaneá</b><span>su QR o acercá el celular al NFC</span></li>
+      <li><b>Descubrí</b><span>tu resultado confirmado</span></li>
+    </ol>
+    <div className={styles.homeActions}>
+      <button className={styles.primaryAction} onClick={() => onGo('jugar')}>Tengo una tarjeta<Icon name="jugar" /></button>
+      <button className={styles.homeTextAction} onClick={() => onGo('descubrir')}>Ver pista <Icon name="descubrir" /></button>
+    </div>
+    {featured && <button className={`${styles.featuredTicket} ${!featured.available || featured.remainingStock <= 0 ? styles.featuredUnavailable : ''}`} onClick={() => onOpenPrize(featured)}>
       <span className={styles.ticketThumb}>{featured.imageUrl ? <Image src={featured.imageUrl} alt="" fill sizes="72px" unoptimized /> : <GiftArt shopping={shopping} />}</span>
-      <span className={styles.ticketBody}><small>PREMIO DESTACADO</small><strong>{featured.name}</strong><em className={featured.available && featured.remainingStock > 0 ? styles.stockOk : styles.stockOut}>{featured.available && featured.remainingStock > 0 ? `Quedan ${featured.remainingStock}` : 'Agotado'}</em></span>
+      <span className={styles.ticketBody}><small>PREMIO DESTACADO</small><strong>{featured.name}</strong><em className={featured.available && featured.remainingStock > 0 ? styles.stockOk : styles.stockOut}>{featured.available && featured.remainingStock > 0 ? `Disponibles: ${featured.remainingStock}` : 'Agotado'}</em></span>
       <span className={styles.ticketGo} aria-hidden="true">›</span>
     </button>}
-    <div className={styles.ctaStack}>
-      <button className={styles.primaryAction} onClick={() => onGo('jugar')}>Jugar ahora<Icon name="jugar" /></button>
-      <div className={styles.secondaryRow}>
-        <button className={styles.secondaryAction} onClick={() => onGo('descubrir')}><Icon name="descubrir" />Buscar tarjeta</button>
-        <button className={styles.secondaryAction} onClick={() => onGo('premios')}><Icon name="premios" />Ver premios</button>
-      </div>
-    </div>
-    <button className={styles.progressStrip} onClick={() => onGo('progreso')}>
-      <span className={styles.dots} aria-hidden="true">{Array.from({ length: target }, (_, index) => <i key={index} className={index < collected ? styles.dotOn : ''} />)}</span>
-      <span>{collected >= target ? 'Colección completa' : `Te faltan ${Math.max(0, target - collected)} tarjetas diferentes`}</span>
-      <span aria-hidden="true">›</span>
-    </button>
-    <ol className={styles.howRow} aria-label="Cómo jugar">
-      <li><b>01</b>Buscá una tarjeta en el shopping</li>
-      <li><b>02</b>Escaneá su QR o NFC</li>
-      <li><b>03</b>Girá y canjeá tu premio</li>
-    </ol>
   </section>;
 }
 
@@ -206,7 +213,7 @@ function Wheel({ spinning, shopping }: { spinning: boolean; shopping: ShoppingBr
     const mid = (index * 60 - 60) * (Math.PI / 180);
     return { label, d: `M0 0 L${(Math.cos(start) * 96).toFixed(2)} ${(Math.sin(start) * 96).toFixed(2)} A96 96 0 0 1 ${(Math.cos(end) * 96).toFixed(2)} ${(Math.sin(end) * 96).toFixed(2)} Z`, tx: (Math.cos(mid) * 58).toFixed(2), ty: (Math.sin(mid) * 58).toFixed(2), angle: index * 60 };
   });
-  return <svg className={`${styles.wheel} ${spinning ? styles.wheelSpin : ''}`} viewBox="-100 -100 200 200" role="img" aria-label={`Ruleta decorativa de ${shopping === 'centenario' ? 'Centenario' : 'UniPlaza'}`}>
+  return <svg data-testid="campaign-wheel" data-spinning={spinning} className={`${styles.wheel} ${spinning ? styles.wheelSpin : ''}`} viewBox="-100 -100 200 200" role="img" aria-label={`Ruleta decorativa de ${shopping === 'centenario' ? 'Centenario' : 'UniPlaza'}`}>
     <circle r="100" className={styles.wheelRim} />
     {segments.map((segment, index) => <g key={segment.label}>
       <path d={segment.d} className={index % 2 ? styles.segmentB : styles.segmentA} />

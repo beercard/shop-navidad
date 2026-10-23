@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+export const metadata = { manifest: '/manifest.webmanifest' };
+
 export default function ShoppingGateway() {
   return (
     <main className="shopping-gateway">
