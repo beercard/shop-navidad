@@ -154,41 +154,47 @@ function HomeScreen({ brandName, title, emphasis, message, primaryAction, shoppi
   const centenario = shopping === 'centenario';
   return <section className={`${styles.home} ${centenario ? styles.centenarioHome : styles.uniplazaHome}`} aria-labelledby="home-title">
     <div className={styles.heroArt}>
-      <Image src={centenario ? '/campaign/centenario/hero-photo.webp' : `/campaign/${shopping}/hero.svg`} alt="" fill sizes="(max-width: 900px) 100vw, 430px" priority unoptimized />
       <div className={`${styles.heroText} ${centenario ? styles.centenarioHeroText : ''}`}>
-        {!centenario && <span className={styles.chip}>{loading ? 'Cargando campaña' : campaignName ?? `${brandName} · Navidad`}</span>}
+        <span className={styles.chip}><i className={styles.chipDot} aria-hidden="true" />{loading ? 'Cargando campaña' : campaignName ?? `${brandName} · Campaña Oficial`}</span>
         <h1 id="home-title">{title} <em>{emphasis}</em></h1>
         <p>{message}</p>
-        <button className={`${styles.heroPrimaryAction} ${!centenario ? styles.uniplazaHeroAction : ''}`} onClick={() => onGo('jugar')}>{primaryAction}<span aria-hidden="true">›</span></button>
+        <button className={`${styles.heroPrimaryAction} ${!centenario ? styles.uniplazaHeroAction : ''}`} onClick={() => onGo('jugar')}><span>{primaryAction}</span><span aria-hidden="true">→</span></button>
       </div>
     </div>
     <section className={styles.passport} aria-labelledby="passport-title">
-      <div className={styles.passportHeading}><h2 id="passport-title">Tu colección</h2><span>{collected} de {target}</span></div>
+      <div className={styles.passportHeading}>
+        <div>
+          <small className={styles.passportEyebrow}>PASAPORTE DEL SHOPPING</small>
+          <h2 id="passport-title">Tu colección</h2>
+        </div>
+        <span>{collected} de {target} postas</span>
+      </div>
       <div className={styles.passportBar} aria-hidden="true"><span style={{ width: `${target > 0 ? Math.min(100, Math.round((collected / target) * 100)) : 0}%` }} /></div>
       <button className={styles.passportSlots} onClick={() => onGo('progreso')} aria-describedby="passport-hint">
         {Array.from({ length: target }, (_, index) => {
           const cardId = [...collectedCards][index];
           const card = cardId ? cards.find((item) => item.publicId === cardId) : undefined;
           return <span key={index} className={`${styles.passportSlot} ${card ? styles.passportSlotFound : ''}`}>
-            <span aria-hidden="true">{card ? '✦' : '☆'}</span>
-            <small>{card ? card.location || `Tarjeta ${index + 1}` : `Tarjeta ${index + 1}`}</small>
+            <b className={styles.postaTag}>POSTA 0{index + 1}</b>
+            <span aria-hidden="true">{card ? '✓' : `0${index + 1}`}</span>
+            <small>{card ? card.location || `Posta ${index + 1}` : 'Por activar'}</small>
           </span>;
         })}
       </button>
-      <p id="passport-hint">{collected >= target ? 'Colección completa. Revisá qué beneficio habilitó esta campaña.' : `Descubrí ${Math.max(0, target - collected)} tarjetas distintas para completar el recorrido.`}</p>
+      <p id="passport-hint">{collected >= target ? 'Pasaporte completo. Revisá qué beneficio habilitó esta campaña.' : `Activá ${Math.max(0, target - collected)} tarjetas distintas en tu visita para completar el pasaporte.`}</p>
     </section>
     <ol className={styles.howRow} aria-label="Cómo participar">
-      <li><StepIcon kind="search" /><b>Buscá</b><span>una tarjeta en el shopping</span></li>
-      <li><StepIcon kind="scan" /><b>Escaneá</b><span>su QR o acercá el celular al NFC</span></li>
-      <li><StepIcon kind="gift" /><b>Descubrí</b><span>tu resultado confirmado</span></li>
+      <li><StepIcon kind="search" /><b>1. Buscá</b><span>una posta en el shopping</span></li>
+      <li><StepIcon kind="scan" /><b>2. Escaneá</b><span>su QR o ingresá el código</span></li>
+      <li><StepIcon kind="gift" /><b>3. Canjeá</b><span>tu voucher QR en locales</span></li>
     </ol>
-    {!centenario && <button className={styles.homeTextAction} onClick={() => onGo('descubrir')}>Ver la pista de la campaña <Icon name="descubrir" /></button>}
+    <button className={styles.homeTextAction} onClick={() => onGo('descubrir')}>Ver pista de ubicación activa <Icon name="descubrir" /></button>
     {centenario ? <button className={`${styles.centenarioFeature} ${featured && (!featured.available || featured.remainingStock <= 0) ? styles.centenarioFeatureUnavailable : ''}`} onClick={() => featured ? onOpenPrize(featured) : onGo('premios')}>
-      <Image src="/campaign/centenario/featured-gift.webp" alt="" fill sizes="(max-width: 430px) 100vw, 430px" unoptimized />
-      <span className={styles.centenarioFeatureCopy}><small>{featured ? 'PREMIO DESTACADO' : 'PREMIOS DE CAMPAÑA'}</small><strong>{featured?.name ?? 'Conocé los regalos de campaña'}</strong><em>{featured ? (featured.available && featured.remainingStock > 0 ? `Disponibles: ${featured.remainingStock}` : 'Agotado') : 'Se mostrarán cuando haya una campaña activa.'}</em><span aria-hidden="true">›</span></span>
+      <span className={styles.centenarioFeatureCopy}><small>{featured ? '★ BENEFICIO DESTACADO' : 'BENEFICIOS DE CAMPAÑA'}</small><strong>{featured?.name ?? 'Conocé los beneficios de temporada'}</strong><em>{featured ? (featured.available && featured.remainingStock > 0 ? `● Disponibles hoy: ${featured.remainingStock} unidades` : 'Agotado') : 'Se mostrarán cuando haya una campaña activa.'}</em></span>
+      <span className={styles.featureArrow} aria-hidden="true">→</span>
     </button> : <button className={`${styles.uniplazaFeature} ${featured && (!featured.available || featured.remainingStock <= 0) ? styles.uniplazaFeatureUnavailable : ''}`} onClick={() => error ? onRetry() : featured ? onOpenPrize(featured) : onGo('premios')}>
-      <span className={styles.uniplazaFeatureCopy}><small>{featured ? 'PREMIO DESTACADO' : 'CAMPAÑA NAVIDEÑA'}</small><strong>{featured?.name ?? (loading ? 'Estamos preparando la experiencia' : error ? 'No pudimos cargar la campaña' : campaignName ? 'No hay premios publicados todavía' : 'Los premios se anuncian acá')}</strong><em>{featured ? (featured.available && featured.remainingStock > 0 ? `Disponibles: ${featured.remainingStock}` : 'Agotado') : loading ? 'Consultando disponibilidad…' : error ? 'Tocá para volver a intentar.' : campaignName ? 'Encontrá acá las novedades y condiciones de la campaña.' : 'Cuando haya una campaña activa, vas a encontrar acá sus premios y condiciones.'}</em><span aria-hidden="true">{featured ? <GiftArt shopping={shopping} /> : <Icon name="premios" />}</span></span>
-      <span className={styles.uniplazaFeatureGo} aria-hidden="true">›</span>
+      <span className={styles.uniplazaFeatureCopy}><small>{featured ? '★ BENEFICIO DESTACADO' : 'CAMPAÑA NAVIDEÑA'}</small><strong>{featured?.name ?? (loading ? 'Estamos preparando la experiencia' : error ? 'No pudimos cargar la campaña' : campaignName ? 'No hay premios publicados todavía' : 'Los premios se anuncian acá')}</strong><em>{featured ? (featured.available && featured.remainingStock > 0 ? `● Disponibles hoy: ${featured.remainingStock} unidades` : 'Agotado') : loading ? 'Consultando disponibilidad…' : error ? 'Tocá para volver a intentar.' : campaignName ? 'Encontrá acá las novedades y condiciones de la campaña.' : 'Cuando haya una campaña activa, vas a encontrar acá sus premios y condiciones.'}</em><span aria-hidden="true">{featured ? <GiftArt shopping={shopping} /> : <Icon name="premios" />}</span></span>
+      <span className={styles.uniplazaFeatureGo} aria-hidden="true">→</span>
     </button>}
     {centenario && error && <div className={styles.centenarioCampaignError} role="alert"><span>La campaña no está disponible en este momento.</span><button type="button" onClick={onRetry}>Reintentar</button></div>}
   </section>;
