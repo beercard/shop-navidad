@@ -57,7 +57,50 @@ export function ReportsView({ analytics, loading, onRetry, csvHref }: { analytic
     </section><button className="secondary retry-report" onClick={onRetry}>Actualizar informe</button>
   </>;
 }
-function label(value: string) { return value.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ").replace(/^./, (character) => character.toUpperCase()); }
+const REPORT_LABELS: Record<string, string> = {
+  visits: "Visitas a carteles QR",
+  uniqueParticipants: "Participantes únicos",
+  discoveredCards: "Postas descubiertas",
+  authorizedPlays: "Jugadas habilitadas",
+  duplicatePlaysRejected: "Jugadas repetidas rechazadas",
+  prizesAssigned: "Premios instantáneos asignados",
+  availableStock: "Stock disponible",
+  consumedStock: "Stock consumido",
+  couponsIssued: "Cupones emitidos",
+  couponsRedeemed: "Cupones canjeados",
+  raffleEntries: "Participaciones sorteo final",
+  suspiciousAttempts: "Intentos sospechosos",
+  completionRate: "Tasa de completitud",
+  redemptionRate: "Tasa de canje",
+  range: "Período analizado",
+  from: "Desde",
+  to: "Hasta",
+  byCampaign: "Actividad por campaña",
+  byCard: "Actividad por cartel / tarjeta",
+  byLocation: "Actividad por ubicación",
+  byMerchant: "Actividad por comercio",
+  visitsByLocation: "Visitas QR por ubicación",
+  byPrize: "Resultados por premio",
+  redemptions: "Estado de cupones",
+  events: "Eventos de auditoría operativa",
+  publicId: "Cartel / Tarjeta",
+  location: "Ubicación",
+  participations: "Jugadas",
+  campaign: "Campaña",
+  status: "Estado",
+  cards: "Carteles",
+  prizes: "Premios",
+  merchant: "Comercio",
+  slug: "Identificador",
+  active: "Estado",
+  assignedPrizes: "Premios asociados",
+  prize: "Premio",
+  count: "Cantidad",
+  eventType: "Evento",
+};
+function label(value: string) {
+  return REPORT_LABELS[value] ?? value.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ").replace(/^./, (character) => character.toUpperCase());
+}
 function Breakdown({ title, rows }: { title: string; rows: unknown[] }) { const records = rows.filter((row): row is Record<string, unknown> => !!row && typeof row === "object" && !Array.isArray(row)); const columns = Array.from(new Set(records.flatMap((row) => Object.keys(row)))); return <section className="report-block"><h3>{title}</h3>{!rows.length ? <Empty message="Sin datos en este período."/> : records.length && columns.length ? <div className="table-wrap stack-sm"><table><thead><tr>{columns.map((column) => <th key={column}>{label(column)}</th>)}</tr></thead><tbody>{records.map((row, index) => <tr key={index}>{columns.map((column) => <td key={column} data-label={label(column)}>{typeof row[column] === "object" ? JSON.stringify(row[column]) : String(row[column] ?? "—")}</td>)}</tr>)}</tbody></table></div> : <p>{rows.map(String).join(", ")}</p>}</section>; }
 
 export async function validateRedeem(shopping: string, code: string) {

@@ -13,15 +13,45 @@ export async function GET(request: NextRequest) {
     const to = new Date(request.nextUrl.searchParams.get('to') ?? new Date().toISOString());
     if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from >= to) return NextResponse.json({ error: 'El rango de fechas no es válido.' }, { status: 400 });
     const where = { shoppingId: scope.shopping.id, createdAt: { gte: from, lt: to } };
-    const [participants, plays, redeemed, stock, prizes, cards, recentAudit] = await Promise.all([
+    const [participants, plays, wonPlays, issuedCoupons, redeemed, stock, prizes, cards, recentAudit, raffleEntries, duplicatePlaysRejected, suspiciousAttempts] = await Promise.all([
       prisma.participant.count({ where: { shoppingId: scope.shopping.id, createdAt: { gte: from, lt: to } } }),
       prisma.participation.count({ where }),
+      prisma.participation.count({ where: { ...where, status: 'WON' } }),
+      prisma.redeemCode.count({ where }),
       prisma.redeemCode.count({ where: { shoppingId: scope.shopping.id, status: 'REDEEMED', redeemedAt: { gte: from, lt: to } } }),
-      prisma.prize.aggregate({ where: { shoppingId: scope.shopping.id, active: true }, _sum: { remainingStock: true } }),
+      prisma.prize.aggregate({ where: { shoppingId: scope.shopping.id, active: true }, _sum: { remainingStock: true, totalStock: true } }),
       prisma.prize.findMany({ where: { shoppingId: scope.shopping.id }, select: { id: true, name: true, remainingStock: true, totalStock: true, active: true }, orderBy: { name: 'asc' } }),
       prisma.card.findMany({ where: { shoppingId: scope.shopping.id }, select: { id: true, publicId: true, location: true, _count: { select: { participations: true } } }, orderBy: { publicId: 'asc' }, take: 100 }),
       prisma.auditLog.findMany({ where: { shoppingId: scope.shopping.id }, select: { action: true, entityType: true, createdAt: true, actor: { select: { name: true } } }, orderBy: { createdAt: 'desc' }, take: 8 }),
+      prisma.collectionCard.count({ where: { card: { shoppingId: scope.shopping.id }, collectedAt: { gte: from, lt: to } } }),
+      prisma.event.count({ where: { shoppingId: scope.shopping.id, eventType: 'DUPLICATE_PLAY_REJECTED', createdAt: { gte: from, lt: to } } }),
+      prisma.event.count({ where: { shoppingId: scope.shopping.id, eventType: 'SUSPICIOUS_ATTEMPT', createdAt: { gte: from, lt: to } } }),
     ]);
-    return NextResponse.json({ range: { from, to }, metrics: { participants, participations: plays, redeemed, availableStock: stock._sum.remainingStock ?? 0 }, prizes, cards, recentAudit });
+    const availableStock = stock._sum.remainingStock ?? 0;
+    const totalStock = stock._sum.totalStock ?? 0;
+    const consumedStock = Math.max(0, totalStock - availableStock);
+    const discoveredCards = cards.filter((c) => c._count.participations > 0).length;
+    return NextResponse.json({
+      range: { from, to },
+      metrics: {
+        participants,
+        participations: plays,
+        authorizedPlays: plays,
+        discoveredCards,
+        duplicatePlaysRejected,
+        prizesAssigned: wonPlays,
+        couponsIssued: issuedCoupons,
+        redeemed,
+        couponsRedeemed: redeemed,
+        availableStock,
+        consumedStock,
+        raffleEntries,
+        suspiciousAttempts,
+        redemptionRate: issuedCoupons > 0 ? `${Math.round((redeemed / issuedCoupons) * 100)}%` : '0%',
+      },
+      prizes,
+      cards,
+      recentAudit,
+    });
   } catch (error) { return apiError(error); }
 }

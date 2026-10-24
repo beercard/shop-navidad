@@ -15,12 +15,24 @@ export async function GET(request: NextRequest) {
       prisma.participant.count({ where: { shoppingId: scope.shopping.id, campaignId } }),
       prisma.participant.findMany({ where: { shoppingId: scope.shopping.id, campaignId }, include: { collections: { where: { campaignId }, include: { cards: { select: { card: { select: { publicId: true, location: true } } } } } }, participations: { where: { campaignId }, include: { prize: { select: { name: true } }, redeemCode: { select: { status: true, expiresAt: true } } }, orderBy: { createdAt: 'desc' }, take: 10 } }, orderBy: { createdAt: 'desc' }, skip: (page - 1) * limit, take: limit }),
     ]);
-    const participants = rows.map(({ id, createdAt, collections, participations }) => ({
-      id: `P-${id.slice(0, 8).toUpperCase()}`,
-      createdAt,
-      collectionProgress: collections[0]?.cards.map(({ card }) => card.publicId) ?? [],
-      participations: participations.map(({ status, createdAt: playedAt, prize, redeemCode }) => ({ status, playedAt, prize: prize?.name ?? null, redemptionStatus: redeemCode?.status ?? null, redeemExpiresAt: redeemCode?.expiresAt ?? null })),
-    }));
+    const participants = rows.map(({ id, createdAt, collections, participations }) => {
+      const cardIds = Array.from(new Set(collections.flatMap((col) => col.cards.map(({ card }) => card.publicId))));
+      const winningPlay = participations.find((p) => p.status === 'WON' && p.prize);
+      return {
+        id: `P-${id.slice(0, 8).toUpperCase()}`,
+        createdAt,
+        collectionProgress: { count: cardIds.length, cardIds },
+        raffleEntries: cardIds.length,
+        instantPrizeWon: winningPlay?.prize?.name ?? null,
+        participations: participations.map(({ status, createdAt: playedAt, prize, redeemCode }) => ({
+          status,
+          playedAt,
+          prize: prize?.name ?? null,
+          redemptionStatus: redeemCode?.status ?? null,
+          redeemExpiresAt: redeemCode?.expiresAt ?? null,
+        })),
+      };
+    });
     return NextResponse.json({ participants, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
   } catch (error) { return apiError(error); }
 }

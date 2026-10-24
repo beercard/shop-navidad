@@ -20,6 +20,12 @@ type PlayResult = {
   redeemCode?: string;
   redeemQr?: string;
   expiresAt?: string;
+  alreadyParticipated?: boolean;
+  duplicateRejected?: boolean;
+  instantPrizeLimitReached?: boolean;
+  priorInstantPrize?: { id: string; name: string } | null;
+  raffleEntriesCount?: number;
+  raffleEntryAdded?: boolean;
 };
 
 const shoppingIds: ShoppingBrandId[] = ['centenario', 'uniplaza'];
@@ -146,7 +152,10 @@ export default function ParticipateClient({ cardId, lockedShopping }: { cardId: 
           {result?.expiresAt && <p className="pr-expiry"><ClockIcon />Válido hasta {new Date(result.expiresAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</p>}
           <p className="pr-demo">Tu cupón también quedó guardado en Mis cupones. Podés jugar otros códigos sin haber canjeado este.</p>
         </div>}
-        {result && !won && <p className="pr-noprize pr-live">Podés seguir buscando otras tarjetas del recorrido para completar tu colección.</p>}
+        {result?.alreadyParticipated && <p className="pr-noprize pr-live">Esta posta ya había sido utilizada en tu recorrido · No genera nuevas jugadas ni participaciones duplicadas.</p>}
+        {result && !won && result.instantPrizeLimitReached && <p className="pr-noprize pr-live">Ya ganaste tu premio instantáneo máximo en esta campaña ({result.priorInstantPrize?.name}). ¡Esta posta sumó +1 participación para el Sorteo Final!</p>}
+        {result && !won && !result.instantPrizeLimitReached && <p className="pr-noprize pr-live">Podés seguir buscando otras tarjetas del recorrido para completar tu colección y sumar chances al Sorteo Final.</p>}
+        {result && typeof result.raffleEntriesCount === 'number' && <p className="pr-demo">★ Participaciones acumuladas para el Sorteo Final: <strong>{result.raffleEntriesCount}</strong></p>}
         {!result && <button className="button button-primary participate-submit" onClick={participate} disabled={loading || submitting || !payload?.campaign}>{submitting ? 'Confirmando con el servidor…' : loading ? 'Verificando…' : payload?.campaign ? 'Participar' : 'Participación no disponible'}</button>}
         {result && <Link className="button button-primary participate-submit" href={`/${shopping}#jugar`}>Jugar otro código de tarjeta</Link>}
         {result && <Link className="participate-back" href={`/${shopping}#progreso`}>Ver todos mis cupones QR</Link>}

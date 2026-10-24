@@ -15,8 +15,23 @@ type PublicCampaign = {
   cards?: PublicCard[];
   clue?: { text: string; startsAt: string; endsAt: string } | null;
   collectionProgress?: { count: number; cardIds: string[] };
+  raffleEntriesCount?: number;
+  instantPrizeWon?: { id: string; name: string; status: string } | null;
 };
-type SpinResult = { status: 'won' | 'no_prize'; prize?: { name?: string; description?: string }; redeemCode?: string; redeemQr?: string; expiresAt?: string; cardId: string };
+type SpinResult = {
+  status: 'won' | 'no_prize';
+  prize?: { name?: string; description?: string };
+  redeemCode?: string;
+  redeemQr?: string;
+  expiresAt?: string;
+  cardId: string;
+  alreadyParticipated?: boolean;
+  duplicateRejected?: boolean;
+  instantPrizeLimitReached?: boolean;
+  priorInstantPrize?: { id: string; name: string } | null;
+  raffleEntriesCount?: number;
+  raffleEntryAdded?: boolean;
+};
 type View = 'inicio' | 'jugar' | 'descubrir' | 'premios' | 'progreso';
 
 const VIEWS: Array<{ id: View; label: string }> = [
@@ -103,6 +118,8 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
   const unlockText = formatUnlockCopy(rawUnlockText, brand.name);
   const collectionTarget = typeof campaign?.campaign?.settings?.collectionTarget === 'number' ? campaign.campaign.settings.collectionTarget : 3;
   const collected = Math.min(collectedIds.length, collectionTarget);
+  const raffleEntriesCount = campaign?.raffleEntriesCount ?? collectedIds.length;
+  const instantPrizeWon = campaign?.instantPrizeWon ?? (result?.status === 'won' && result.prize?.name ? { id: 'won', name: result.prize.name, status: 'WON' } : null);
   const complete = collected >= collectionTarget;
   const availablePrizes = campaign?.prizes?.filter((prize) => prize.available && prize.remainingStock > 0) ?? [];
   const featuredPrize = availablePrizes.slice().sort((a, b) => b.remainingStock - a.remainingStock)[0] ?? campaign?.prizes?.[0];
@@ -111,6 +128,9 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
   const canSpin = Boolean(campaign?.campaign) && !participating && Boolean(cardCode) && codeStatus !== 'invalid';
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const cardParam = params.get('card');
+    if (cardParam) setCardId(cardParam.trim().toUpperCase());
     const fromHash = HASH_VIEWS[window.location.hash.replace('#', '')];
     if (fromHash) setView(fromHash);
   }, []);
@@ -237,25 +257,10 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
           <div className={styles.topActions}>
             <button type="button" className={styles.progressChip} onClick={() => goTo('progreso')} title="Ver tus cupones y progreso de colección">
               <span className={styles.progressChipDot} aria-hidden="true" />
-              <b>{collected}/{collectionTarget}</b> <small>postas</small>
+              <b>{collected}/{collectionTarget}</b> <small>postas · {raffleEntriesCount} {raffleEntriesCount === 1 ? 'chance' : 'chances'}</small>
             </button>
           </div>
         </header>
-
-        <nav className={styles.tabbar} aria-label="Secciones de la campaña">
-          {VIEWS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`${styles.tab} ${view === item.id ? styles.tabActive : ''}`}
-              aria-current={view === item.id ? 'page' : undefined}
-              onClick={() => goTo(item.id)}
-            >
-              <Icon name={item.id} />
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
 
         <div className={styles.screen}>
           {view === 'inicio' && (
@@ -272,6 +277,8 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
               cards={campaign?.cards ?? []}
               collected={collected}
               target={collectionTarget}
+              raffleEntriesCount={raffleEntriesCount}
+              instantPrizeWon={instantPrizeWon}
               campaignName={campaign?.campaign?.name}
               clueText={campaign?.clue?.text}
               loading={campaignLoading}
@@ -298,6 +305,8 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
               cards={campaign?.cards ?? []}
               collectedIds={collectedIds}
               collectedCount={collected}
+              raffleEntriesCount={raffleEntriesCount}
+              instantPrizeWon={instantPrizeWon}
               target={collectionTarget}
               onChange={(value) => { setCardId(value.toUpperCase()); setParticipationError(''); }}
               onClearResult={() => { setResult(null); setCardId(''); setParticipationError(''); }}
@@ -312,6 +321,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
               shopping={shopping}
               campaign={campaign}
               collectedIds={collectedIds}
+              raffleEntriesCount={raffleEntriesCount}
               target={collectionTarget}
               showClue={showClue}
               onToggleClue={() => setShowClue((value) => !value)}
@@ -337,10 +347,12 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
           {view === 'progreso' && (
             <ProgressScreen
               collected={collected}
+              raffleEntriesCount={raffleEntriesCount}
+              instantPrizeWon={instantPrizeWon}
               target={collectionTarget}
               complete={complete}
               unlockText={unlockText}
-              wonPrize={result?.status === 'won' ? result.prize?.name : undefined}
+              wonPrize={result?.status === 'won' ? result.prize?.name : instantPrizeWon?.name}
               rulesUrl={campaign?.campaign?.rulesUrl}
               shoppingName={brand.name}
               shopping={shopping}
@@ -355,6 +367,21 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
           <span>{brand.name} · {shopping === 'centenario' ? 'Temporada Festiva' : 'Paseo Urbano'}</span>
           <Link href="/merchant">Acceso Comercios</Link>
         </footer>
+
+        <nav className={styles.tabbar} aria-label="Secciones de la campaña">
+          {VIEWS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`${styles.tab} ${view === item.id ? styles.tabActive : ''}`}
+              aria-current={view === item.id ? 'page' : undefined}
+              onClick={() => goTo(item.id)}
+            >
+              <Icon name={item.id} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
       </main>
 
       {selectedPrize && (
@@ -367,9 +394,9 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
 }
 
 function HomeScreen({
-  brandName, title, emphasis, message, primaryAction, shopping, featured, totalStock, collectedIds, cards, collected, target, campaignName, clueText, loading, error, onRetry, onGo, onOpenPrize,
+  brandName, title, emphasis, message, primaryAction, shopping, featured, totalStock, collectedIds, cards, collected, target, raffleEntriesCount, instantPrizeWon, campaignName, clueText, loading, error, onRetry, onGo, onOpenPrize,
 }: {
-  brandName: string; title: string; emphasis: string; message: string; primaryAction: string; shopping: ShoppingBrandId; featured?: Prize; totalStock: number; collectedIds: string[]; cards: PublicCard[]; collected: number; target: number; campaignName?: string; clueText?: string; loading: boolean; error: string; onRetry: () => void; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void;
+  brandName: string; title: string; emphasis: string; message: string; primaryAction: string; shopping: ShoppingBrandId; featured?: Prize; totalStock: number; collectedIds: string[]; cards: PublicCard[]; collected: number; target: number; raffleEntriesCount: number; instantPrizeWon?: { id: string; name: string; status: string } | null; campaignName?: string; clueText?: string; loading: boolean; error: string; onRetry: () => void; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void;
 }) {
   const collectedCards = new Set(collectedIds);
   const centenario = shopping === 'centenario';
@@ -425,7 +452,7 @@ function HomeScreen({
               <small className={styles.passportEyebrow}>LIBRETA DE COLECCIÓN · CENTENARIO</small>
               <h2 id="passport-title">Tu colección</h2>
             </div>
-            <span className={styles.passportCounterPill}>{collected} de {target} sellos</span>
+            <span className={styles.passportCounterPill}>{collected} de {target} sellos · {raffleEntriesCount} {raffleEntriesCount === 1 ? 'chance' : 'chances'}</span>
           </div>
           <div className={styles.passportBar} aria-hidden="true">
             <span style={{ width: `${progressPercent}%` }} />
@@ -446,9 +473,11 @@ function HomeScreen({
             })}
           </button>
           <p id="passport-hint" className={styles.passportFooterHint}>
-            {collected >= target
-              ? '¡Pasaporte completo! Tocá para ver tus beneficios y cupones desbloqueados.'
-              : `Reuní ${Math.max(0, target - collected)} ${Math.max(0, target - collected) === 1 ? 'sello más' : 'sellos distintos'} en el shopping para completar tu libreta.`}
+            {instantPrizeWon
+              ? `★ Ya obtuviste tu premio instantáneo (${formatPrizeName(instantPrizeWon.name).title}). Cada nueva posta válida suma +1 chance para el Sorteo Final (${raffleEntriesCount} acumuladas).`
+              : collected >= target
+                ? `¡Pasaporte completo! Tenés ${raffleEntriesCount} participaciones acumuladas para el Sorteo Final.`
+                : `Cada cartel QR distinto te da 1 giro por premio instantáneo (máx. 1 por campaña) y suma +1 chance para el Sorteo Final.`}
           </p>
         </section>
 
@@ -580,7 +609,7 @@ function HomeScreen({
           </div>
           <div className={styles.circuitBadge}>
             <strong>{collected}/{target}</strong>
-            <span>estaciones</span>
+            <span>estaciones · {raffleEntriesCount} chances</span>
           </div>
         </div>
 
@@ -606,9 +635,11 @@ function HomeScreen({
           })}
         </button>
         <p id="passport-hint" className={styles.passportFooterHint}>
-          {collected >= target
-            ? 'Circuito completo. Revisá tus recompensas y vouchers activos.'
-            : `Te ${Math.max(0, target - collected) === 1 ? 'falta 1 estación' : `faltan ${Math.max(0, target - collected)} estaciones`} para completar el recorrido de UniPlaza.`}
+          {instantPrizeWon
+            ? `★ Ya obtuviste tu beneficio instantáneo (${formatPrizeName(instantPrizeWon.name).title}). Seguí escaneando estaciones distintas para sumar chances al Sorteo Final (${raffleEntriesCount} acumuladas).`
+            : collected >= target
+              ? `Circuito completo · ${raffleEntriesCount} participaciones acumuladas para el Sorteo Final.`
+              : `Cada estación QR distinta habilita 1 giro (máx. 1 premio directo por campaña) y suma +1 chance para el Sorteo Final.`}
         </p>
       </section>
 
@@ -669,16 +700,18 @@ function StepIcon({ kind }: { kind: 'search' | 'scan' | 'gift' }) {
 }
 
 function PlayScreen(props: {
-  shopping: ShoppingBrandId; loading: boolean; hasCampaign: boolean; error: string; participating: boolean; spinPhase: 'idle' | 'accel' | 'cruise' | 'land'; wheelAngle: number; participationError: string; result: SpinResult | null; cardCode: string; codeStatus: 'invalid' | 'repeated' | 'new' | null; canSpin: boolean; cards: PublicCard[]; collectedIds: string[]; collectedCount: number; target: number; onChange: (value: string) => void; onClearResult: () => void; onSpin: () => void; onRetry: () => void; onGo: (view: View) => void; rulesUrl?: string | null;
+  shopping: ShoppingBrandId; loading: boolean; hasCampaign: boolean; error: string; participating: boolean; spinPhase: 'idle' | 'accel' | 'cruise' | 'land'; wheelAngle: number; participationError: string; result: SpinResult | null; cardCode: string; codeStatus: 'invalid' | 'repeated' | 'new' | null; canSpin: boolean; cards: PublicCard[]; collectedIds: string[]; collectedCount: number; raffleEntriesCount: number; instantPrizeWon?: { id: string; name: string; status: string } | null; target: number; onChange: (value: string) => void; onClearResult: () => void; onSpin: () => void; onRetry: () => void; onGo: (view: View) => void; rulesUrl?: string | null;
 }) {
-  const { shopping, loading, hasCampaign, error, participating, spinPhase, wheelAngle, participationError, result, cardCode, codeStatus, canSpin, cards, collectedIds, collectedCount, target, onChange, onClearResult, onSpin, onRetry, onGo } = props;
+  const { shopping, loading, hasCampaign, error, participating, spinPhase, wheelAngle, participationError, result, cardCode, codeStatus, canSpin, cards, collectedIds, collectedCount, raffleEntriesCount, instantPrizeWon, target, onChange, onClearResult, onSpin, onRetry, onGo } = props;
   const demoCards = cards.filter((c) => /DEMO/i.test(c.publicId)).slice(0, 5);
   const hint = codeStatus === 'invalid'
     ? 'Ese código no pertenece a una posta activa de este shopping. Verificá los caracteres.'
     : codeStatus === 'repeated'
-      ? 'Ya sellaste esta posta antes. Podés volver a girar si tenés intentos, o elegir una posta nueva para tu colección.'
+      ? 'Ya utilizaste esta posta en esta campaña. Consultar de nuevo recupera tu resultado previo sin sumar jugadas ni chances extra.'
       : codeStatus === 'new'
-        ? '✓ Posta verificada y nueva para tu pasaporte. ¡Lista para girar!'
+        ? instantPrizeWon
+          ? `✓ Posta nueva verificada. Ya tenés tu premio instantáneo de campaña; activarla suma +1 participación al Sorteo Final.`
+          : '✓ Posta verificada y nueva para tu pasaporte. ¡Lista para girar y sumar +1 chance al Sorteo Final!'
         : 'Ingresá el código impreso bajo el QR de la posta o seleccioná una tarjeta activa.';
   const hintTone = codeStatus === 'invalid' ? styles.hintBad : codeStatus === 'repeated' ? styles.hintWarn : codeStatus === 'new' ? styles.hintGood : styles.hintNeutral;
   const wheelStatusText = participating
@@ -691,14 +724,14 @@ function PlayScreen(props: {
       ? (result.status === 'won' ? '★ Beneficio asignado y guardado en tu billetera' : 'Participación registrada en tu recorrido')
       : cardCode && codeStatus === 'new'
         ? `Posta ${cardCode} lista · Tocá «Girar y descubrir»`
-        : `Tu pasaporte hoy: ${collectedCount} de ${target} postas activadas`;
+        : `Tu pasaporte hoy: ${collectedCount} de ${target} postas · ${raffleEntriesCount} ${raffleEntriesCount === 1 ? 'chance' : 'chances'} Sorteo Final`;
 
   return (
     <section className={styles.play} aria-labelledby="play-title">
       <div className={styles.screenHead}>
         <span className={styles.kicker}>{shopping === 'centenario' ? 'RULETA DE TEMPORADA' : 'DINÁMICA INTERACTIVA'}</span>
         <h2 id="play-title">Girá y descubrí</h2>
-        <p>Activá el código de tu posta para sellar tu pasaporte y participar por beneficios instantáneos.</p>
+        <p>1 jugada por cada cartel distinto · Máximo 1 premio instantáneo por campaña · Cada nuevo cartel suma +1 participación para el Sorteo Final.</p>
       </div>
 
       <div className={`${styles.wheelWrap} ${participating ? styles.wheelBusy : ''}`} aria-busy={participating}>
@@ -710,6 +743,7 @@ function PlayScreen(props: {
       {result && (
         <ResultCard
           result={result}
+          raffleEntriesCount={result.raffleEntriesCount ?? raffleEntriesCount}
           onGo={onGo}
           onPlayAnother={() => {
             onClearResult();
@@ -792,7 +826,7 @@ function PlayScreen(props: {
   );
 }
 
-function ResultCard({ result, onGo, onPlayAnother }: { result: SpinResult; onGo: (view: View) => void; onPlayAnother: () => void }) {
+function ResultCard({ result, raffleEntriesCount, onGo, onPlayAnother }: { result: SpinResult; raffleEntriesCount: number; onGo: (view: View) => void; onPlayAnother: () => void }) {
   const won = result.status === 'won';
   const [copied, setCopied] = useState(false);
   const formattedPrize = formatPrizeName(result.prize?.name);
@@ -809,11 +843,33 @@ function ResultCard({ result, onGo, onPlayAnother }: { result: SpinResult; onGo:
   return (
     <article className={`${styles.resultCard} ${won ? styles.resultWon : styles.resultNone}`} role="status" aria-live="polite">
       <div className={styles.resultHeader}>
-        <span className={styles.resultKicker}>{won ? '★ VOUCHER DIGITAL GENERADO' : 'POSTA REGISTRADA'}</span>
+        <span className={styles.resultKicker}>{won ? 'PREMIO CONFIRMADO' : 'SIN PREMIO ESTA VEZ'}</span>
         <span className={styles.resultCardTag}>{result.cardId}</span>
       </div>
-      <h3>{won ? formattedPrize.title : '¡Posta sumada a tu recorrido!'}</h3>
-      <p>{won ? result.prize?.description || 'Presentá el código QR en el comercio adherido para hacer efectivo tu beneficio.' : 'Esta posta no asignó premio directo, pero ya quedó registrada. Probá con otra tarjeta del recorrido.'}</p>
+      <h3>{won ? 'Premio confirmado' : 'Participación registrada'}</h3>
+      {won && <strong className={styles.resultPrizeSubtitle}>{formattedPrize.title}</strong>}
+      {result.alreadyParticipated && (
+        <p className={styles.resultDuplicateBanner}>
+          Posta ya registrada anteriormente en esta campaña · Mostramos tu resultado previo sin generar nuevas jugadas ni participaciones duplicadas.
+        </p>
+      )}
+      {!won && result.instantPrizeLimitReached && (
+        <p className={styles.resultDuplicateBanner}>
+          Ya obtuviste tu premio instantáneo máximo en esta campaña ({formatPrizeName(result.priorInstantPrize?.name).title}). ¡Esta nueva posta sumó +1 participación verificada para el Sorteo Final!
+        </p>
+      )}
+      <p>
+        {won
+          ? result.prize?.description || 'Presentá el código QR en el comercio adherido para hacer efectivo tu beneficio.'
+          : result.alreadyParticipated
+            ? 'Este cartel QR ya había sido utilizado. Escaneá otro cartel distinto del shopping para sumar una nueva participación al Sorteo Final.'
+            : 'Esta posta quedó registrada en tu pasaporte y sumó +1 participación para el Sorteo Final. Probá con otra tarjeta del recorrido.'}
+      </p>
+      <div className={styles.rafflePillRow}>
+        <span className={styles.raffleEntryBadge}>
+          ★ Participaciones Sorteo Final: <strong>{raffleEntriesCount}</strong> {result.raffleEntryAdded ? '(+1 sumada)' : ''}
+        </span>
+      </div>
 
       {won && result.redeemCode && (
         <div className={styles.voucherPass}>
@@ -839,7 +895,7 @@ function ResultCard({ result, onGo, onPlayAnother }: { result: SpinResult; onGo:
       {won && result.expiresAt && <small className={styles.resultExpiry}>Válido hasta el {new Date(result.expiresAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</small>}
 
       <div className={styles.resultActions}>
-        <button type="button" className={styles.resultActionBtn} onClick={onPlayAnother}>Ingresar otro código</button>
+        <button type="button" className={styles.resultActionBtn} onClick={onPlayAnother}>Buscar otra tarjeta</button>
         {won ? (
           <button type="button" className={styles.resultActionSecondary} onClick={() => onGo('progreso')}>Ver mis cupones QR</button>
         ) : (
@@ -898,9 +954,9 @@ function Wheel({ spinning, angle, shopping }: { spinning: boolean; angle: number
 }
 
 function DiscoverScreen({
-  shopping, campaign, collectedIds, target, showClue, onToggleClue, loading, error, onRetry, onSelectCard, onGo,
+  shopping, campaign, collectedIds, raffleEntriesCount, target, showClue, onToggleClue, loading, error, onRetry, onSelectCard, onGo,
 }: {
-  shopping: ShoppingBrandId; campaign: PublicCampaign | null; collectedIds: string[]; target: number; showClue: boolean; onToggleClue: () => void; loading: boolean; error: string; onRetry: () => void; onSelectCard: (code: string) => void; onGo: (view: View) => void;
+  shopping: ShoppingBrandId; campaign: PublicCampaign | null; collectedIds: string[]; raffleEntriesCount: number; target: number; showClue: boolean; onToggleClue: () => void; loading: boolean; error: string; onRetry: () => void; onSelectCard: (code: string) => void; onGo: (view: View) => void;
 }) {
   const slots = Array.from({ length: target }, (_, index) => collectedIds[index]);
   const discovered = Math.min(collectedIds.length, target);
@@ -911,7 +967,7 @@ function DiscoverScreen({
       <div className={styles.screenHead}>
         <span className={styles.kicker}>{shopping === 'centenario' ? 'RECORRIDO DE POSTAS' : 'MAPA DE ESTACIONES'}</span>
         <h2 id="discover-title">Tu colección</h2>
-        <p>Cada posta distinta suma un sello a tu pasaporte. Podés activarlas escaneando su QR o tocando una estación activa.</p>
+        <p>Cada posta distinta suma un sello a tu pasaporte y +1 participación para el Sorteo Final.</p>
       </div>
 
       {error && (
@@ -925,8 +981,8 @@ function DiscoverScreen({
         <div className={styles.collectionCount}>
           <strong>{discovered}<small>/{target}</small></strong>
           <div>
-            <b>{target - discovered > 0 ? `Te faltan ${target - discovered} postas` : '¡Colección completada!'}</b>
-            <span>{target - discovered > 0 ? 'Las tarjetas repetidas no suman avance' : 'Ya alcanzaste la meta de esta campaña'}</span>
+            <b>{target - discovered > 0 ? `Te faltan ${target - discovered} postas · ${raffleEntriesCount} chances Sorteo Final` : `¡Colección completada! · ${raffleEntriesCount} chances Sorteo Final`}</b>
+            <span>{target - discovered > 0 ? 'Las tarjetas repetidas no suman avance ni chances adicionales' : 'Podés seguir escaneando postas distintas para sumar chances al Sorteo Final'}</span>
           </div>
         </div>
         <div className={styles.discoverBar} aria-hidden="true">
@@ -1143,9 +1199,9 @@ function PrizeDetail({ prize, shopping, rulesUrl, onPlay }: { prize: Prize; shop
 }
 
 function ProgressScreen({
-  collected, target, complete, unlockText, wonPrize, rulesUrl, shoppingName, shopping, refreshKey, onGo,
+  collected, raffleEntriesCount, instantPrizeWon, target, complete, unlockText, wonPrize, rulesUrl, shoppingName, shopping, refreshKey, onGo,
 }: {
-  shopping: ShoppingBrandId; refreshKey: string; collected: number; target: number; complete: boolean; unlockText: string; wonPrize?: string; rulesUrl?: string | null; shoppingName: string; onGo: (view: View) => void;
+  shopping: ShoppingBrandId; refreshKey: string; collected: number; raffleEntriesCount: number; instantPrizeWon?: { id: string; name: string; status: string } | null; target: number; complete: boolean; unlockText: string; wonPrize?: string; rulesUrl?: string | null; shoppingName: string; onGo: (view: View) => void;
 }) {
   const ratio = target > 0 ? Math.min(collected / target, 1) : 0;
   const circumference = 2 * Math.PI * 52;
@@ -1154,7 +1210,7 @@ function ProgressScreen({
       <div className={styles.screenHead}>
         <span className={styles.kicker}>BILLETERA Y RECORRIDO</span>
         <h2 id="progress-title">Mi progreso</h2>
-        <p>Tus cupones QR listos para presentar en caja y el estado de tu pasaporte en {shoppingName}.</p>
+        <p>Tus cupones QR listos para presentar en caja, tu pasaporte y tus chances para el Sorteo Final en {shoppingName}.</p>
       </div>
 
       {/* BILLETERA DE CUPONES QR PRIMERO PARA ACCESO INMEDIATO EN CAJA */}
@@ -1170,8 +1226,14 @@ function ProgressScreen({
           <span>postas</span>
         </div>
         <div className={styles.ringCopy}>
-          <b>{complete ? '¡Colección completada!' : 'Pasaporte en curso'}</b>
-          <p>{complete ? `Reuniste todas las postas requeridas en ${shoppingName}.` : `Te faltan ${Math.max(0, target - collected)} postas distintas para completar el álbum.`}</p>
+          <b>{complete ? '¡Colección completada!' : 'Pasaporte en curso'} · {raffleEntriesCount} {raffleEntriesCount === 1 ? 'chance' : 'chances'}</b>
+          <p>
+            {instantPrizeWon
+              ? `Premio instantáneo de campaña obtenido (${formatPrizeName(instantPrizeWon.name).title}). Tenés ${raffleEntriesCount} ${raffleEntriesCount === 1 ? 'participación acumulada' : 'participaciones acumuladas'} para el Sorteo Final.`
+              : complete
+                ? `Reuniste todas las postas requeridas en ${shoppingName} y sumaste ${raffleEntriesCount} chances para el Sorteo Final.`
+                : `Te faltan ${Math.max(0, target - collected)} postas distintas para completar el álbum. Cada posta suma +1 chance al Sorteo Final.`}
+          </p>
         </div>
       </div>
 

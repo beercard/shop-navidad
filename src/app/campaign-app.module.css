@@ -2398,24 +2398,33 @@
    NAVIGATION BAR SUPERIOR INTEGRADA (NUNCA CORTA CONTENIDO NI CAPTURAS)
    ========================================================================= */
 .tabbar {
-  position: relative;
-  z-index: 25;
-  padding: 6px 10px;
-  background: #f0ece1;
-  border-bottom: 1px solid rgb(20 46 36 / 10%);
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100%, 460px);
+  z-index: 40;
+  padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: rgb(245 241 232 / 96%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgb(20 46 36 / 12%);
+  box-shadow: 0 -8px 28px rgb(16 40 31 / 12%);
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 4px;
 }
 
 .stage[data-shopping="uniplaza"] .tabbar {
-  background: #e6eff3;
-  border-bottom-color: rgb(16 35 44 / 10%);
+  background: rgb(236 244 247 / 96%);
+  border-top-color: rgb(16 35 44 / 12%);
+  box-shadow: 0 -8px 28px rgb(16 35 44 / 12%);
 }
 
 .appFooter {
   margin-top: auto;
-  padding: 16px 18px calc(18px + env(safe-area-inset-bottom));
+  margin-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  padding: 16px 18px 20px;
   border-top: 1px solid rgb(20 46 36 / 10%);
   display: flex;
   align-items: center;
@@ -2437,7 +2446,7 @@
 }
 
 .tab {
-  min-height: 50px;
+  min-height: 52px;
   padding: 6px 2px;
   border: 0;
   border-radius: 12px;
@@ -2451,6 +2460,56 @@
   font: 700 11px/1.1 var(--brand-font-body, sans-serif);
   cursor: pointer;
   position: relative;
+}
+
+.resultPrizeSubtitle {
+  display: block;
+  margin-top: -2px;
+  font-family: var(--brand-font-display, Georgia, serif);
+  font-size: 18px;
+  color: #f3deb0;
+}
+
+.resultDuplicateBanner {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 11px;
+  background: rgb(245 158 11 / 14%);
+  border: 1px solid rgb(245 158 11 / 38%);
+  font-size: 12.5px !important;
+  line-height: 1.4 !important;
+  color: #78350f !important;
+}
+
+.resultWon .resultDuplicateBanner {
+  background: rgb(255 255 255 / 12%);
+  border-color: rgb(255 255 255 / 26%);
+  color: #fef3c7 !important;
+}
+
+.rafflePillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.raffleEntryBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgb(23 56 43 / 8%);
+  border: 1px solid rgb(23 56 43 / 18%);
+  font-size: 12px;
+  font-weight: 700;
+  color: #142e24;
+}
+
+.resultWon .raffleEntryBadge {
+  background: rgb(255 255 255 / 12%);
+  border-color: rgb(212 173 104 / 45%);
+  color: #f6e4bc;
 }
 
 .tabActive {
@@ -2673,6 +2732,18 @@
     border-radius: 30px;
     overflow: clip;
     border: 1px solid rgb(255 255 255 / 18%);
+  }
+
+  .tabbar {
+    position: sticky;
+    bottom: 0;
+    left: auto;
+    transform: none;
+    width: 100%;
+  }
+
+  .appFooter {
+    margin-bottom: 0;
   }
 }
 

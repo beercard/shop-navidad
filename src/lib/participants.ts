@@ -34,8 +34,12 @@ export async function findOrCreateParticipant(
   });
 }
 
-export async function readCollectionProgress(participantId: string, campaignId: string) {
-  const progress = await prisma.collectionProgress.findUnique({
+export async function readCollectionProgress(
+  participantId: string,
+  campaignId: string,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+) {
+  const progress = await db.collectionProgress.findUnique({
     where: { participantId_campaignId: { participantId, campaignId } },
     include: { cards: { select: { card: { select: { publicId: true } } } } },
   });

@@ -193,6 +193,75 @@ export async function executeQaScenario(input: { actorId: string; shoppingSlug: 
       passed = redemption.ok && replay === 'ALREADY_REDEEMED' && crossShopping === 'INVALID_CODE';
       break;
     }
+    case 'instant-prize-limit': {
+      await activateFixture(fixture.id);
+      for (const prize of fixture.prizes) await recordStock(prize, fixture.id, fixture.shoppingId, input.actorId, 20, true);
+      const token = randomUUID();
+      const firstPlay = await playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[0].publicId, idempotencyKey: randomUUID() });
+      const secondPlay = await playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[1].publicId, idempotencyKey: randomUUID() });
+      const thirdPlay = await playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[2].publicId, idempotencyKey: randomUUID() });
+      expected = 'Un usuario que gana premio instantáneo en el primer cartel no puede ganar un segundo premio instantáneo en otros carteles de la misma campaña, pero acumula participaciones para el sorteo final.';
+      observed = {
+        firstStatus: firstPlay.status,
+        secondStatus: secondPlay.status,
+        secondLimitReached: secondPlay.instantPrizeLimitReached,
+        thirdStatus: thirdPlay.status,
+        thirdLimitReached: thirdPlay.instantPrizeLimitReached,
+        raffleEntriesCount: thirdPlay.raffleEntriesCount,
+      };
+      passed = firstPlay.status === 'won' && secondPlay.status === 'no_prize' && secondPlay.instantPrizeLimitReached === true && thirdPlay.status === 'no_prize' && thirdPlay.raffleEntriesCount === 3;
+      break;
+    }
+    case 'concurrent-same-card': {
+      await activateFixture(fixture.id);
+      for (const prize of fixture.prizes) await recordStock(prize, fixture.id, fixture.shoppingId, input.actorId, 20, true);
+      const token = randomUUID();
+      const outcomes = await Promise.allSettled([
+        playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[0].publicId, idempotencyKey: randomUUID() }),
+        playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[0].publicId, idempotencyKey: randomUUID() }),
+        playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[0].publicId, idempotencyKey: randomUUID() }),
+      ]);
+      const participant = await prisma.participant.findUnique({ where: { sessionHash_campaignId_shoppingId: { sessionHash: sha256(token), campaignId: fixture.id, shoppingId: fixture.shoppingId } } });
+      const plays = participant ? await prisma.participation.count({ where: { participantId: participant.id, cardId: fixture.cards[0].id } }) : 0;
+      const raffleEntries = participant ? await prisma.collectionCard.count({ where: { progress: { participantId: participant.id, campaignId: fixture.id } } }) : 0;
+      expected = 'Peticiones simultáneas del mismo usuario al mismo cartel registran exactamente 1 jugada y 1 participación de sorteo.';
+      observed = { plays, raffleEntries, fulfilled: outcomes.filter((o) => o.status === 'fulfilled').length };
+      passed = plays === 1 && raffleEntries === 1;
+      break;
+    }
+    case 'concurrent-two-cards': {
+      await activateFixture(fixture.id);
+      for (const prize of fixture.prizes) await recordStock(prize, fixture.id, fixture.shoppingId, input.actorId, 20, true);
+      const token = randomUUID();
+      const outcomes = await Promise.allSettled([
+        playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[0].publicId, idempotencyKey: randomUUID() }),
+        playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[1].publicId, idempotencyKey: randomUUID() }),
+      ]);
+      const participant = await prisma.participant.findUnique({ where: { sessionHash_campaignId_shoppingId: { sessionHash: sha256(token), campaignId: fixture.id, shoppingId: fixture.shoppingId } } });
+      const wonPlays = participant ? await prisma.participation.count({ where: { participantId: participant.id, campaignId: fixture.id, status: 'WON' } }) : 0;
+      const totalPlays = participant ? await prisma.participation.count({ where: { participantId: participant.id, campaignId: fixture.id } }) : 0;
+      const raffleEntries = participant ? await prisma.collectionCard.count({ where: { progress: { participantId: participant.id, campaignId: fixture.id } } }) : 0;
+      expected = 'Dos peticiones simultáneas del mismo usuario en Cartel A y Cartel B registran ambos carteles en el sorteo final pero asignan como máximo 1 premio instantáneo.';
+      observed = { totalPlays, wonPlays, raffleEntries, outcomes: outcomes.map((o) => o.status === 'fulfilled' ? o.value.status : 'rejected') };
+      passed = totalPlays === 2 && raffleEntries === 2 && wonPlays <= 1;
+      break;
+    }
+    case 'concurrent-redeem': {
+      await activateFixture(fixture.id);
+      for (const prize of fixture.prizes) await recordStock(prize, fixture.id, fixture.shoppingId, input.actorId, 20, true);
+      const played = await playCard({ token: randomUUID(), shoppingSlug: shop.slug, cardId: fixture.cards[0].publicId, idempotencyKey: randomUUID() });
+      if (!played.redeemCode) throw new Error('No se emitió cupón para la prueba de concurrencia.');
+      const attempts = await Promise.allSettled([
+        validateRedemption({ shoppingId: fixture.shoppingId, actorId: input.actorId, code: played.redeemCode }),
+        validateRedemption({ shoppingId: fixture.shoppingId, actorId: input.actorId, code: played.redeemCode }),
+      ]);
+      const successes = attempts.filter((a) => a.status === 'fulfilled' && a.value.ok).length;
+      const rejections = attempts.filter((a) => a.status === 'rejected' && a.reason instanceof RedeemError && a.reason.code === 'ALREADY_REDEEMED').length;
+      expected = 'Dos intentos simultáneos de canjear el mismo cupón aprueban exactamente 1 y rechazan el otro con ALREADY_REDEEMED.';
+      observed = { successes, rejections };
+      passed = successes === 1 && rejections === 1;
+      break;
+    }
       default: throw new Error('Escenario QA desconocido.');
     }
   } catch (error) {
