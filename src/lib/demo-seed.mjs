@@ -54,10 +54,10 @@ export async function seedDemo(prisma) {
           schedule: { startsAt: startsAt.toISOString(), endsAt: endsAt.toISOString() },
         };
         if (prior) {
-          await tx.prize.update({ where: { id }, data: { name: `DEMO — SIN VALOR COMERCIAL · ${prize.name}`, description: prize.description, imageUrl: prize.image, weight: prize.weight, startsAt, endsAt, active: true, maxPerPerson: 1, details } });
+          await tx.prize.update({ where: { id }, data: { name: `DEMO — SIN VALOR COMERCIAL · ${prize.name}`, description: prize.description, imageUrl: prize.image, weight: prize.weight, startsAt, endsAt, active: true, maxPerPerson: 10, details } });
           counts.prizesUpdated += 1;
         } else {
-          await tx.prize.create({ data: { id, campaignId: campaign.id, shoppingId: shopping.id, name: `DEMO — SIN VALOR COMERCIAL · ${prize.name}`, description: prize.description, imageUrl: prize.image, totalStock: prize.stock, remainingStock: prize.stock, weight: prize.weight, startsAt, endsAt, active: true, maxPerPerson: 1, details } });
+          await tx.prize.create({ data: { id, campaignId: campaign.id, shoppingId: shopping.id, name: `DEMO — SIN VALOR COMERCIAL · ${prize.name}`, description: prize.description, imageUrl: prize.image, totalStock: prize.stock, remainingStock: prize.stock, weight: prize.weight, startsAt, endsAt, active: true, maxPerPerson: 10, details } });
           await tx.inventoryMovement.create({ data: { prizeId: id, campaignId: campaign.id, shoppingId: shopping.id, delta: prize.stock, reason: 'Carga inicial de inventario de demostración' } });
           counts.prizesCreated += 1;
         }

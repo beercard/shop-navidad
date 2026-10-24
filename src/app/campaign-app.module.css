@@ -63,18 +63,27 @@
 
 /* Play */
 .play{padding-bottom:8px}
-.wheelWrap{position:relative;margin:14px 16px 0;padding:22px 0 18px;display:flex;justify-content:center;border-radius:24px;background:var(--brand-primary-strong,#203f34);overflow:hidden}
-.wheel{width:min(280px,76vw);height:auto;aspect-ratio:1;display:block;transform-origin:50% 50%}
-.wheelSpin{animation:spin .9s linear infinite}
-.wheel[data-spinning="true"]{animation:spin .9s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+.wheelWrap{position:relative;margin:14px 16px 0;padding:24px 0 20px;display:flex;justify-content:center;border-radius:24px;background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--brand-primary,#315d4b) 75%,#fff8e7),var(--brand-primary-strong,#203f34) 72%);box-shadow:inset 0 0 32px rgb(0 0 0 / 28%),0 12px 28px rgb(0 0 0 / 16%);overflow:hidden}
+.wheelBusy{box-shadow:inset 0 0 42px rgb(228 193 124 / 35%),0 14px 34px rgb(0 0 0 / 24%)}
+.wheel{width:min(280px,76vw);height:auto;aspect-ratio:1;display:block;transform-origin:50% 50%;transition:transform 3.15s cubic-bezier(.12,.84,.18,1);filter:drop-shadow(0 10px 20px rgb(0 0 0 / 32%))}
+.wheelSpin{animation:spin 1.1s cubic-bezier(.32,.04,.55,.96) infinite}
+.wheel[data-spinning="true"]{animation:spin 1.1s cubic-bezier(.32,.04,.55,.96) infinite}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(1080deg)}}
+.wheelOuterRim{fill:#182a23;stroke:var(--festive,#e4c17c);stroke-width:3}
 .wheelRim{fill:var(--festive,#e4c17c);stroke:#fff8e7;stroke-width:2}
+.wheelBulb{stroke:#203f34;stroke-width:.8}
+.wheelBulbA{fill:#fff8e7;animation:bulbBlink .55s ease-in-out infinite alternate}
+.wheelBulbB{fill:#ffd166;animation:bulbBlink .55s ease-in-out .27s infinite alternate}
+@keyframes bulbBlink{from{opacity:.45;transform:scale(.88)}to{opacity:1;transform:scale(1.14)}}
 .segmentA{fill:var(--wheel-a);stroke:var(--festive,#e4c17c);stroke-width:1.5}
 .segmentB{fill:var(--wheel-b);stroke:var(--festive,#e4c17c);stroke-width:1.5}
 .wheel text{fill:#fff8e7;font:700 9px var(--brand-font-body,Arial,sans-serif);letter-spacing:.04em}
+.wheelHubGlow{fill:rgb(228 193 124 / 38%)}
 .wheelHub{fill:#fff8e7;stroke:var(--brand-primary-strong,#203f34);stroke-width:4}
 .hubText{fill:var(--brand-accent,#b94f43)!important;font:700 16px var(--brand-font-display,Georgia,serif)!important}
-.pointer{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:24px solid #fff8e7;filter:drop-shadow(0 2px 2px rgb(0 0 0 / 40%))}
+.pointer{position:absolute;top:8px;left:50%;transform:translateX(-50%);transform-origin:50% 0;width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;border-top:26px solid #fff8e7;filter:drop-shadow(0 3px 4px rgb(0 0 0 / 45%))}
+.pointerBounce{animation:pointerTick .16s ease-in-out infinite alternate}
+@keyframes pointerTick{from{transform:translateX(-50%) rotate(-14deg)}to{transform:translateX(-50%) rotate(8deg)}}
 .wheelState{margin:12px 16px 0;font-size:14px;font-weight:700;text-align:center;min-height:20px}
 .codeForm{margin:16px;display:flex;flex-direction:column;gap:6px}
 .label{font:700 12px var(--brand-font-utility,monospace);letter-spacing:.06em;text-transform:uppercase}
@@ -99,6 +108,11 @@
 .redeemInstruction{margin-top:10px!important}
 .redeemQr{align-self:center;width:min(220px,100%);height:auto;aspect-ratio:1;background:white;padding:8px;border-radius:12px;image-rendering:pixelated}
 .resultCard small{font-size:13px}
+.resultActions{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px}
+.resultActionBtn,.resultActionSecondary{min-height:44px;padding:0 14px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer}
+.resultActionBtn{border:0;background:var(--festive,#e4c17c);color:#1d2e27}
+.resultActionSecondary{border:1.5px solid rgb(255 255 255 / 55%);background:transparent;color:inherit}
+.resultNone .resultActionSecondary{border-color:var(--brand-accent,#b94f43);color:var(--brand-accent,#b94f43)}
 @keyframes pop{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
 
 /* Confetti: short, decorative, disabled for reduced motion */
@@ -207,8 +221,8 @@
   .tabbar{border-radius:0}
 }
 @media(prefers-reduced-motion:reduce){
-  .wheelSpin,.wheel[data-spinning="true"],.confetti i,.slotFound,.resultCard{animation:none!important}
-  .wheel{transform:rotate(0deg)}
+  .wheelSpin,.wheel[data-spinning="true"],.wheelBulbA,.wheelBulbB,.pointerBounce,.confetti i,.slotFound,.resultCard{animation:none!important}
+  .wheel{transform:rotate(0deg)!important;transition:none!important}
   .ringFill{transition:none}
 }
 @media(max-width:360px){

@@ -135,10 +135,12 @@ export default function ParticipateClient({ cardId, lockedShopping }: { cardId: 
             <span className="sr-only" role="status">{copied ? 'Código copiado al portapapeles' : ''}</span>
           </div>}
           {result?.expiresAt && <p className="pr-expiry"><ClockIcon />Válido hasta {new Date(result.expiresAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</p>}
-          <p className="pr-demo">Guardá este código o hacé una captura hasta canjear tu premio.</p>
+          <p className="pr-demo">Tu cupón también quedó guardado en Mis cupones. Podés jugar otros códigos sin haber canjeado este.</p>
         </div>}
         {result && !won && <p className="pr-noprize pr-live">Podés seguir buscando otras tarjetas del recorrido para completar tu colección.</p>}
         {!result && <button className="button button-primary participate-submit" onClick={participate} disabled={loading || submitting || !payload?.campaign}>{submitting ? 'Confirmando con el servidor…' : loading ? 'Verificando…' : payload?.campaign ? 'Participar' : 'Participación no disponible'}</button>}
+        {result && <Link className="button button-primary participate-submit" href={`/${shopping}#jugar`}>Jugar otro código de tarjeta</Link>}
+        {result && <Link className="participate-back" href={`/${shopping}#progreso`}>Ver todos mis cupones QR</Link>}
         <Link className="participate-back" href={`/${shopping}`}>Volver a la campaña</Link>
       </section>
       <footer className="participate-footer">Una campaña para compartir la magia.</footer>
