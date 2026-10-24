@@ -17,10 +17,13 @@
     "qa:admin": "node scripts/qa-admin.mjs",
     "qa:setup": "npm run qa:migrate && npm run qa:admin",
     "seed:demo": "node scripts/seed-demo.mjs",
-    "test:qa": "node scripts/qa-playwright.mjs"
+    "test:qa": "node scripts/qa-playwright.mjs",
+    "test:merchant": "node scripts/qa-playwright.mjs tests/merchant-portal.spec.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
+    "@zxing/browser": "0.1.5",
+    "@zxing/library": "0.21.3",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.13",
     "next": "^15.2.0",

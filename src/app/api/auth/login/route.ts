@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'El correo o la contraseña no son correctos.', code: 'INVALID_CREDENTIALS' }, { status: 401 });
     }
     const response = NextResponse.json({ ok: true });
-    await setAdminCookie(await createAdminSession(user.id));
-    await prisma.adminUser.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+    const updated = await prisma.adminUser.update({ where: { id: user.id }, data: { lastLoginAt: new Date() }, select: { sessionVersion: true } });
+    await setAdminCookie(await createAdminSession(user.id, updated.sessionVersion));
     return response;
   } catch (error) {
     if (!process.env.DATABASE_URL) return serviceUnavailable();

@@ -2,6 +2,20 @@ import { prisma } from '@/lib/db';
 
 /** PostgreSQL-backed fixed-window rate limit. The caller should pass a hashed identity. */
 export async function checkRateLimit(key: string, limit: number, windowMs: number) {
+  // Las peticiones simultáneas con la misma clave chocan en la transacción Serializable (P2034):
+  // se reintenta con espera aleatoria en lugar de devolver un 500 al comercio.
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await attemptRateLimit(key, limit, windowMs);
+    } catch (error) {
+      const conflict = error && typeof error === 'object' && 'code' in error && (error.code === 'P2034' || error.code === 'P2002');
+      if (!conflict || attempt >= 6) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 15 + Math.random() * 35 * (attempt + 1)));
+    }
+  }
+}
+
+async function attemptRateLimit(key: string, limit: number, windowMs: number) {
   const now = new Date();
   const resetAt = new Date(now.getTime() + windowMs);
   return prisma.$transaction(async (tx) => {

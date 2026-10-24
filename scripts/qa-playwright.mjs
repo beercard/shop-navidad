@@ -7,7 +7,8 @@ if (process.env.NODE_ENV === 'production' || process.env.QA_MODE !== 'true') {
   process.exit(1);
 }
 
-const result = spawnSync(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['playwright', 'test', 'tests/qa-demo.spec.ts'], {
+const specs = process.argv.slice(2);
+const result = spawnSync(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['playwright', 'test', ...(specs.length ? specs : ['tests/qa-demo.spec.ts'])], {
   stdio: 'inherit',
   shell: process.platform === 'win32',
   env: process.env,

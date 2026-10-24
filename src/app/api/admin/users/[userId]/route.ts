@@ -16,7 +16,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ u
     const { active } = schema.parse(await request.json());
     if (userId === admin.id && !active) return NextResponse.json({ error: 'No podés desactivar tu propio usuario.' }, { status: 400 });
     const user = await prisma.$transaction(async (tx) => {
-      const updated = await tx.adminUser.update({ where: { id: userId }, data: { active }, select: { id: true, name: true, email: true, role: true, active: true } });
+      const updated = await tx.adminUser.update({ where: { id: userId }, data: { active, sessionVersion: { increment: 1 } }, select: { id: true, name: true, email: true, role: true, active: true } });
       await logAudit(tx, { actorId: admin.id, action: active ? 'ADMIN_USER_ACTIVATED' : 'ADMIN_USER_DEACTIVATED', entityType: 'AdminUser', entityId: userId });
       return updated;
     });

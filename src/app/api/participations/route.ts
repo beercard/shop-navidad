@@ -6,6 +6,7 @@ import { apiError, serviceUnavailable } from '@/lib/http';
 import { readParticipantToken, setParticipantCookie } from '@/lib/participants';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sha256 } from '@/lib/security';
+import QRCode from 'qrcode';
 
 const schema = z.object({ shoppingSlug: z.string().min(1).max(80), cardId: z.string().trim().min(1).max(40), idempotencyKey: z.string().uuid().optional() });
 
@@ -28,7 +29,8 @@ export async function POST(request: NextRequest) {
     const limit = await checkRateLimit(`play:${sha256(clientIp)}:${payload.shoppingSlug}`, 20, 15 * 60_000);
     if (!limit.allowed) return NextResponse.json({ error: 'Hiciste varios intentos seguidos. Esperá un rato y probá otra vez.', code: 'RATE_LIMITED' }, { status: 429 });
     const result = await playCard({ ...payload, token, idempotencyKey: payload.idempotencyKey ?? randomUUID() });
-    const response = NextResponse.json(result, { headers: { 'Cache-Control': 'private, no-store' } });
+    const redeemQr = result.redeemCode ? await QRCode.toDataURL(result.redeemCode, { width: 240, margin: 2, errorCorrectionLevel: 'M' }) : undefined;
+    const response = NextResponse.json({ ...result, redeemQr }, { headers: { 'Cache-Control': 'private, no-store' } });
     setParticipantCookie(response, token);
     return response;
   } catch (error) {

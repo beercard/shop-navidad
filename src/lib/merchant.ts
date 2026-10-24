@@ -10,7 +10,7 @@ export async function getMerchantScopes(): Promise<MerchantScopesResult> {
   const admin = await requireAdmin(['MERCHANT_VALIDATOR']);
   if (!admin) return { error: 'UNAUTHORIZED' as const };
   const merchants = admin.merchantScopes.map(({ merchant }) => merchant).filter((merchant) => merchant.active);
-  if (!merchants.length) return { error: 'FORBIDDEN' as const };
+  if (merchants.length !== 1) return { error: 'FORBIDDEN' as const };
   return { admin, merchants };
 }
 

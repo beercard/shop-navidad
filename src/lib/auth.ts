@@ -11,8 +11,8 @@ function secret() {
   return new TextEncoder().encode(value);
 }
 
-export async function createAdminSession(userId: string) {
-  return new SignJWT({ sub: userId })
+export async function createAdminSession(userId: string, sessionVersion: number) {
+  return new SignJWT({ sub: userId, sv: sessionVersion })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('8h')
@@ -38,14 +38,15 @@ export async function getAdmin() {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret());
-    if (!payload.sub) return null;
-    return await prisma.adminUser.findFirst({
+    if (!payload.sub || typeof payload.sv !== 'number') return null;
+    const user = await prisma.adminUser.findFirst({
       where: { id: payload.sub, active: true },
       select: {
         id: true,
         email: true,
         name: true,
         role: true,
+        sessionVersion: true,
         shoppingScopes: { select: { shopping: { select: { id: true, slug: true, name: true } } } },
         merchantScopes: {
           where: { merchant: { active: true, shopping: { active: true } } },
@@ -53,6 +54,7 @@ export async function getAdmin() {
         },
       },
     });
+    return user && user.sessionVersion === payload.sv ? user : null;
   } catch {
     return null;
   }
