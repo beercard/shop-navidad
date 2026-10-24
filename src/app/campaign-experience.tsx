@@ -235,10 +235,9 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
             </span>
           </a>
           <div className={styles.topActions}>
-            <button type="button" className={styles.progressChip} onClick={() => goTo('progreso')} aria-label={`${collected}/${collectionTarget} postas en tu colección`}>
+            <button type="button" className={styles.progressChip} onClick={() => goTo('progreso')} title="Ver tus cupones y progreso de colección">
               <span className={styles.progressChipDot} aria-hidden="true" />
-              <b>{collected}/{collectionTarget}</b>
-              <small>postas</small>
+              <b>{collected}/{collectionTarget}</b> <small>postas</small>
             </button>
           </div>
         </header>
