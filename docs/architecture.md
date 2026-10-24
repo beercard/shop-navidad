@@ -13,7 +13,7 @@ Auditoría e implementación incremental: 23-10-2026. La base de datos PostgreSQ
 - `Shopping` es tenant padre para `Campaign`, `Prize`, `Card`, `Participant`, `Participation`, `RedeemCode`, `Event`, `Location`, `Merchant`, inventario y auditoría.
 - `Location` identifica carteles NFC/QR mediante `/nfc/[shoppingSlug]/[locationSlug]`. La ruta resuelve únicamente ubicaciones activas del shopping activo, registra `LANDING_VISIT` deduplicado por cookie opaca/ventana de 30 minutos y redirige a la experiencia pública con el contexto de campaña/ubicación. El enlace no autentica ni autoriza.
 - `Merchant`, `MerchantUser` y `PrizeMerchant` asignan validadores y premios a comercios propios de un shopping. El portal `/merchant` consulta el código antes de permitir una confirmación explícita. Historial y canje están acotados al comercio autorizado.
-- `OtpChallenge` prepara almacenamiento de desafíos y consentimiento, pero no hay proveedor SMS/WhatsApp, flujo OTP ni verificación telefónica implementados. No se simula ni se marca un número como verificado.
+- `OtpChallenge` quedó **reservada y sin uso**: por decisión de producto (24-10-2026) no habrá verificación por SMS/WhatsApp. La tabla puede eliminarse en una migración futura; no se borró para no alterar el historial de migraciones.
 - La migración `20261023120000_locations_merchants_otp` agrega ubicaciones, comercios, asignación de premios/validadores, relación opcional de tarjeta a ubicación, evento de visita y comercio que consumió el canje. Aún requiere aplicación contra una base aislada y prueba de migración real.
 
 ## Juego, stock y canjes
@@ -47,7 +47,7 @@ En QA aislado, configurar variables en `.env.local` y ejecutar `npm run qa:setup
 
 ## Pendiente antes de producción
 
-- Elegir e integrar proveedor real de OTP/SMS/WhatsApp, límites por teléfono, consentimiento legal y política de retención.
+- ~~Integrar proveedor de OTP/SMS~~ Descartado por decisión de producto: la participación sigue siendo anónima por cookie.
 - Aplicar y probar las migraciones en PostgreSQL QA; las APIs de base y pruebas de integración no se pudieron ejecutar en la instancia local actual.
 - La migración `20261023143000_tenant_composite_constraints` agrega claves foráneas compuestas para que participaciones, tarjetas, premios, canjes y movimientos de stock no puedan asociarse a campañas/shoppings distintos ni siquiera mediante una escritura SQL directa. Las relaciones auxiliares de colección, pistas, ubicaciones y comercios todavía dependen también de sus validaciones de servidor y quedan para una migración posterior. Esta migración no elimina ni modifica filas; una inconsistencia previa hará que falle al añadir una FK y deberá corregirse explícitamente antes de reintentar.
 - Definir retención/limpieza de `Event`, `OtpChallenge` y `RateLimitBucket`, backups y restauración.

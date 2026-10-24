@@ -1,0 +1,40 @@
+/*
+ * Pantalla de participación por tarjeta (NFC/QR). Se carga después de globals.css y usa selectores de mayor
+ * especificidad para sustituir las etiquetas en mayúsculas de 10 px, los emojis como iconos y el bloque de
+ * resultado cuyo texto claro se heredaba al código (ilegible). Las identidades siguen viniendo de --brand-*.
+ */
+.participate-shell[data-shopping] .participate-kicker { display: block; margin: 0; font: 600 14px/1.3 var(--brand-font-body, system-ui, sans-serif); letter-spacing: 0; text-transform: none; color: var(--brand-text-muted); }
+.participate-shell[data-shopping] .participate-card-id > span { font: 600 14px/1.3 var(--brand-font-body, system-ui, sans-serif); letter-spacing: 0; text-transform: none; color: var(--brand-text-muted); }
+.participate-shell[data-shopping] .participate-card-id strong { font-size: clamp(20px, 6vw, 26px); letter-spacing: .06em; color: var(--brand-text); }
+.participate-shell[data-shopping] .participate-card-id small { font-size: 14px; }
+.participate-shell[data-shopping] .participate-description { font-size: 16px; line-height: 1.55; color: var(--brand-text-muted); }
+.participate-shell[data-shopping] .participate-status { font-size: 15px; }
+.participate-shell[data-shopping] .participate-error { font-size: 15px; border-radius: var(--radius-md); }
+.participate-shell[data-shopping] .participate-back { min-height: 48px; font-size: 16px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.participate-shell[data-shopping] .participate-footer { font-size: 13px; }
+.participate-shell[data-shopping] .participate-submit { min-height: var(--touch-primary); font-size: 18px; font-weight: 700; }
+.participate-shell[data-shopping] .participate-icon { color: var(--brand-campaign-soft, #fff); }
+.participate-shell[data-shopping] .participate-icon svg { width: 36px; height: 36px; }
+.participate-shell[data-shopping] .participate-card *:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+
+/* Resultado: bloque de campaña con una tarjeta clara (QR + código) que garantiza contraste propio */
+.participate-shell[data-shopping] .pr-result { margin: 20px 0 8px; padding: 20px; border-radius: var(--brand-radius-card); background: var(--brand-campaign-field, #17382b); color: var(--brand-campaign-field-raised, #fffdf8); text-align: left; }
+.participate-shell[data-shopping] .pr-eyebrow { margin: 0 0 6px; font: 600 15px/1.3 var(--brand-font-body, system-ui, sans-serif); color: var(--brand-campaign-festive, #d4ad68); }
+.participate-shell[data-shopping] .pr-prize { margin: 0; font: 600 clamp(24px, 7vw, 30px)/1.15 var(--brand-font-display, Georgia, serif); color: var(--brand-campaign-field-raised, #fffdf8); letter-spacing: -.01em; }
+.participate-shell[data-shopping="uniplaza"] .pr-prize { font-weight: 750; letter-spacing: -.03em; }
+.participate-shell[data-shopping] .pr-desc { margin: 10px 0 0; font-size: 16px; line-height: 1.55; color: var(--brand-campaign-soft, #f1e4d2); }
+.participate-shell[data-shopping] .pr-voucher { display: grid; justify-items: center; gap: 12px; margin: 18px 0 0; padding: 18px 16px; border-radius: var(--radius-md); background: #fff; color: #14231d; }
+.participate-shell[data-shopping] .pr-voucher img { width: min(208px, 62vw); height: auto; aspect-ratio: 1; image-rendering: pixelated; }
+.participate-shell[data-shopping] .pr-how { margin: 0; font-size: 15px; font-weight: 600; text-align: center; color: #33443c; }
+.participate-shell[data-shopping] .pr-code { display: block; width: 100%; padding: 10px 8px; border: 2px dashed #8a968f; border-radius: 10px; background: #f6f4ec; color: #14231d; font: 500 clamp(19px, 6vw, 24px)/1.2 var(--brand-font-utility, ui-monospace, monospace); letter-spacing: .08em; text-align: center; overflow-wrap: anywhere; user-select: all; }
+.participate-shell[data-shopping] .pr-copy { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 8px 18px; border: 2px solid #14231d; border-radius: var(--radius-full); background: transparent; color: #14231d; font: 700 16px/1 var(--brand-font-body, system-ui, sans-serif); cursor: pointer; touch-action: manipulation; transition: background-color var(--dur-feedback), transform var(--dur-feedback) var(--ease-out); }
+.participate-shell[data-shopping] .pr-copy:hover { background: #ece9dd; }
+.participate-shell[data-shopping] .pr-copy:active { transform: scale(.98); }
+.participate-shell[data-shopping] .pr-copy svg { width: 18px; height: 18px; }
+.participate-shell[data-shopping] .pr-expiry { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; font-size: 15px; color: var(--brand-campaign-soft, #f1e4d2); }
+.participate-shell[data-shopping] .pr-expiry svg { flex: none; width: 18px; height: 18px; }
+.participate-shell[data-shopping] .pr-demo { margin: 12px 0 0; font-size: 14px; color: var(--brand-campaign-soft, #f1e4d2); }
+.participate-shell[data-shopping] .pr-noprize { margin: 18px 0 8px; padding: 18px; border: 1px solid var(--brand-border); border-radius: var(--brand-radius-card); background: var(--brand-surface); color: var(--brand-text); text-align: left; font-size: 16px; line-height: 1.55; }
+.participate-shell[data-shopping] .pr-live { animation: pr-in var(--dur-screen) var(--ease-out); }
+@keyframes pr-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .participate-shell[data-shopping] .pr-live { animation: none; } }

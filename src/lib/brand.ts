@@ -100,9 +100,9 @@ export const shoppingBrands: Record<ShoppingBrandId, BrandTheme> = {
       wordmark: "CENTENARIO SHOPPING",
     },
     fonts: {
-      display: '"Playfair Display", Georgia, serif',
-      body: '"DM Sans", Arial, sans-serif',
-      utility: '"DM Mono", ui-monospace, monospace',
+      display: 'var(--font-playfair), "Playfair Display", Georgia, serif',
+      body: 'var(--font-dm-sans), "DM Sans", Arial, sans-serif',
+      utility: 'var(--font-dm-mono), "DM Mono", ui-monospace, monospace',
     },
     colors: {
       primary: "#315D4B",
@@ -160,9 +160,9 @@ export const shoppingBrands: Record<ShoppingBrandId, BrandTheme> = {
       wordmark: "UniPlaza Shopping",
     },
     fonts: {
-      display: '"DM Sans", Arial, sans-serif',
-      body: '"DM Sans", Arial, sans-serif',
-      utility: '"DM Mono", ui-monospace, monospace',
+      display: 'var(--font-dm-sans), "DM Sans", Arial, sans-serif',
+      body: 'var(--font-dm-sans), "DM Sans", Arial, sans-serif',
+      utility: 'var(--font-dm-mono), "DM Mono", ui-monospace, monospace',
     },
     colors: {
       primary: "#315C70",
@@ -257,7 +257,7 @@ export function brandCssVariables(brand: BrandTheme, overrides?: Record<string, 
     const value = overrides?.[key];
     if (typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value)) variables[token] = value;
   }
-  if (overrides?.fontPreset === "urban") variables["--brand-font-display"] = '"DM Sans", Arial, sans-serif';
-  if (overrides?.fontPreset === "classic") variables["--brand-font-display"] = '"Playfair Display", Georgia, serif';
+  if (overrides?.fontPreset === "urban") variables["--brand-font-display"] = 'var(--font-dm-sans), "DM Sans", Arial, sans-serif';
+  if (overrides?.fontPreset === "classic") variables["--brand-font-display"] = 'var(--font-playfair), "Playfair Display", Georgia, serif';
   return variables;
 }

@@ -96,6 +96,8 @@
 .resultKicker{font:700 12px var(--brand-font-utility,monospace);letter-spacing:.08em;color:var(--festive,#e4c17c)}
 .resultNone .resultKicker{color:var(--brand-accent,#b94f43)}
 .redeemCode{display:block;padding:12px;border-radius:12px;background:#fff8e7;color:#203a31;font:700 18px var(--brand-font-utility,monospace);overflow-wrap:anywhere}
+.redeemInstruction{margin-top:10px!important}
+.redeemQr{align-self:center;width:min(220px,100%);height:auto;aspect-ratio:1;background:white;padding:8px;border-radius:12px;image-rendering:pixelated}
 .resultCard small{font-size:13px}
 @keyframes pop{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
 
@@ -602,3 +604,14 @@
   .stage[data-shopping="centenario"] .prizes .hero,.stage[data-shopping="uniplaza"] .prizes .hero{margin-inline:14px;width:calc(100% - 28px)}
   .stage[data-shopping="centenario"] .wheelWrap,.stage[data-shopping="uniplaza"] .wheelWrap{margin-inline:14px}
 }
+
+/* Ajustes de legibilidad (v5): etiquetas >= 12px y rejilla estable en la tarjeta destacada de UniPlaza. */
+.uniplazaFeatureCopy small{font-size:12px;letter-spacing:.08em}
+.uniplazaFeatureCopy strong{grid-column:1;grid-row:2}
+.uniplazaFeatureCopy>span{grid-column:2;grid-row:2;align-self:start}
+.uniplazaFeatureCopy em{grid-row:3;font-size:14px}
+.centenarioFeatureCopy small{font-size:12px;letter-spacing:.1em}
+.centenarioFeatureCopy em{font-size:14px}
+
+/* v5: el SVG del regalo es absoluto; su contenedor debe ser el cuadro de 44px y no toda la tarjeta. */
+.uniplazaFeatureCopy>span{position:relative;overflow:hidden}

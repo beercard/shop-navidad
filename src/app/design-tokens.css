@@ -1,0 +1,39 @@
+/*
+ * Capa semántica de diseño compartida por la experiencia pública, el portal de comercios y el panel.
+ * Las identidades de cada shopping siguen viviendo en src/lib/brand.ts (--brand-*); aquí solo hay
+ * escalas neutrales (espacio, forma, movimiento, foco, estados) para que ninguna pantalla repita valores.
+ * Escalas basadas en mobile-ui-ux/design-tokens.md (espaciado base 4, movimiento 100–400 ms, objetivo táctil 48).
+ */
+:root {
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px; --space-7: 48px;
+  --radius-sm: 8px; --radius-md: 14px; --radius-lg: 22px; --radius-full: 999px;
+  --touch: 48px;
+  --touch-primary: 64px;
+
+  --ease-out: cubic-bezier(.2, .7, .2, 1);
+  --ease-in: cubic-bezier(.5, 0, .8, .3);
+  --dur-feedback: 120ms;
+  --dur-surface: 240ms;
+  --dur-screen: 360ms;
+
+  --focus-ring: 3px solid var(--brand-focus, #8a5a1f);
+  --focus-offset: 3px;
+
+  /* Estados: cada uno se muestra con color + icono + texto; el color nunca es la única señal. */
+  --state-success-ink: #17603f; --state-success-bg: #e6f4ea; --state-success-line: #8cc4a0;
+  --state-danger-ink: #8f2f28; --state-danger-bg: #fbeceb; --state-danger-line: #e0a29d;
+  --state-warning-ink: #6f4a0b; --state-warning-bg: #fdf3dc; --state-warning-line: #e3c27a;
+  --state-info-ink: #1d4d63; --state-info-bg: #e7f1f5; --state-info-line: #9bc3d2;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-feedback: 1ms; --dur-surface: 1ms; --dur-screen: 1ms; }
+}
+
+/* Playfair usa cifras de texto por defecto: el 0 parece una O. Cifras alineadas en toda la app. */
+body { font-variant-numeric: lining-nums; }

@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 
+test.use({ actionTimeout: 15_000, navigationTimeout: 60_000 });
+
 test('demo seed is idempotent, campaign reads are side-effect free, and QR cards stay in their tenant', async ({ page, request, browser }) => {
   test.skip(process.env.QA_MODE !== 'true' || !process.env.QA_ADMIN_EMAIL || !process.env.QA_ADMIN_PASSWORD, 'Requires the isolated QA database and QA superadmin.');
-  test.setTimeout(120_000);
+  test.setTimeout(300_000);
 
   await page.goto('/admin');
   await page.getByLabel('Correo').fill(process.env.QA_ADMIN_EMAIL!);
@@ -100,6 +102,7 @@ test('demo seed is idempotent, campaign reads are side-effect free, and QR cards
   expect(result.status).toBe('won');
   expect(result.prize.name).toContain('DEMO — SIN VALOR COMERCIAL');
   expect(result.redeemCode).toBeTruthy();
+  expect(result.redeemQr).toMatch(/^data:image\/png;base64,/);
   await expect(page.getByRole('heading', { name: '¡Encontraste tu premio!' })).toBeVisible();
   const redemption = { shoppingSlug: 'centenario', code: result.redeemCode };
   const merchantSuffix = randomUUID().slice(0, 8);
@@ -116,28 +119,68 @@ test('demo seed is idempotent, campaign reads are side-effect free, and QR cards
   const validatorPassword = `Qa-${randomUUID()}-A1!`;
   const validatorCreate = await page.request.post('/api/admin/users', { data: { name: 'Validador QA', email: validatorEmail, password: validatorPassword, role: 'MERCHANT_VALIDATOR', shoppingSlugs: ['centenario'], merchantIds: [merchant.id] } });
   expect(validatorCreate.status()).toBe(201);
+  const validatorUser = (await validatorCreate.json()).user;
+  const resetPasswordResponse = await page.request.post(`/api/admin/users/${validatorUser.id}/password`);
+  expect(resetPasswordResponse.status()).toBe(200);
+  const resetPassword = await resetPasswordResponse.json();
+  expect(resetPassword.temporaryPassword).toBeTruthy();
+  const effectiveValidatorPassword = resetPassword.temporaryPassword as string;
   const merchantContext = await browser.newContext();
   const merchantPage = await merchantContext.newPage();
   try {
     await merchantPage.goto('/merchant');
     await merchantPage.getByLabel('Correo').fill(validatorEmail);
-    await merchantPage.getByLabel('Contraseña').fill(validatorPassword);
+    await merchantPage.getByLabel('Contraseña').fill(effectiveValidatorPassword);
     const merchantLogin = merchantPage.waitForResponse((response) => response.url().includes('/api/auth/login') && response.request().method() === 'POST');
     await merchantPage.getByRole('button', { name: 'Ingresar' }).click();
     expect((await merchantLogin).status()).toBe(200);
-    const merchantLookup = await merchantPage.request.post('/api/merchant/coupons/lookup', { data: { merchantSlug: merchant.slug, code: result.redeemCode } });
-    expect(merchantLookup.status()).toBe(200);
-    expect((await merchantLookup.json()).prize.name).toBe(result.prize.name);
+    await expect(merchantPage.getByRole('heading', { name: merchant.name })).toBeVisible();
+    await expect(merchantPage.getByText('Canjes de hoy')).toBeVisible();
+    await expect(merchantPage.getByText('Centenario Shopping')).toBeVisible();
+    await expect(merchantPage.getByRole('combobox')).toHaveCount(0);
     const unauthorizedLookup = await merchantPage.request.post('/api/merchant/coupons/lookup', { data: { merchantSlug: otherMerchant.slug, code: result.redeemCode } });
     expect(unauthorizedLookup.status()).toBe(403);
-    const merchantRedeem = await merchantPage.request.post('/api/merchant/coupons/redeem', { data: { merchantSlug: merchant.slug, code: result.redeemCode } });
+    await merchantPage.getByRole('button', { name: 'Escanear QR' }).click();
+    await merchantPage.getByRole('button', { name: 'Permitir cámara y escanear' }).click();
+    await expect(merchantPage.getByRole('region', { name: 'Escaneá el QR' }).getByRole('alert')).toContainText(/cámara|permiso/i);
+    await merchantPage.getByRole('button', { name: 'Cerrar', exact: true }).click();
+    await merchantPage.getByRole('button', { name: 'Ingresar código manualmente' }).click();
+    await merchantPage.getByLabel('Código del cupón').fill(result.redeemCode);
+    const lookupResponse = merchantPage.waitForResponse((response) => response.url().includes('/api/merchant/coupons/lookup') && response.request().method() === 'POST');
+    await merchantPage.getByRole('button', { name: 'Consultar cupón' }).click();
+    expect((await lookupResponse).status()).toBe(200);
+    await expect(merchantPage.getByRole('heading', { name: result.prize.name })).toBeVisible();
+    expect(await merchantPage.locator('body').innerText()).not.toContain('Teléfono');
+    const merchantRedeemResponse = merchantPage.waitForResponse((response) => response.url().includes('/api/merchant/coupons/redeem') && response.request().method() === 'POST');
+    await merchantPage.getByRole('button', { name: 'Confirmar canje' }).click();
+    const merchantRedeem = await merchantRedeemResponse;
     expect(merchantRedeem.status()).toBe(200);
+    await expect(merchantPage.getByRole('heading', { name: 'Cupón canjeado correctamente' })).toBeVisible();
     const repeatRedeem = await merchantPage.request.post('/api/merchant/coupons/redeem', { data: { merchantSlug: merchant.slug, code: result.redeemCode } });
-    expect(repeatRedeem.status()).toBe(409);
-    expect((await repeatRedeem.json()).code).toBe('ALREADY_REDEEMED');
+    expect(repeatRedeem.status()).toBe(200);
+    expect((await repeatRedeem.json()).alreadyRedeemed).toBe(true);
     const history = await merchantPage.request.get(`/api/merchant/coupons/history?merchantSlug=${merchant.slug}`);
     expect(history.status()).toBe(200);
-    expect((await history.json()).redemptions).toHaveLength(1);
+    const historyBody = await history.json();
+    expect(historyBody.redemptions).toHaveLength(1);
+    expect(historyBody.todayCount).toBe(1);
+    expect(historyBody.redemptions[0].maskedCode).toMatch(/^••••-/);
+    expect(historyBody.redemptions[0].redeemedBy.name).toBe('Validador QA');
+    expect(JSON.stringify(historyBody)).not.toContain(result.redeemCode);
+    await merchantPage.getByRole('button', { name: 'Validar otro cupón' }).click();
+    await merchantPage.getByRole('button', { name: /Historial/ }).click();
+    await expect(merchantPage.getByRole('heading', { name: 'Historial de canjes' })).toBeVisible();
+    await expect(merchantPage.getByText(/Validador QA/)).toBeVisible();
+    await merchantPage.getByRole('button', { name: 'Seguridad' }).click();
+    await merchantPage.getByText('Cambiar contraseña').click();
+    await merchantPage.getByLabel('Contraseña actual').fill(effectiveValidatorPassword);
+    const changedPassword = `New-${randomUUID()}-Secure!`;
+    await merchantPage.getByLabel('Nueva contraseña').fill(changedPassword);
+    const changePasswordResponse = merchantPage.waitForResponse((response) => response.url().includes('/api/auth/password') && response.request().method() === 'POST');
+    await merchantPage.getByRole('button', { name: 'Guardar contraseña' }).click();
+    expect((await changePasswordResponse).status()).toBe(200);
+    await expect(merchantPage.getByText('Contraseña actualizada. La sesión segura sigue activa en este dispositivo.')).toBeVisible();
+    expect((await merchantPage.request.get('/api/auth/me')).status()).toBe(200);
   } finally { await merchantContext.close(); }
   const crossTenantRedeem = await page.request.post('/api/redeems/validate', { data: { ...redemption, shoppingSlug: 'uniplaza' } });
   expect(crossTenantRedeem.status()).toBe(404);

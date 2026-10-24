@@ -62,3 +62,97 @@ Auditoría inicial: 23-10-2026. Alcance: código, esquema/migraciones Prisma, ru
 - [ ] Integrar OTP únicamente tras seleccionar un proveedor SMS/WhatsApp real, definir credenciales fuera del repo, límites, consentimiento y retención.
 - [x] Añadir constraints compuestas multi-tenant a nivel SQL.
 - [ ] Aplicar la migración sobre una base QA aislada y verificar restricciones negativas antes de cualquier entorno compartido.
+
+
+## Ciclo 3 — Investigación, rediseño UX/UI y cupones del participante (23-10-2026)
+
+Este ciclo corrige una nota de los anteriores: **PostgreSQL QA sí estuvo disponible** (puerto 5433), las migraciones se aplicaron en la base QA y las pruebas contra base real se ejecutaron (ver "Verificación").
+
+### Matriz de pantallas (estado real tras este ciclo)
+
+| Pantalla | Estado | Problemas encontrados | Mejora aplicada | Prioridad | Verificado |
+|---|---|---|---|---|---|
+| NFC/QR `/nfc/[shopping]/[ubicación]` | Completa (ciclo 2) | Sin cambios visuales | Sin cambios | P2 | Prueba e2e de redirección y desactivación |
+| Inicio público Centenario / UniPlaza | Completa | Tarjeta de premio destacado: rejilla rota en UniPlaza (icono en fila propia), etiquetas de 10 px, `aria-label` que no contenía el texto visible | Rejilla corregida, etiquetas ≥ 12 px, nombre accesible desde el contenido | P1 | Capturas + axe `/centenario`, `/uniplaza` |
+| Juego / participación por tarjeta | Completa | **Código de canje ilegible** (claro sobre claro), sin QR, etiquetas mono de 10 px, emojis como iconos | Bloque de resultado propio con QR escaneable, código legible, copiar, vencimiento; iconos SVG; foco al título | **P0** | Capturas + axe `/…/participar/…` |
+| Colección y progreso | Completa | Solo mostraba un logro "premio en esta sesión" | Se conserva; se añade la billetera de cupones debajo | P1 | e2e |
+| **Cupones del participante** | **Inexistente** (el cupón se veía una sola vez al girar) | Recargar la página lo perdía; no había estados | **`GET /api/coupons` + `CouponWallet`**: Disponibles / Historial, estados disponible-canjeado-vencido-anulado, QR solo mientras está disponible | **P0** | 2 pruebas de integración (aislamiento, estados, sin PII) |
+| Registro y verificación de teléfono (OTP) | Inexistente | Sin proveedor SMS/WhatsApp | **No implementado** (necesita proveedor y política de privacidad) | P0 negocio | — |
+| Portal de comercios | Completa | Escaneo sin protagonismo, encabezado cortado, confirmar tapado por la barra, sin foco al cambiar de pantalla | Rediseñado: escaneo dominante, ticket de confirmación, barra de acción fija, foco gestionado, estados con icono+texto | P0 | e2e + 11 pruebas API + axe + 8 anchos |
+| Escaneo QR / entrada manual | Completa | Mensaje de cámara se salía del marco, error duplicado | Guía de esquinas, explicación previa del permiso, cámara se detiene al ocultar la pestaña | P0 | e2e (error de permiso) |
+| Historial de comercio | Completa | Solo filtro por fecha | Chips "Confirmado" con icono, esqueletos de carga | P2 | e2e |
+| Panel de marketing / admin | Completa en funciones | Bitácora con códigos internos en inglés, 13 secciones sin agrupar, glifos de texto como iconos, texto de 8–11 px, tipografías sin cargar | Navegación agrupada (Campaña/Operación/Sistema), iconos SVG, etiquetas en español, escala ≥ 12–13 px, tira de secciones en móvil | P1 | Capturas + axe `/admin` |
+| Métricas y reportes | Parcial | Sin gráficos; tablas sin versión móvil de tarjetas | **No cambiado** | P2 | — |
+| Directorio de locales / mapa | Inexistente | No hay modelo de datos | No implementado (ver investigación, Westfield) | P3 | — |
+
+### Tareas
+
+- [x] Auditoría de pantallas con capturas reales (`docs/ux-redesign/v5/before`).
+- [x] Investigación de 9 productos documentada con límites de método (`docs/ux-redesign/research.md`).
+- [x] Lectura de las 4 skills pedidas (ver abajo) y aplicación de sus criterios.
+- [x] Sistema de diseño: `src/app/design-tokens.css`, tipografías reales con `next/font`, estados semánticos.
+- [x] Prototipo: portal de comercios + pantalla de resultado de participación.
+- [x] Cupones del participante (API + UI) con pruebas.
+- [x] Aplicar el sistema al panel de administración (navegación, tipografía, bitácora).
+- [x] Pruebas: integración de comercios y cupones, e2e de navegador, overflow en 8 anchos, axe en 6 rutas.
+- [x] Panel: tabla de rendimiento con barra comparativa y apilado en móvil (resto de tablas: solo desplazamiento horizontal; ver pendientes).
+- [x] Retroalimentación háptica (lectura, éxito y error con patrones distintos). Sonora: descartada (ruido en el mostrador). iOS no soporta vibración: nunca es la única señal.
+- [ ] Modo oscuro (no pedido explícitamente; no implementado).
+- [x] OTP/SMS: **descartado por decisión de producto (24-10-2026)**, era una fricción. Documentado en README y docs/architecture.md.
+- [ ] Preview en Vercel (no se publicó nada; ver "Entrega").
+
+### Skills consultadas (rutas verificadas, instrucciones leídas)
+
+| Skill | Ruta verificada | Qué se leyó | Cómo se aplicó |
+|---|---|---|---|
+| Frontend Design | `anthropics/skills` → `skills/frontend-design/SKILL.md` | Completo (71 líneas) | Evitar etiquetas en mayúsculas con tracking, copy orientado a la acción, una sola cosa memorable por pantalla, revisión contra "defectos de plantilla" |
+| UI UX Pro Max | `nextlevelbuilder/ui-ux-pro-max-skill` → `.claude/skills/ui-ux-pro-max/SKILL.md` + `references/pro-rules.md` | `SKILL.md` (214 líneas) y checklist; **se ejecutó** `search.py --design-system` | La paleta sugerida (verde/ámbar "food e-commerce", Rubik) se **rechazó** por chocar con las dos marcas; se usó su checklist (contraste, 44 px, safe areas, reduced-motion) |
+| Taste Skill | URL del pedido (`Leonxnx`) **no existe**; el repo real es `Leonxlnx/taste-skill` | `SKILL.md` leído hasta la línea 230 de 529 | Idea "el contenido del sujeto es el diseño" y copy completo. **No** se ejecutaron sus scripts (`draw.mjs`, `inspect.mjs`) |
+| Mobile UX Skills | `numen111104/mobile-ux-skills` → `mobile-ui-ux/SKILL.md` | `SKILL.md` completo (169 líneas); referencias solo por su índice | Reglas de jerarquía, estados, targets ≥ 44, foco, movimiento 100–400 ms |
+| Frontend App Builder (`openai/plugins`) | No consultada en este ciclo | — | No se afirma uso. Un registro previo en `docs/ux-redesign/skill-registry.md` indica que otra sesión sí la leyó; no se pudo verificar desde aquí |
+| `pwa-from-reference-ui`, `pwa-mobile-redesign` | No leídas en este ciclo | — | Sin uso afirmado |
+
+### Verificación (ejecutada, 23-10-2026, base QA real en `127.0.0.1:5433`)
+
+| Prueba | Resultado |
+|---|---|
+| `npx tsc --noEmit` | Sin errores |
+| `npm run test:merchant` (11 pruebas: sesión, QR/manual, canje, repetición idempotente, vencido/anulado, no autorizado, concurrencia, historial, suspensión, autorización admin, **cupones del participante**) | 11 pasan |
+| `npm run test:qa` (e2e de navegador: portal, escáner sin cámara, canje, historial, contraseña, participación pública, QR por shopping) | 1 pasa (≈ 31 s) |
+| `tests/ux-layout.spec.ts` (sin desbordes a 8 anchos en 4 rutas; objetivos táctiles; **axe WCAG A/AA** en 6 rutas) | 11 de 11 pasan (8 anchos × 4 rutas sin desborde; objetivos táctiles; axe WCAG A/AA en 6 rutas). La primera ejecución encontró 4 fallas reales de axe (label-content-name-mismatch) que se corrigieron |
+| `tests/responsive.spec.ts` (10 anchos de las rutas de campaña) | 7 de 7 pasan (tras actualizar un selector que dependía de un ria-label que incumplía WCAG 2.5.3) |
+
+### Límites conocidos
+
+- La investigación usó resúmenes de búsqueda; no hubo uso directo de las apps de referencia.
+- No se probó en un dispositivo físico (ni la cámara real, ni la instalación de la PWA).
+- No se ejecutó la herramienta `draw.mjs`/`inspect.mjs` de Taste Skill.
+- No se probó dark mode ni escala de texto 200 %.
+
+
+### Cierre del ciclo 3
+
+- 
+pm run lint: 0 errores, 2 advertencias previas (<img> en utilidades QA).
+- 
+ext build de producción (en .next-build, para no pisar el servidor de desarrollo): compilación correcta.
+- Capturas finales en docs/ux-redesign/v5/final2. Tras ellas solo se añadió ont-variant-numeric: lining-nums (CSS); **no se volvieron a capturar**.
+- Defectos propios corregidos durante la verificación: ruta de import de CSS errónea (500 en rutas), billetera sin margen, rejilla del premio destacado de UniPlaza, ria-label que incumplían WCAG 2.5.3, prueba e2e que asumía la barra inferior tras un canje.
+
+### Estado de los pendientes (24-10-2026, segunda ronda)
+
+Cerrado y verificado:
+- [x] Tablas del panel: las 5 tablas (rendimiento de tarjetas, tarjetas, usuarios, participantes y la genérica de informes) se apilan en móvil con etiquetas por celda; la de rendimiento incluye barra comparativa. Estados de tarjeta traducidos. Prueba: ninguna sección del panel desborda a 390 y 320 px (esta prueba confirma ausencia de desborde, no por sí sola que cada tabla esté apilada; eso se comprobó con captura para la de rendimiento).
+- [x] Modo oscuro del portal de comercios (sigue `prefers-color-scheme`, paleta propia por shopping). **Hallazgo:** la primera versión no se aplicaba porque `brandCssVariables` inyecta `--brand-*` como estilo en línea; las pruebas axe de esa versión evaluaron en realidad el modo claro. Se corrigió con `!important` y se verificó con capturas reales y axe.
+- [x] Cobertura axe de las pantallas autenticadas del portal (inicio, entrada manual, escáner con error, confirmación, resultado, cupón inválido, historial, seguridad) en modo claro y oscuro. Antes solo se revisaba el login.
+
+Descartado por decisión de producto:
+- OTP/SMS (ver README y `docs/architecture.md`).
+
+Sigue abierto (no se puede cerrar sin datos, autorización o dispositivo):
+- Modo oscuro de la experiencia pública, la pantalla de participación y el panel: sin implementar (diseños artísticos propios de cada campaña; requieren decisión de arte).
+- Texto escalable: los tamaños están en px, así que **la preferencia de tamaño de fuente del navegador no se respeta**; el zoom de página sí (reflujo probado a 320 px). Migrar a rem es un cambio transversal no hecho.
+- Directorio de locales y mapa: requiere datos nuevos en el modelo.
+- Preview en Vercel: no se publicó nada; requiere autorización.
+- Cámara real, instalación de la PWA y vibración en dispositivo físico: sin probar.
+- Tabla `OtpChallenge`: reservada y sin uso; puede eliminarse en una migración futura.

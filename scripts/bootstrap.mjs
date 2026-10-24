@@ -4,6 +4,11 @@ import nextEnv from '@next/env';
 
 nextEnv.loadEnvConfig(process.cwd());
 
+/** Muestra host y base sin credenciales: las URL de conexion llevan la contrasena. */
+function safeTarget(url) {
+  try { const u = new URL(url); return `${u.host}/${u.pathname.slice(1)}`; } catch { return '(URL no valida)'; }
+}
+
 const targetUrls = [process.env.DATABASE_URL, process.env.QA_DATABASE_URL].filter(Boolean);
 
 for (const url of [...new Set(targetUrls)]) {
@@ -24,9 +29,9 @@ for (const url of [...new Set(targetUrls)]) {
     } else {
       console.log('Shopping records are ready. Set ADMIN_EMAIL and ADMIN_PASSWORD to create the first admin account.');
     }
-    console.log(`Ready: ${centenario.name} and ${uniplaza.name} at ${url}.`);
+    console.log(`Ready: ${centenario.name} and ${uniplaza.name} at ${safeTarget(url)}.`);
   } catch (err) {
-    console.warn(`Could not seed ${url}: ${err.message}`);
+    console.warn(`Could not seed ${safeTarget(url)}: ${err.message}`);
   } finally {
     await prisma.$disconnect();
   }

@@ -1,0 +1,36 @@
+/* Cupones del participante. Hereda --brand-* del contenedor de campaña; no define colores de marca propios. */
+.cw { margin: 24px 20px 8px; }
+.cw-title { margin: 0 0 12px; font: 600 24px/1.15 var(--brand-font-display, Georgia, serif); color: var(--brand-text, #203a31); }
+.cw-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: color-mix(in srgb, var(--brand-text, #203a31) 8%, transparent); }
+.cw-tabs button { min-height: 48px; border: 0; border-radius: 10px; background: transparent; color: var(--brand-text-muted, #55635c); font: 700 15px var(--brand-font-body, system-ui, sans-serif); cursor: pointer; touch-action: manipulation; }
+.cw-tabs button[aria-pressed="true"] { background: var(--brand-surface-raised, #fff); color: var(--brand-text, #203a31); box-shadow: 0 1px 3px rgb(0 0 0 / 14%); }
+.cw :focus-visible { outline: 3px solid var(--brand-focus, #8a5a1f); outline-offset: 2px; }
+.cw-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 12px; }
+.cw-card { padding: 16px; border: 1px solid var(--brand-border, #d6dacd); border-radius: var(--brand-radius-card, 14px); background: var(--brand-surface-raised, #fff); color: var(--brand-text, #203a31); }
+.cw-card[data-state="available"] { border-color: var(--brand-primary, #315d4b); box-shadow: 0 0 0 1px var(--brand-primary, #315d4b) inset; }
+.cw-card:not([data-state="available"]) { background: color-mix(in srgb, var(--brand-surface-raised, #fff) 60%, var(--brand-surface, #f3f0e7)); }
+.cw-card:not([data-state="available"]) h4 { color: var(--brand-text-muted, #55635c); }
+.cw-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.cw-top h4 { margin: 0; font: 700 17px/1.3 var(--brand-font-body, system-ui, sans-serif); overflow-wrap: anywhere; }
+.cw-chip { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 3px 10px 3px 8px; border-radius: 999px; font: 700 13px var(--brand-font-body, system-ui, sans-serif); background: var(--state-success-bg, #e6f4ea); color: var(--state-success-ink, #17603f); }
+.cw-chip[data-state="redeemed"] { background: var(--state-info-bg, #e7f1f5); color: var(--state-info-ink, #1d4d63); }
+.cw-chip[data-state="expired"] { background: var(--state-warning-bg, #fdf3dc); color: var(--state-warning-ink, #6f4a0b); }
+.cw-chip[data-state="void"] { background: var(--state-danger-bg, #fbeceb); color: var(--state-danger-ink, #8f2f28); }
+.cw-where, .cw-expiry { margin: 8px 0 0; font-size: 15px; line-height: 1.45; color: var(--brand-text-muted, #55635c); }
+.cw-expiry[data-soon="true"] { color: var(--state-warning-ink, #6f4a0b); font-weight: 700; }
+.cw-show { width: 100%; min-height: 52px; margin-top: 12px; border: 0; border-radius: var(--brand-radius-card, 14px); background: var(--brand-primary, #315d4b); color: var(--brand-on-primary, #fff); font: 700 17px var(--brand-font-body, system-ui, sans-serif); cursor: pointer; touch-action: manipulation; transition: background-color var(--dur-feedback, 120ms), transform var(--dur-feedback, 120ms); }
+.cw-show:hover { background: var(--brand-primary-strong, #203f34); }
+.cw-show:active { transform: scale(.985); }
+.cw-voucher { display: grid; justify-items: center; gap: 10px; margin-top: 14px; padding: 16px; border-radius: 12px; background: #fff; color: #14231d; text-align: center; animation: cw-in var(--dur-surface, 240ms) var(--ease-out, ease-out); }
+.cw-voucher p { margin: 0; font-size: 15px; font-weight: 600; }
+.cw-voucher img { width: min(220px, 64vw); height: auto; image-rendering: pixelated; }
+.cw-voucher code { display: block; width: 100%; padding: 9px 6px; border: 2px dashed #8a968f; border-radius: 10px; background: #f6f4ec; font: 500 clamp(18px, 5.6vw, 22px)/1.2 var(--brand-font-utility, ui-monospace, monospace); letter-spacing: .08em; overflow-wrap: anywhere; user-select: all; }
+.cw-voucher small { font-size: 14px; color: #3f4c44; }
+.cw-empty { margin: 14px 0 0; padding: 22px 16px; border: 1px dashed var(--brand-border, #d6dacd); border-radius: var(--brand-radius-card, 14px); text-align: center; font-size: 15px; line-height: 1.5; color: var(--brand-text-muted, #55635c); }
+.cw-error { margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--state-danger-bg, #fbeceb); color: var(--state-danger-ink, #8f2f28); font-size: 15px; }
+.cw-error button { min-height: 44px; margin-left: 6px; border: 0; background: none; color: inherit; font: 700 15px var(--brand-font-body, system-ui, sans-serif); text-decoration: underline; cursor: pointer; }
+.cw-skeleton { display: grid; gap: 10px; margin-top: 14px; }
+.cw-skeleton span { height: 92px; border-radius: 14px; background: linear-gradient(90deg, #e9e6dc 25%, #f3f0e7 37%, #e9e6dc 63%); background-size: 400% 100%; animation: cw-shimmer 1.4s ease infinite; }
+@keyframes cw-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+@keyframes cw-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cw-voucher, .cw-skeleton span { animation: none; } .cw-show { transition: none; } }

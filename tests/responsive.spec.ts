@@ -78,7 +78,7 @@ test('both shopping art directions carry through every public PWA destination an
 
     await page.goto(`${shopping.path}/participar/QA-TEST-01`);
     await expect(page.locator('main[data-shopping]')).toHaveAttribute('data-shopping', shopping.slug);
-    await expect(page.getByRole('link', { name: `Volver a la campaña de ${shopping.name}` })).toHaveAttribute('href', shopping.path);
+    await expect(page.getByRole('link', { name: shopping.name })).toHaveAttribute('href', shopping.path);
     await expectNoHorizontalOverflow(page);
   }
   expect(observed.centenario).not.toEqual(observed.uniplaza);

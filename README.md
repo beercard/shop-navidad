@@ -45,7 +45,7 @@ Abrí http://localhost:3000. La portada `/` deriva a la experiencia correcta. `/
 - `npm run db:generate` regenera el cliente Prisma después de cambiar el esquema.
 - `npm run db:seed` inicializa los dos shoppings y, si recibe las variables opcionales, el primer administrador.
 
-Las migraciones versionadas instalan el esquema inicial, el ownership obligatorio por shopping, metadatos de premios demo, los modelos de ubicación/comercio/OTP (`20261023120000_locations_merchants_otp`) y restricciones relacionales compuestas de tenant (`20261023143000_tenant_composite_constraints`). La migración de tenant inicial aborta si encuentra campañas enlazadas a más de un shopping o sin shopping; la migración compuesta falla de forma segura si hay referencias históricas cruzadas que violan la pertenencia. Aplicá desarrollo con `npm run db:migrate:dev`; para QA usá `npm run qa:setup` (primera vez) y `npm run qa:migrate` (posteriores). Las migraciones nuevas están generadas, pero siguen pendientes de aplicación porque PostgreSQL QA local no estaba disponible.
+Las migraciones versionadas instalan el esquema inicial, el ownership obligatorio por shopping, metadatos de premios demo, los modelos de ubicación/comercio/OTP (`20261023120000_locations_merchants_otp`), restricciones relacionales compuestas de tenant (`20261023143000_tenant_composite_constraints`) y revocación de sesiones administrativas (`20261023220000_merchant_account_sessions`). La migración de tenant inicial aborta si encuentra campañas enlazadas a más de un shopping o sin shopping; la migración compuesta falla de forma segura si hay referencias históricas cruzadas que violan la pertenencia. Aplicá desarrollo con `npm run db:migrate:dev`; para QA usá `npm run qa:setup` (primera vez) y `npm run qa:migrate` (posteriores).
 
 ## Centro de pruebas QA
 
@@ -79,10 +79,10 @@ No uses datos personales ni credenciales productivas en QA. No configures `QA_MO
 ### Alcance funcional pendiente
 
 - La ruta NFC/QR registra `LANDING_VISIT` con deduplicación por cookie opaca en ventanas de 30 minutos; no equivale a visitantes únicos verificados y una persona puede borrar su cookie.
-- Comercios, relación usuario-comercio, asignación de premios y portal de consulta/canje están implementados. La asociación de validador a comercio y la gestión de usuarios quedan bajo superadministrador; el operador puede administrar solo recursos del shopping.
-- No hay verificación telefónica OTP ni proveedor SMS/WhatsApp configurado. La participación sigue siendo anónima, no se simula verificación.
+- Comercios, relación usuario-comercio, asignación de premios y portal de consulta/canje están implementados. Las cuentas validadoras tienen un único comercio y shopping; la cuenta compartida identifica el turno/equipo, no a cada empleado individual. El superadministrador puede suspender acceso y generar una contraseña temporal; el operador puede cambiar su contraseña. No hay proveedor de correo configurado para recuperación automática. Ver [operación del portal de comercios](docs/merchant-portal.md).
+- **Decisión de producto (24-10-2026): no se verifica el teléfono por SMS/WhatsApp**, porque era una fricción para participar. La participación es anónima por cookie de dispositivo (180 días): una persona puede participar de nuevo si borra cookies o usa otro dispositivo. Los límites reales son el stock, un cupón por tarjeta y participante, y el límite de intentos por IP.
 - Las rutas y operaciones validan tenant en servidor. Aún falta añadir restricciones compuestas en base de datos para impedir relaciones con shopping discordante aunque una futura ruta interna omita validación.
-- La migración y pruebas de integración nuevas requieren ejecutar contra PostgreSQL QA aislado antes de habilitar la operación.
+- El lector QR necesita una prueba física adicional en teléfono por HTTPS; la prueba QA automatizada cubre la alternativa cuando no hay cámara disponible.
 
 ## Datos iniciales de campaña
 

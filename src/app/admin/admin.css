@@ -1,0 +1,99 @@
+/*
+ * Panel de administración: capa de consistencia sobre los estilos existentes (AdminStyles).
+ * Prefijo .admin-app / .admin-login para ganar especificidad sin !important.
+ * Reglas: texto mínimo 12 px (13 px para contenido), contraste ≥ 4.5:1, objetivos táctiles ≥ 44 px,
+ * foco visible, tipografía cargada por next/font, estados con texto además de color.
+ */
+.admin-app, .admin-login, .admin-boot { --a-muted: #4a5850; --a-line: #d9dccf; font-family: var(--sans), system-ui, sans-serif; font-size: 15px; }
+.admin-app :focus-visible, .admin-login :focus-visible { outline: 3px solid #8a5a1f; outline-offset: 2px; }
+
+/* Barra lateral */
+.admin-app .sidebar { gap: 22px; overflow-y: auto; }
+.admin-app .side-brand b { font: 600 18px var(--serif), Georgia, serif; }
+.admin-app .side-brand small { font-size: 12px; letter-spacing: 0; color: #b9cabd; }
+.admin-app .sidebar nav { gap: 2px; }
+.admin-app .nav-group { display: grid; gap: 2px; }
+.admin-app .nav-group + .nav-group { margin-top: 14px; }
+.admin-app .nav-group-label { margin: 0 0 4px; padding: 0 13px; font-size: 12px; font-weight: 700; color: #a9bdae; }
+.admin-app .sidebar nav button { gap: 12px; padding: 10px 13px; border-radius: 8px; font-size: 14px; line-height: 1.25; color: #d6e2d9; transition: background-color var(--dur-feedback, 120ms); }
+.admin-app .sidebar nav button svg { flex: none; width: 20px; height: 20px; }
+.admin-app .sidebar nav button.active { background: #ffffff26; color: #fff; box-shadow: inset 3px 0 0 #e5c780; }
+.admin-app .side-bottom { font-size: 14px; }
+.admin-app .side-bottom small { font-size: 12px; color: #b9cabd; }
+.admin-app .side-bottom button, .admin-app .mobile-logout { min-height: 44px; padding: 8px 12px; font-size: 14px; font-weight: 600; }
+
+/* Encabezado y tipografía */
+.admin-app .eyebrow, .admin-login .eyebrow { font-size: 14px; letter-spacing: 0; font-weight: 600; color: #7d4a38; text-transform: none; }
+.admin-app .admin-header h1 { font: 600 clamp(28px, 3vw, 38px)/1.1 var(--serif), Georgia, serif; letter-spacing: -.015em; }
+.admin-app .shop-select { font-size: 14px; }
+.admin-app .panel-head h2 { font: 600 21px/1.2 var(--serif), Georgia, serif; }
+.admin-app .metric span { font-size: 14px; }
+.admin-app .metric strong { font: 600 clamp(28px, 3vw, 36px)/1 var(--serif), Georgia, serif; font-variant-numeric: lining-nums tabular-nums; }
+.admin-app .stock-count { font: 600 20px var(--serif), Georgia, serif; font-variant-numeric: lining-nums tabular-nums; }
+.admin-app .stock-count small { font: 13px var(--sans), Arial, sans-serif; }
+
+/* Listas, tablas y estados */
+.admin-app .list-row b { font-size: 15px; }
+.admin-app .list-row small, .admin-app .hint, .admin-app .stock-title small, .admin-app .table-sub { font-size: 13px; }
+.admin-app .list-row time { font-size: 13px; color: var(--a-muted); font-variant-numeric: tabular-nums; }
+.admin-app .badge { padding: 4px 11px; font-size: 13px; font-weight: 600; background: #ecebe2; color: #3f4c44; }
+.admin-app .badge.on { background: #dcecdf; color: #1d5a3b; }
+.admin-app table { font-size: 14px; }
+.admin-app th { font-size: 13px; font-weight: 700; color: #36443c; background: #f1efe6; }
+.admin-app th, .admin-app td { padding: 12px 14px; }
+.admin-app .form-grid label, .admin-app .stock-adjust label, .admin-app .redeem-panel label, .admin-login .login-card label, .admin-app .search, .admin-app .scope-options legend, .admin-app .pager { font-size: 14px; }
+.admin-app .scope-options label { font-size: 14px; }
+.admin-app .secondary, .admin-app .primary { font: 700 14px var(--sans), Arial, sans-serif; min-height: 44px; padding: 10px 16px; border-radius: 8px; }
+.admin-app .notice, .admin-login .notice { font-size: 15px; border-radius: 10px; }
+.admin-app .notice.error { background: #fbeceb; color: #8f2f28; }
+.admin-app .notice.success { background: #e6f4ea; color: #17603f; }
+.admin-app .loading, .admin-app .empty { font-size: 15px; }
+.admin-app .pending-note, .admin-app .redeem-panel > p { font-size: 14px; }
+.admin-app .panel { border-radius: 12px; }
+.admin-app .metric { border-radius: 12px; }
+
+/* Acceso */
+.admin-login .login-card h1 { font: 600 clamp(30px, 8vw, 36px)/1.1 var(--serif), Georgia, serif; letter-spacing: -.015em; }
+.admin-login .login-card p { font-size: 15px; }
+.admin-login .login-card input { min-height: 52px; font-size: 17px; }
+.admin-login .primary { min-height: 56px; font-size: 17px; border-radius: 10px; }
+
+/* Móvil: la barra lateral pasa a una tira de secciones con desplazamiento y borde difuminado */
+@media (max-width: 900px) {
+  .admin-app .sidebar { padding: 8px 12px 6px; gap: 4px; }
+  .admin-app .side-brand small { display: none; }
+  .admin-app .sidebar nav { display: flex; align-items: stretch; gap: 4px; padding-bottom: 6px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+  .admin-app .sidebar nav::-webkit-scrollbar { display: none; }
+  .admin-app .nav-group { display: contents; }
+  .admin-app .nav-group + .nav-group { margin-top: 0; }
+  .admin-app .nav-group-label { display: none; }
+  .admin-app .sidebar nav button { flex: 0 0 auto; scroll-snap-align: start; min-height: 44px; padding: 8px 14px; border-radius: var(--radius-full, 999px); font-size: 14px; white-space: nowrap; }
+  .admin-app .sidebar nav button.active { box-shadow: none; background: #e5c780; color: #123b32; font-weight: 700; }
+  .admin-app .sidebar nav button svg { width: 18px; height: 18px; }
+  .admin-app .admin-header { gap: 10px; }
+  .admin-app .shop-select { width: 100%; margin-left: 0; }
+  .admin-app .shop-select select { flex: 1; min-width: 0; }
+}
+@media (max-width: 650px) {
+  .admin-app .metric strong { font-size: 28px; }
+  .admin-app .list-row { flex-wrap: wrap; }
+  .admin-app .list-row time { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .admin-app * { transition: none !important; } }
+
+.admin-app .eyebrow, .admin-login .eyebrow, .admin-app th { font-family: var(--sans), system-ui, sans-serif; }
+
+/* Tabla de rendimiento: barra comparativa (el gráfico adecuado para comparar conteos) y apilado en móvil. */
+.admin-app .bar-cell { min-width: 150px; }
+.admin-app .bar-cell b { display: inline-block; min-width: 2ch; margin-left: 10px; font-variant-numeric: lining-nums tabular-nums; }
+.admin-app .bar-track { display: inline-block; vertical-align: middle; width: min(160px, 40%); height: 10px; border-radius: 999px; background: #e7e5da; overflow: hidden; }
+.admin-app .bar-fill { display: block; height: 100%; min-width: 2px; border-radius: 999px; background: #245347; }
+@media (max-width: 650px) {
+  .admin-app .stack-sm table, .admin-app .stack-sm tbody, .admin-app .stack-sm tr, .admin-app .stack-sm td { display: block; width: 100%; }
+  .admin-app .stack-sm thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .admin-app .stack-sm tr { padding: 10px 0; border-bottom: 1px solid var(--a-line); }
+  .admin-app .stack-sm td { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 2px; border: 0; white-space: normal; }
+  .admin-app .stack-sm td::before { content: attr(data-label); flex: none; color: var(--a-muted); font-size: 13px; font-weight: 700; }
+  .admin-app .stack-sm .bar-cell { justify-content: flex-start; }
+  .admin-app .stack-sm .bar-cell::before { min-width: 120px; }
+}
