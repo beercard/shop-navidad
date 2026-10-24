@@ -235,13 +235,28 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
             </span>
           </a>
           <div className={styles.topActions}>
-            <button type="button" className={styles.progressChip} onClick={() => goTo('progreso')} aria-label={`Colección: ${collected} de ${collectionTarget} tarjetas`}>
+            <button type="button" className={styles.progressChip} onClick={() => goTo('progreso')} aria-label={`${collected}/${collectionTarget} postas en tu colección`}>
               <span className={styles.progressChipDot} aria-hidden="true" />
               <b>{collected}/{collectionTarget}</b>
               <small>postas</small>
             </button>
           </div>
         </header>
+
+        <nav className={styles.tabbar} aria-label="Secciones de la campaña">
+          {VIEWS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`${styles.tab} ${view === item.id ? styles.tabActive : ''}`}
+              aria-current={view === item.id ? 'page' : undefined}
+              onClick={() => goTo(item.id)}
+            >
+              <Icon name={item.id} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
 
         <div className={styles.screen}>
           {view === 'inicio' && (
@@ -337,19 +352,10 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
         </div>
 
         {view === 'jugar' && result?.status === 'won' && <Confetti />}
-        <nav className={styles.tabbar} aria-label="Secciones de la campaña">
-          {VIEWS.map((item) => (
-            <button
-              key={item.id}
-              className={`${styles.tab} ${view === item.id ? styles.tabActive : ''}`}
-              aria-current={view === item.id ? 'page' : undefined}
-              onClick={() => goTo(item.id)}
-            >
-              <Icon name={item.id} />
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
+        <footer className={styles.appFooter}>
+          <span>{brand.name} · {shopping === 'centenario' ? 'Temporada Festiva' : 'Paseo Urbano'}</span>
+          <Link href="/merchant">Acceso Comercios</Link>
+        </footer>
       </main>
 
       {selectedPrize && (

@@ -54,6 +54,7 @@
 
 /* Acceso */
 .admin-login { background: radial-gradient(circle at 20% 10%, #244a3c 0%, #10281f 100%) !important; }
+.admin-login > a { color: #f3deb0 !important; font-weight: 700; font-size: 14px; }
 .admin-login .login-card { border-radius: 22px !important; box-shadow: 0 28px 70px rgb(0 0 0 / 36%) !important; border: 1px solid rgb(212 173 104 / 35%) !important; }
 .admin-login .login-card h1 { font: 600 clamp(30px, 8vw, 36px)/1.1 var(--serif), Georgia, serif; letter-spacing: -.015em; }
 .admin-login .login-card p { font-size: 15px; }
