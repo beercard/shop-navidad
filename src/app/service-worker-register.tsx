@@ -10,14 +10,24 @@ export function ServiceWorkerRegister() {
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' || !('serviceWorker' in navigator)) return;
     let active = true;
-    navigator.serviceWorker.register('/sw.js', { scope: '/' }).then((value) => {
+    const hadController = Boolean(navigator.serviceWorker.controller);
+    navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' }).then((value) => {
       if (!active) return;
       setRegistration(value);
-      if (value.waiting) setUpdateReady(true);
+      value.update().catch(() => {});
+      if (value.waiting) {
+        setUpdateReady(true);
+        updateRequested.current = true;
+        value.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
       value.addEventListener('updatefound', () => {
         const worker = value.installing;
         worker?.addEventListener('statechange', () => {
-          if (active && worker.state === 'installed' && navigator.serviceWorker.controller) setUpdateReady(true);
+          if (active && worker.state === 'installed' && hadController) {
+            setUpdateReady(true);
+            updateRequested.current = true;
+            worker.postMessage({ type: 'SKIP_WAITING' });
+          }
         });
       });
     }).catch(() => {
@@ -28,8 +38,12 @@ export function ServiceWorkerRegister() {
 
   useEffect(() => {
     if (!registration) return;
+    let reloaded = false;
     const onControllerChange = () => {
-      if (updateRequested.current) window.location.reload();
+      if (!reloaded && updateRequested.current) {
+        reloaded = true;
+        window.location.reload();
+      }
     };
     navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
     return () => navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
