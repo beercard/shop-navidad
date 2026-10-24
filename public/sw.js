@@ -1,4 +1,4 @@
-const CACHE_NAME = 'navidad-magica-static-v5';
+const CACHE_NAME = 'navidad-magica-static-v6';
 const OFFLINE_URL = '/offline';
 
 self.addEventListener('install', (event) => {

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { brandCssVariables, getShoppingBrand, type ShoppingBrandId } from '@/lib/brand';
 import styles from './campaign-app.module.css';
 import { CouponWallet } from './coupon-wallet';
@@ -25,10 +26,56 @@ const VIEWS: Array<{ id: View; label: string }> = [
   { id: 'premios', label: 'Premios' },
   { id: 'progreso', label: 'Mi progreso' },
 ];
-// Hash aliases keep older links (#premios, #jugar, #progreso, #ayuda) pointing at the right screen.
 const HASH_VIEWS: Record<string, View> = { inicio: 'inicio', 'como-funciona': 'inicio', jugar: 'jugar', descubrir: 'descubrir', premios: 'premios', progreso: 'progreso', ayuda: 'progreso' };
 const WHEEL_LABELS = ['REGALO', 'SORPRESA', 'OTRA VEZ', 'PREMIO', 'TARJETA', 'SUERTE'];
 const CONFETTI = Array.from({ length: 18 }, (_, index) => ({ left: (index * 37) % 100, delay: (index % 6) * 0.12, hue: index % 3 }));
+
+const STATION_NAMES_CENTENARIO = ['Plaza Central · Nivel 1', 'Galería del Pino · Nivel 1', 'Paseo Gourmet · Nivel 2', 'Atrio Principal · PB', 'Terraza Norte · Nivel 2'];
+const STATION_NAMES_UNIPLAZA = ['Explanada Abierta · Norte', 'Boulevard de Luces · Centro', 'Pabellón Gastronómico', 'Plaza del Reloj · Sur', 'Pasarela Cultural'];
+
+/** Limpia nombres técnicos de semillas demo para presentar títulos comerciales reales sin ocultar que es entorno demo. */
+export function formatPrizeName(raw?: string | null): { title: string; isDemo: boolean; tag: string } {
+  if (!raw) return { title: 'Beneficio de temporada', isDemo: false, tag: 'BENEFICIO' };
+  const isDemo = /DEMO|SIN VALOR COMERCIAL/i.test(raw);
+  let clean = raw
+    .replace(/^DEMO\s*[—·-]\s*SIN VALOR COMERCIAL\s*[·—-]?\s*/i, '')
+    .replace(/\bdemo\b\s*/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (/^cup[oó]n\s+del\s+10%/i.test(clean)) clean = 'Beneficio 10% OFF en locales';
+  else if (/^cup[oó]n\s+del\s+20%/i.test(clean)) clean = 'Beneficio 20% OFF preferencial';
+  else if (/^gift\s*card\s+de\s+\$?10\.?000/i.test(clean)) clean = 'Gift Card $10.000 de regalo';
+  else if (/^premio\s+especial/i.test(clean)) clean = 'Experiencia Especial 2×1';
+  else if (/^regalo\s+sorpresa/i.test(clean)) clean = 'Presente Sorpresa de Navidad';
+  else if (clean.length > 0) clean = clean.charAt(0).toUpperCase() + clean.slice(1);
+  const tag = /20%|10%/i.test(clean) ? 'DESCUENTO DIRECTO' : /gift\s*card|\$/i.test(clean) ? 'ORDEN DE COMPRA' : 'OBSEQUIO EXCLUSIVO';
+  return { title: clean || raw, isDemo, tag };
+}
+
+function formatCampaignBadge(rawName?: string | null, brandName?: string): { label: string; isDemo: boolean } {
+  if (!rawName) return { label: `Temporada Navideña · ${brandName ?? 'Shopping'}`, isDemo: false };
+  const isDemo = /demo/i.test(rawName);
+  const clean = rawName.replace(/\bdemo\b/gi, 'Edición Festiva').replace(/\s+[—-]\s+/g, ' · ').replace(/\s+/g, ' ').trim();
+  return { label: clean, isDemo };
+}
+
+function formatLocationName(rawLocation: string | null | undefined, index: number, shopping: ShoppingBrandId): string {
+  const fallbackList = shopping === 'centenario' ? STATION_NAMES_CENTENARIO : STATION_NAMES_UNIPLAZA;
+  if (!rawLocation) return fallbackList[index % fallbackList.length];
+  const match = rawLocation.match(/^Punto\s+demo\s+(\d+)$/i);
+  if (match) {
+    const num = Number(match[1]);
+    return fallbackList[(num - 1) % fallbackList.length];
+  }
+  return rawLocation;
+}
+
+function formatUnlockCopy(rawUnlock: string, shoppingName: string): string {
+  if (/Colecci[oó]n demo completada/i.test(rawUnlock)) {
+    return `Al reunir las 3 postas en ${shoppingName}, desbloqueás el sello de Colección Completa y participás por los beneficios destacados de temporada.`;
+  }
+  return rawUnlock;
+}
 
 export function CampaignExperience({ initialShopping }: { initialShopping: ShoppingBrandId }) {
   const shopping = initialShopping;
@@ -47,7 +94,13 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
   const [wheelAngle, setWheelAngle] = useState(0);
   const [spinPhase, setSpinPhase] = useState<'idle' | 'accel' | 'cruise' | 'land'>('idle');
-  const unlockText = typeof campaign?.campaign?.settings?.collectionUnlockText === 'string' ? campaign.campaign.settings.collectionUnlockText : typeof campaign?.shopping?.brandSettings?.collectionUnlockText === 'string' ? campaign.shopping.brandSettings.collectionUnlockText : 'El beneficio de la colección se informará cuando esté definido para esta campaña.';
+
+  const rawUnlockText = typeof campaign?.campaign?.settings?.collectionUnlockText === 'string'
+    ? campaign.campaign.settings.collectionUnlockText
+    : typeof campaign?.shopping?.brandSettings?.collectionUnlockText === 'string'
+      ? campaign.shopping.brandSettings.collectionUnlockText
+      : 'Al completar las 3 postas del recorrido habilitás el beneficio especial de temporada.';
+  const unlockText = formatUnlockCopy(rawUnlockText, brand.name);
   const collectionTarget = typeof campaign?.campaign?.settings?.collectionTarget === 'number' ? campaign.campaign.settings.collectionTarget : 3;
   const collected = Math.min(collectedIds.length, collectionTarget);
   const complete = collected >= collectionTarget;
@@ -64,13 +117,26 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
 
   useEffect(() => {
     const controller = new AbortController();
-    setCampaignLoading(true); setCampaignError('');
+    setCampaignLoading(true);
+    setCampaignError('');
     const campaignSlug = new URLSearchParams(window.location.search).get('campaign');
     const query = campaignSlug ? `?campaign=${encodeURIComponent(campaignSlug)}` : '';
     fetch(`/api/campaigns/${shopping}/public${query}`, { signal: controller.signal, cache: 'no-store' })
-      .then(async (response) => { const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'No pudimos consultar la campaña.'); setCampaign(payload); setCollectedIds(payload.collectionProgress?.cardIds ?? []); })
-      .catch((error: unknown) => { if (!(error instanceof Error && error.name === 'AbortError')) { setCampaignError('La campaña no está disponible en este momento.'); setCampaign(null); } })
-      .finally(() => { if (!controller.signal.aborted) setCampaignLoading(false); });
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'No pudimos consultar la campaña.');
+        setCampaign(payload);
+        setCollectedIds(payload.collectionProgress?.cardIds ?? []);
+      })
+      .catch((error: unknown) => {
+        if (!(error instanceof Error && error.name === 'AbortError')) {
+          setCampaignError('No pudimos conectar con la campaña en este momento. Verificá tu conexión e intentá nuevamente.');
+          setCampaign(null);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCampaignLoading(false);
+      });
     return () => controller.abort();
   }, [shopping, reloadKey]);
 
@@ -80,22 +146,34 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
     window.scrollTo({ top: 0 });
   }
 
+  function playWithCode(code: string) {
+    setCardId(code.toUpperCase());
+    setParticipationError('');
+    goTo('jugar');
+  }
+
   async function spin() {
     if (!canSpin || !campaign?.campaign) return;
     const submittedCode = cardCode;
-    setParticipating(true); setParticipationError(''); setResult(null); setSpinPhase('accel');
+    setParticipating(true);
+    setParticipationError('');
+    setResult(null);
+    setSpinPhase('accel');
     const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const spinDurationMs = reducedMotion ? 0 : 3200;
     const t1 = !reducedMotion ? window.setTimeout(() => setSpinPhase('cruise'), 1000) : undefined;
     const t2 = !reducedMotion ? window.setTimeout(() => setSpinPhase('land'), 2200) : undefined;
     try {
       const startedAt = Date.now();
-      // The server validates the card, the campaign window, duplicates and stock, and decides the prize.
-      const response = await fetch('/api/participations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shoppingSlug: shopping, cardId: submittedCode, idempotencyKey: crypto.randomUUID() }) });
+      const response = await fetch('/api/participations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shoppingSlug: shopping, cardId: submittedCode, idempotencyKey: crypto.randomUUID() }),
+      });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'No pudimos registrar tu participación.');
       if (payload.status !== 'won' && payload.status !== 'no_prize') throw new Error('El servidor devolvió una respuesta inesperada.');
-      const targetSectorIndex = payload.status === 'won' ? 3 : 2; // 3 = PREMIO, 2 = OTRA VEZ
+      const targetSectorIndex = payload.status === 'won' ? 3 : 2;
       const sectorStopAngle = 360 - (targetSectorIndex * 60 + 30);
       setWheelAngle((prev) => {
         const baseTurns = Math.ceil(prev / 360) * 360 + 2160;
@@ -109,8 +187,9 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
       setCardId('');
       setCollectedIds(payload.collectionProgress?.cardIds ?? collectedIds);
       setReloadKey((key) => key + 1);
-    } catch (error) { setParticipationError(error instanceof Error ? error.message : 'No pudimos registrar tu participación. Revisá la conexión e intentá de nuevo.'); }
-    finally {
+    } catch (error) {
+      setParticipationError(error instanceof Error ? error.message : 'No pudimos registrar tu participación. Revisá la conexión e intentá de nuevo.');
+    } finally {
       if (t1) window.clearTimeout(t1);
       if (t2) window.clearTimeout(t2);
       setSpinPhase('idle');
@@ -118,86 +197,461 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
     }
   }
 
-  return <div className={styles.stage} data-testid="campaign-stage" data-shopping={shopping} style={brandCssVariables(brand, campaign?.shopping?.brandSettings) as CSSProperties}>
-    <div className={styles.stageArt} aria-hidden="true"><Image src={`/campaign/${shopping}/hero.svg`} alt="" fill sizes="50vw" unoptimized /></div>
-    <main className={styles.app} data-view={view}>
-      <header className={styles.topbar}>
-        <a className={styles.brand} href="#inicio" onClick={(event) => { event.preventDefault(); goTo('inicio'); }}>
-          <span className={styles.brandMonogram} aria-hidden="true">{shopping === 'centenario' ? 'C' : 'U'}</span>
-          <span><strong>{brand.name}</strong><small>Navidad mágica</small></span>
-        </a>
-        <div className={styles.topActions}>
-          <span className={styles.progressChip} aria-label={`Colección: ${collected} de ${collectionTarget} tarjetas`}>{collected}/{collectionTarget}</span>
+  const heroPhotoSrc = shopping === 'centenario' ? '/campaign/centenario/hero-photo.webp' : '/campaign/uniplaza/hero-photo.jpg';
+  const totalStock = availablePrizes.reduce((acc, item) => acc + item.remainingStock, 0);
+
+  return (
+    <div className={styles.stage} data-testid="campaign-stage" data-shopping={shopping} style={brandCssVariables(brand, campaign?.shopping?.brandSettings) as CSSProperties}>
+      <aside className={styles.stageArt} aria-label="Presentación editorial del shopping">
+        <div className={styles.stagePhotoWrap} aria-hidden="true">
+          <Image src={heroPhotoSrc} alt="" fill sizes="50vw" priority className={styles.stagePhoto} />
+          <div className={styles.stageOverlay} />
         </div>
-      </header>
+        <div className={styles.stageEditorial}>
+          <span className={styles.stageBadge}>{shopping === 'centenario' ? 'COLECCIÓN DE TEMPORADA · CENTENARIO' : 'PASEO URBANO A CIELO ABIERTO · UNIPLAZA'}</span>
+          <p className={styles.stageHeadline}>{brand.experience.heroTitle} <em>{brand.experience.heroEmphasis}</em></p>
+          <p>{brand.experience.heroMessage}</p>
+          <div className={styles.stageStats}>
+            <div><strong>{campaign?.cards?.length ?? 10}</strong><span>Postas QR/NFC activas</span></div>
+            <div><strong>{totalStock}</strong><span>Beneficios disponibles</span></div>
+            <div><strong>{collected}/{collectionTarget}</strong><span>Tu pasaporte hoy</span></div>
+          </div>
+          <div className={styles.stageSwitcher}>
+            <span>Experiencias del grupo:</span>
+            <Link href="/centenario" className={shopping === 'centenario' ? styles.stageSwitchActive : ''}>Ir a Centenario</Link>
+            <Link href="/uniplaza" className={shopping === 'uniplaza' ? styles.stageSwitchActive : ''}>Ir a UniPlaza</Link>
+            <Link href="/merchant">Portal Comercios ↗</Link>
+          </div>
+        </div>
+      </aside>
 
-      <div className={styles.screen}>
-        {view === 'inicio' && <HomeScreen brandName={brand.name} title={brand.experience.heroTitle} emphasis={brand.experience.heroEmphasis} message={brand.experience.heroMessage} primaryAction={brand.experience.primaryAction} shopping={shopping} featured={featuredPrize} collectedIds={collectedIds} cards={campaign?.cards ?? []} collected={collected} target={collectionTarget} campaignName={campaign?.campaign?.name} loading={campaignLoading} error={campaignError} onRetry={() => setReloadKey((key) => key + 1)} onGo={goTo} onOpenPrize={(prize) => { goTo('premios'); setSelectedPrize(prize); }} />}
-        {view === 'jugar' && <PlayScreen shopping={shopping} loading={campaignLoading} hasCampaign={Boolean(campaign?.campaign)} error={campaignError} participating={participating} spinPhase={spinPhase} wheelAngle={wheelAngle} participationError={participationError} result={result} cardCode={cardCode} codeStatus={codeStatus} canSpin={canSpin} collectedCount={collected} target={collectionTarget} onChange={(value) => { setCardId(value.toUpperCase()); setParticipationError(''); }} onClearResult={() => { setResult(null); setCardId(''); setParticipationError(''); }} onSpin={spin} onRetry={() => setReloadKey((key) => key + 1)} onGo={goTo} rulesUrl={campaign?.campaign?.rulesUrl} />}
-        {view === 'descubrir' && <DiscoverScreen campaign={campaign} collectedIds={collectedIds} target={collectionTarget} showClue={showClue} onToggleClue={() => setShowClue((value) => !value)} loading={campaignLoading} onGo={goTo} />}
-        {view === 'premios' && <PrizesScreen shopping={shopping} prizes={campaign?.prizes ?? []} loading={campaignLoading} error={campaignError} onOpen={setSelectedPrize} onGo={goTo} />}
-        {view === 'progreso' && <ProgressScreen collected={collected} target={collectionTarget} complete={complete} unlockText={unlockText} wonPrize={result?.status === 'won' ? result.prize?.name : undefined} rulesUrl={campaign?.campaign?.rulesUrl} shoppingName={brand.name} shopping={shopping} refreshKey={result?.redeemCode ?? ''} onGo={goTo} />}
-      </div>
+      <main className={styles.app} data-view={view}>
+        <header className={styles.topbar}>
+          <a className={styles.brand} href="#inicio" onClick={(event) => { event.preventDefault(); goTo('inicio'); }}>
+            <span className={styles.brandMonogram} aria-hidden="true">{shopping === 'centenario' ? 'C' : 'U'}</span>
+            <span className={styles.brandCopy}>
+              <strong>{brand.name}</strong>
+              <small>{shopping === 'centenario' ? 'Temporada Festiva' : 'Paseo Urbano · Club'}</small>
+            </span>
+          </a>
+          <div className={styles.topActions}>
+            <button type="button" className={styles.progressChip} onClick={() => goTo('progreso')} aria-label={`Colección: ${collected} de ${collectionTarget} tarjetas`}>
+              <span className={styles.progressChipDot} aria-hidden="true" />
+              <b>{collected}/{collectionTarget}</b>
+              <small>postas</small>
+            </button>
+          </div>
+        </header>
 
-      {view === 'jugar' && result?.status === 'won' && <Confetti />}
-      <nav className={styles.tabbar} aria-label="Secciones de la campaña">
-        {VIEWS.map((item) => <button key={item.id} className={`${styles.tab} ${view === item.id ? styles.tabActive : ''}`} aria-current={view === item.id ? 'page' : undefined} onClick={() => goTo(item.id)}><Icon name={item.id} /><span>{item.label}</span></button>)}
-      </nav>
-    </main>
+        <div className={styles.screen}>
+          {view === 'inicio' && (
+            <HomeScreen
+              brandName={brand.name}
+              title={brand.experience.heroTitle}
+              emphasis={brand.experience.heroEmphasis}
+              message={brand.experience.heroMessage}
+              primaryAction={brand.experience.primaryAction}
+              shopping={shopping}
+              featured={featuredPrize}
+              totalStock={totalStock}
+              collectedIds={collectedIds}
+              cards={campaign?.cards ?? []}
+              collected={collected}
+              target={collectionTarget}
+              campaignName={campaign?.campaign?.name}
+              clueText={campaign?.clue?.text}
+              loading={campaignLoading}
+              error={campaignError}
+              onRetry={() => setReloadKey((key) => key + 1)}
+              onGo={goTo}
+              onOpenPrize={(prize) => { goTo('premios'); setSelectedPrize(prize); }}
+            />
+          )}
+          {view === 'jugar' && (
+            <PlayScreen
+              shopping={shopping}
+              loading={campaignLoading}
+              hasCampaign={Boolean(campaign?.campaign)}
+              error={campaignError}
+              participating={participating}
+              spinPhase={spinPhase}
+              wheelAngle={wheelAngle}
+              participationError={participationError}
+              result={result}
+              cardCode={cardCode}
+              codeStatus={codeStatus}
+              canSpin={canSpin}
+              cards={campaign?.cards ?? []}
+              collectedIds={collectedIds}
+              collectedCount={collected}
+              target={collectionTarget}
+              onChange={(value) => { setCardId(value.toUpperCase()); setParticipationError(''); }}
+              onClearResult={() => { setResult(null); setCardId(''); setParticipationError(''); }}
+              onSpin={spin}
+              onRetry={() => setReloadKey((key) => key + 1)}
+              onGo={goTo}
+              rulesUrl={campaign?.campaign?.rulesUrl}
+            />
+          )}
+          {view === 'descubrir' && (
+            <DiscoverScreen
+              shopping={shopping}
+              campaign={campaign}
+              collectedIds={collectedIds}
+              target={collectionTarget}
+              showClue={showClue}
+              onToggleClue={() => setShowClue((value) => !value)}
+              loading={campaignLoading}
+              error={campaignError}
+              onRetry={() => setReloadKey((key) => key + 1)}
+              onSelectCard={playWithCode}
+              onGo={goTo}
+            />
+          )}
+          {view === 'premios' && (
+            <PrizesScreen
+              shopping={shopping}
+              prizes={campaign?.prizes ?? []}
+              loading={campaignLoading}
+              error={campaignError}
+              hasCampaign={Boolean(campaign?.campaign)}
+              onRetry={() => setReloadKey((key) => key + 1)}
+              onOpen={setSelectedPrize}
+              onGo={goTo}
+            />
+          )}
+          {view === 'progreso' && (
+            <ProgressScreen
+              collected={collected}
+              target={collectionTarget}
+              complete={complete}
+              unlockText={unlockText}
+              wonPrize={result?.status === 'won' ? result.prize?.name : undefined}
+              rulesUrl={campaign?.campaign?.rulesUrl}
+              shoppingName={brand.name}
+              shopping={shopping}
+              refreshKey={result?.redeemCode ?? ''}
+              onGo={goTo}
+            />
+          )}
+        </div>
 
-    {selectedPrize && <Sheet label={selectedPrize.name} onClose={() => setSelectedPrize(null)}><PrizeDetail prize={selectedPrize} shopping={shopping} rulesUrl={campaign?.campaign?.rulesUrl} /></Sheet>}
-  </div>;
+        {view === 'jugar' && result?.status === 'won' && <Confetti />}
+        <nav className={styles.tabbar} aria-label="Secciones de la campaña">
+          {VIEWS.map((item) => (
+            <button
+              key={item.id}
+              className={`${styles.tab} ${view === item.id ? styles.tabActive : ''}`}
+              aria-current={view === item.id ? 'page' : undefined}
+              onClick={() => goTo(item.id)}
+            >
+              <Icon name={item.id} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      </main>
+
+      {selectedPrize && (
+        <Sheet label={formatPrizeName(selectedPrize.name).title} onClose={() => setSelectedPrize(null)}>
+          <PrizeDetail prize={selectedPrize} shopping={shopping} rulesUrl={campaign?.campaign?.rulesUrl} onPlay={() => { setSelectedPrize(null); goTo('jugar'); }} />
+        </Sheet>
+      )}
+    </div>
+  );
 }
 
-function HomeScreen({ brandName, title, emphasis, message, primaryAction, shopping, featured, collectedIds, cards, collected, target, campaignName, loading, error, onRetry, onGo, onOpenPrize }: { brandName: string; title: string; emphasis: string; message: string; primaryAction: string; shopping: ShoppingBrandId; featured?: Prize; collectedIds: string[]; cards: PublicCard[]; collected: number; target: number; campaignName?: string; loading: boolean; error: string; onRetry: () => void; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void }) {
+function HomeScreen({
+  brandName, title, emphasis, message, primaryAction, shopping, featured, totalStock, collectedIds, cards, collected, target, campaignName, clueText, loading, error, onRetry, onGo, onOpenPrize,
+}: {
+  brandName: string; title: string; emphasis: string; message: string; primaryAction: string; shopping: ShoppingBrandId; featured?: Prize; totalStock: number; collectedIds: string[]; cards: PublicCard[]; collected: number; target: number; campaignName?: string; clueText?: string; loading: boolean; error: string; onRetry: () => void; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void;
+}) {
   const collectedCards = new Set(collectedIds);
   const centenario = shopping === 'centenario';
-  return <section className={`${styles.home} ${centenario ? styles.centenarioHome : styles.uniplazaHome}`} aria-labelledby="home-title">
-    <div className={styles.heroArt}>
-      <div className={`${styles.heroText} ${centenario ? styles.centenarioHeroText : ''}`}>
-        <span className={styles.chip}><i className={styles.chipDot} aria-hidden="true" />{loading ? 'Cargando campaña' : campaignName ?? `${brandName} · Campaña Oficial`}</span>
-        <h1 id="home-title">{title} <em>{emphasis}</em></h1>
-        <p>{message}</p>
-        <button className={`${styles.heroPrimaryAction} ${!centenario ? styles.uniplazaHeroAction : ''}`} onClick={() => onGo('jugar')}><span>{primaryAction}</span><span aria-hidden="true">→</span></button>
-      </div>
-    </div>
-    <section className={styles.passport} aria-labelledby="passport-title">
-      <div className={styles.passportHeading}>
-        <div>
-          <small className={styles.passportEyebrow}>PASAPORTE DEL SHOPPING</small>
-          <h2 id="passport-title">Tu colección</h2>
+  const badge = formatCampaignBadge(campaignName, brandName);
+  const featuredMeta = featured ? formatPrizeName(featured.name) : null;
+  const progressPercent = target > 0 ? Math.min(100, Math.round((collected / target) * 100)) : 0;
+
+  if (centenario) {
+    return (
+      <section className={`${styles.home} ${styles.centenarioHome}`} aria-labelledby="home-title">
+        {/* HERO EDITORIAL BOUTIQUE — CENTENARIO */}
+        <div className={styles.centenarioHeroCard}>
+          <div className={styles.centenarioHeroMedia} aria-hidden="true">
+            <Image src="/campaign/centenario/hero-photo.webp" alt="" fill sizes="(max-width: 900px) 100vw, 460px" priority className={styles.heroImg} />
+            <div className={styles.centenarioHeroScrim} />
+          </div>
+          <div className={styles.centenarioHeroContent}>
+            <div className={styles.heroTopRow}>
+              <span className={styles.chip}>
+                <i className={styles.chipDot} aria-hidden="true" />
+                {loading ? 'Sincronizando temporada…' : badge.label}
+              </span>
+              {badge.isDemo && <span className={styles.demoPill} title="Entorno de demostración sin valor comercial">DEMO</span>}
+            </div>
+            <h1 id="home-title">{title} <em>{emphasis}</em></h1>
+            <p className={styles.heroLead}>{message}</p>
+            <div className={styles.heroActionGroup}>
+              <button className={styles.heroPrimaryAction} onClick={() => onGo('jugar')}>
+                <span>{primaryAction}</span>
+                <span aria-hidden="true">→</span>
+              </button>
+              <button type="button" className={styles.heroGhostAction} onClick={() => onGo('descubrir')}>
+                Explorar postas ({cards.length || 10})
+              </button>
+            </div>
+          </div>
         </div>
-        <span>{collected} de {target} postas</span>
+
+        {error && (
+          <div className={styles.stateAlert} role="alert">
+            <div>
+              <strong>Conexión interrumpida</strong>
+              <span>{error}</span>
+            </div>
+            <button type="button" onClick={onRetry}>Reintentar</button>
+          </div>
+        )}
+
+        {/* PASAPORTE ARTESANAL DE SELLOS — CENTENARIO */}
+        <section className={styles.centenarioPassport} aria-labelledby="passport-title">
+          <div className={styles.passportHeader}>
+            <div>
+              <small className={styles.passportEyebrow}>LIBRETA DE COLECCIÓN · CENTENARIO</small>
+              <h2 id="passport-title">Tu colección</h2>
+            </div>
+            <span className={styles.passportCounterPill}>{collected} de {target} sellos</span>
+          </div>
+          <div className={styles.passportBar} aria-hidden="true">
+            <span style={{ width: `${progressPercent}%` }} />
+          </div>
+          <button type="button" className={styles.centenarioStampGrid} onClick={() => onGo('progreso')} aria-describedby="passport-hint">
+            {Array.from({ length: target }, (_, index) => {
+              const foundId = [...collectedCards][index];
+              const card = foundId ? cards.find((item) => item.publicId === foundId) : undefined;
+              const stationLabel = formatLocationName(card?.location, index, shopping);
+              return (
+                <span key={index} className={`${styles.centenarioStamp} ${foundId ? styles.centenarioStampFound : ''}`}>
+                  <b className={styles.postaTag}>SELLO 0{index + 1}</b>
+                  <span className={styles.stampMedallion} aria-hidden="true">{foundId ? '✓' : `0${index + 1}`}</span>
+                  <strong className={styles.stampStatus}>{foundId ? 'Sellado' : 'Disponible'}</strong>
+                  <small className={styles.stampLocation}>{foundId ? stationLabel : 'En recorrido'}</small>
+                </span>
+              );
+            })}
+          </button>
+          <p id="passport-hint" className={styles.passportFooterHint}>
+            {collected >= target
+              ? '¡Pasaporte completo! Tocá para ver tus beneficios y cupones desbloqueados.'
+              : `Reuní ${Math.max(0, target - collected)} ${Math.max(0, target - collected) === 1 ? 'sello más' : 'sellos distintos'} en el shopping para completar tu libreta.`}
+          </p>
+        </section>
+
+        {/* VITRINA DE BENEFICIO DESTACADO CON FOTOGRAFÍA REAL */}
+        <button
+          type="button"
+          className={`${styles.centenarioFeatureCard} ${featured && (!featured.available || featured.remainingStock <= 0) ? styles.featureUnavailable : ''}`}
+          onClick={() => (featured ? onOpenPrize(featured) : onGo('premios'))}
+        >
+          <div className={styles.centenarioFeatureMedia} aria-hidden="true">
+            <Image src="/campaign/centenario/featured-gift.webp" alt="" fill sizes="(max-width: 900px) 100vw, 440px" className={styles.featureImg} />
+            <div className={styles.centenarioFeatureScrim} />
+          </div>
+          <div className={styles.centenarioFeatureBody}>
+            <div className={styles.featureTagRow}>
+              <small className={styles.featureEyebrow}>★ {featuredMeta ? featuredMeta.tag : 'CATÁLOGO DE TEMPORADA'}</small>
+              {featured && (
+                <span className={styles.featureStockPill}>
+                  {featured.available && featured.remainingStock > 0 ? `${featured.remainingStock} disponibles` : 'Agotado'}
+                </span>
+              )}
+            </div>
+            <strong>{featuredMeta ? featuredMeta.title : loading ? 'Preparando beneficios del día…' : 'Conocé los regalos de temporada'}</strong>
+            <em>
+              {featured
+                ? `${totalStock} beneficios activos hoy en locales adheridos · Tocá para ver condiciones`
+                : 'Consultá el catálogo completo de locales participantes.'}
+            </em>
+          </div>
+          <span className={styles.featureArrow} aria-hidden="true">→</span>
+        </button>
+
+        {/* GUÍA EDITORIAL EN LISTA HORIZONTAL + PISTA DEL DÍA */}
+        <section className={styles.centenarioEditorialGuide} aria-label="Cómo participar">
+          <div className={styles.guideHeader}>
+            <small>CÓMO PARTICIPAR</small>
+            <h3>Tres pasos en tu visita</h3>
+          </div>
+          <ol className={styles.centenarioStepsList}>
+            <li>
+              <span className={styles.romanNum}>I</span>
+              <div>
+                <b>Recorré las postas</b>
+                <span>Ubicadas en plazas y galerías del shopping.</span>
+              </div>
+            </li>
+            <li>
+              <span className={styles.romanNum}>II</span>
+              <div>
+                <b>Escaneá o cargá el código</b>
+                <span>Activá la tarjeta en la ruleta de temporada.</span>
+              </div>
+            </li>
+            <li>
+              <span className={styles.romanNum}>III</span>
+              <div>
+                <b>Canjeá con tu QR digital</b>
+                <span>Presentá tu voucher directo en el comercio.</span>
+              </div>
+            </li>
+          </ol>
+          <button type="button" className={styles.centenarioClueBar} onClick={() => onGo('descubrir')}>
+            <div>
+              <small>PISTA ACTIVA DE HOY</small>
+              <span>{clueText ? 'Hay una pista disponible para encontrar tu próxima tarjeta' : 'Ver mapa de postas y pistas del recorrido'}</span>
+            </div>
+            <b aria-hidden="true">Ver →</b>
+          </button>
+        </section>
+      </section>
+    );
+  }
+
+  /* =========================================================================
+     UNIPLAZA SHOPPING — URBAN NIGHT PROMENADE & CONTEMPORARY CLUB
+     Composición propia: Hero arquitectónico nocturno, Circuito de Estaciones
+     Conectadas (Wayfinding Track), Bento Grid asimétrico y Showcase fotográfico.
+     ========================================================================= */
+  return (
+    <section className={`${styles.home} ${styles.uniplazaHome}`} aria-labelledby="home-title">
+      {/* HERO ARQUITECTÓNICO NOCTURNO — UNIPLAZA */}
+      <div className={styles.uniplazaHeroCard}>
+        <div className={styles.uniplazaHeroMedia} aria-hidden="true">
+          <Image src="/campaign/uniplaza/hero-photo.jpg" alt="" fill sizes="(max-width: 900px) 100vw, 460px" priority className={styles.heroImg} />
+          <div className={styles.uniplazaHeroScrim} />
+        </div>
+        <div className={styles.uniplazaHeroContent}>
+          <div className={styles.heroTopRow}>
+            <span className={styles.uniplazaLiveBadge}>
+              <i className={styles.chipDot} aria-hidden="true" />
+              {loading ? 'CONECTANDO PASEO…' : badge.label}
+            </span>
+            {badge.isDemo && <span className={styles.demoPill}>DEMO</span>}
+          </div>
+          <h1 id="home-title">{title} <em>{emphasis}</em></h1>
+          <p className={styles.heroLead}>{message}</p>
+          <div className={styles.uniplazaHeroMetrics}>
+            <div><b>{cards.length || 10}</b><span>Estaciones activas</span></div>
+            <div><b>{totalStock}</b><span>Vouchers hoy</span></div>
+          </div>
+          <div className={styles.heroActionGroup}>
+            <button className={`${styles.heroPrimaryAction} ${styles.uniplazaHeroAction}`} onClick={() => onGo('jugar')}>
+              <span>{primaryAction}</span>
+              <span aria-hidden="true">→</span>
+            </button>
+            <button type="button" className={styles.uniplazaGhostAction} onClick={() => onGo('premios')}>
+              Catálogo
+            </button>
+          </div>
+        </div>
       </div>
-      <div className={styles.passportBar} aria-hidden="true"><span style={{ width: `${target > 0 ? Math.min(100, Math.round((collected / target) * 100)) : 0}%` }} /></div>
-      <button className={styles.passportSlots} onClick={() => onGo('progreso')} aria-describedby="passport-hint">
-        {Array.from({ length: target }, (_, index) => {
-          const cardId = [...collectedCards][index];
-          const card = cardId ? cards.find((item) => item.publicId === cardId) : undefined;
-          return <span key={index} className={`${styles.passportSlot} ${card ? styles.passportSlotFound : ''}`}>
-            <b className={styles.postaTag}>POSTA 0{index + 1}</b>
-            <span aria-hidden="true">{card ? '✓' : `0${index + 1}`}</span>
-            <small>{card ? card.location || `Posta ${index + 1}` : 'Por activar'}</small>
-          </span>;
-        })}
+
+      {error && (
+        <div className={styles.stateAlert} role="alert">
+          <div>
+            <strong>Sin respuesta del servidor</strong>
+            <span>{error}</span>
+          </div>
+          <button type="button" onClick={onRetry}>Reintentar</button>
+        </div>
+      )}
+
+      {/* CIRCUITO URBANO DE ESTACIONES (WAYFINDING TRACK) — UNIPLAZA */}
+      <section className={styles.uniplazaCircuit} aria-labelledby="passport-title">
+        <div className={styles.circuitTop}>
+          <div>
+            <small className={styles.uniplazaEyebrow}>CIRCUITO URBANO · WAYFINDING</small>
+            <h2 id="passport-title">Tu colección</h2>
+          </div>
+          <div className={styles.circuitBadge}>
+            <strong>{collected}/{target}</strong>
+            <span>estaciones</span>
+          </div>
+        </div>
+
+        <div className={styles.uniplazaTrackBar} aria-hidden="true">
+          <span style={{ width: `${progressPercent}%` }} />
+        </div>
+
+        <button type="button" className={styles.uniplazaNodes} onClick={() => onGo('progreso')} aria-describedby="passport-hint">
+          {Array.from({ length: target }, (_, index) => {
+            const foundId = [...collectedCards][index];
+            const card = foundId ? cards.find((item) => item.publicId === foundId) : undefined;
+            const stationLabel = formatLocationName(card?.location, index, shopping);
+            return (
+              <span key={index} className={`${styles.uniplazaNode} ${foundId ? styles.uniplazaNodeActive : ''}`}>
+                <span className={styles.nodeIndex}>{foundId ? '✓' : `0${index + 1}`}</span>
+                <span className={styles.nodeCopy}>
+                  <b>ESTACIÓN 0{index + 1} · {foundId ? 'ACTIVA' : 'PENDIENTE'}</b>
+                  <strong>{stationLabel}</strong>
+                </span>
+                <span className={styles.nodeTag}>{foundId ? foundId : 'Escanear QR'}</span>
+              </span>
+            );
+          })}
+        </button>
+        <p id="passport-hint" className={styles.passportFooterHint}>
+          {collected >= target
+            ? 'Circuito completo. Revisá tus recompensas y vouchers activos.'
+            : `Te ${Math.max(0, target - collected) === 1 ? 'falta 1 estación' : `faltan ${Math.max(0, target - collected)} estaciones`} para completar el recorrido de UniPlaza.`}
+        </p>
+      </section>
+
+      {/* SHOWCASE FOTOGRÁFICO NOCTURNO — UNIPLAZA */}
+      <button
+        type="button"
+        className={`${styles.uniplazaFeatureCard} ${featured && (!featured.available || featured.remainingStock <= 0) ? styles.featureUnavailable : ''}`}
+        onClick={() => (error ? onRetry() : featured ? onOpenPrize(featured) : onGo('premios'))}
+      >
+        <div className={styles.uniplazaFeatureMedia} aria-hidden="true">
+          <Image src="/campaign/uniplaza/featured-gift.jpg" alt="" fill sizes="(max-width: 900px) 100vw, 440px" className={styles.featureImg} />
+          <div className={styles.uniplazaFeatureScrim} />
+        </div>
+        <div className={styles.uniplazaFeatureBody}>
+          <div className={styles.featureTagRow}>
+            <small className={styles.uniplazaFeatureEyebrow}>★ {featuredMeta ? featuredMeta.tag : 'BENEFICIO DE PASEO'}</small>
+            {featured && (
+              <span className={styles.uniplazaStockPill}>
+                {featured.available && featured.remainingStock > 0 ? `${featured.remainingStock} en stock` : 'Agotado'}
+              </span>
+            )}
+          </div>
+          <strong>{featuredMeta ? featuredMeta.title : loading ? 'Consultando beneficios activos…' : 'Beneficios exclusivos en locales'}</strong>
+          <em>
+            {featured
+              ? 'Validación inmediata con código QR en comercios adheridos de UniPlaza'
+              : 'Tocá para explorar todos los beneficios de la campaña.'}
+          </em>
+        </div>
+        <span className={styles.uniplazaFeatureArrow} aria-hidden="true">→</span>
       </button>
-      <p id="passport-hint">{collected >= target ? 'Pasaporte completo. Revisá qué beneficio habilitó esta campaña.' : `Activá ${Math.max(0, target - collected)} tarjetas distintas en tu visita para completar el pasaporte.`}</p>
+
+      {/* BENTO GRID ASIMÉTRICO URBANO + RADAR DE PISTA */}
+      <div className={styles.uniplazaBento} aria-label="Cómo participar">
+        <button type="button" className={styles.bentoRadar} onClick={() => onGo('descubrir')}>
+          <span className={styles.bentoKicker}>RADAR DEL PASEO</span>
+          <strong>¿Buscás la próxima estación?</strong>
+          <p>{clueText ? 'Hay una pista activa lista para desbloquear tu siguiente posta.' : 'Consultá las ubicaciones habilitadas en las plazas abiertas.'}</p>
+          <span className={styles.bentoLink}>Abrir mapa y pista →</span>
+        </button>
+        <div className={styles.bentoSteps}>
+          <div><StepIcon kind="search" /><b>1. Explorá</b><span>las plazas abiertas</span></div>
+          <div><StepIcon kind="scan" /><b>2. Activá</b><span>QR/NFC en la ruleta</span></div>
+          <div><StepIcon kind="gift" /><b>3. Canjeá</b><span>tu pase en el local</span></div>
+        </div>
+      </div>
     </section>
-    <ol className={styles.howRow} aria-label="Cómo participar">
-      <li><StepIcon kind="search" /><b>1. Buscá</b><span>una posta en el shopping</span></li>
-      <li><StepIcon kind="scan" /><b>2. Escaneá</b><span>su QR o ingresá el código</span></li>
-      <li><StepIcon kind="gift" /><b>3. Canjeá</b><span>tu voucher QR en locales</span></li>
-    </ol>
-    <button className={styles.homeTextAction} onClick={() => onGo('descubrir')}>Ver pista de ubicación activa <Icon name="descubrir" /></button>
-    {centenario ? <button className={`${styles.centenarioFeature} ${featured && (!featured.available || featured.remainingStock <= 0) ? styles.centenarioFeatureUnavailable : ''}`} onClick={() => featured ? onOpenPrize(featured) : onGo('premios')}>
-      <span className={styles.centenarioFeatureCopy}><small>{featured ? '★ BENEFICIO DESTACADO' : 'BENEFICIOS DE CAMPAÑA'}</small><strong>{featured?.name ?? 'Conocé los beneficios de temporada'}</strong><em>{featured ? (featured.available && featured.remainingStock > 0 ? `● Disponibles hoy: ${featured.remainingStock} unidades` : 'Agotado') : 'Se mostrarán cuando haya una campaña activa.'}</em></span>
-      <span className={styles.featureArrow} aria-hidden="true">→</span>
-    </button> : <button className={`${styles.uniplazaFeature} ${featured && (!featured.available || featured.remainingStock <= 0) ? styles.uniplazaFeatureUnavailable : ''}`} onClick={() => error ? onRetry() : featured ? onOpenPrize(featured) : onGo('premios')}>
-      <span className={styles.uniplazaFeatureCopy}><small>{featured ? '★ BENEFICIO DESTACADO' : 'CAMPAÑA NAVIDEÑA'}</small><strong>{featured?.name ?? (loading ? 'Estamos preparando la experiencia' : error ? 'No pudimos cargar la campaña' : campaignName ? 'No hay premios publicados todavía' : 'Los premios se anuncian acá')}</strong><em>{featured ? (featured.available && featured.remainingStock > 0 ? `● Disponibles hoy: ${featured.remainingStock} unidades` : 'Agotado') : loading ? 'Consultando disponibilidad…' : error ? 'Tocá para volver a intentar.' : campaignName ? 'Encontrá acá las novedades y condiciones de la campaña.' : 'Cuando haya una campaña activa, vas a encontrar acá sus premios y condiciones.'}</em><span aria-hidden="true">{featured ? <GiftArt shopping={shopping} /> : <Icon name="premios" />}</span></span>
-      <span className={styles.uniplazaFeatureGo} aria-hidden="true">→</span>
-    </button>}
-    {centenario && error && <div className={styles.centenarioCampaignError} role="alert"><span>La campaña no está disponible en este momento.</span><button type="button" onClick={onRetry}>Reintentar</button></div>}
-  </section>;
+  );
 }
 
 function StepIcon({ kind }: { kind: 'search' | 'scan' | 'gift' }) {
@@ -206,49 +660,138 @@ function StepIcon({ kind }: { kind: 'search' | 'scan' | 'gift' }) {
     scan: <><path d="M8 4H5a1 1 0 0 0-1 1v3m12-4h3a1 1 0 0 1 1 1v3M4 16v3a1 1 0 0 0 1 1h3m12-4v3a1 1 0 0 1-1 1h-3M8 12h8" /></>,
     gift: <><rect x="4" y="10" width="16" height="10" rx="1.5" /><path d="M3 7.5h18V10H3zM12 7.5V20m0-12.5c-2-4-5.5-3-4.5-1S10.5 7.5 12 7.5zm0 0c2-4 5.5-3 4.5-1S13.5 7.5 12 7.5z" /></>,
   };
-  return <span className={styles.howIcon} aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[kind]}</svg></span>;
+  return <span className={styles.howIcon} aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{paths[kind]}</svg></span>;
 }
 
-function PlayScreen(props: { shopping: ShoppingBrandId; loading: boolean; hasCampaign: boolean; error: string; participating: boolean; spinPhase: 'idle' | 'accel' | 'cruise' | 'land'; wheelAngle: number; participationError: string; result: SpinResult | null; cardCode: string; codeStatus: 'invalid' | 'repeated' | 'new' | null; canSpin: boolean; collectedCount: number; target: number; onChange: (value: string) => void; onClearResult: () => void; onSpin: () => void; onRetry: () => void; onGo: (view: View) => void; rulesUrl?: string | null }) {
-  const { shopping, loading, hasCampaign, error, participating, spinPhase, wheelAngle, participationError, result, cardCode, codeStatus, canSpin, onChange, onClearResult, onSpin, onRetry, onGo } = props;
-  const message = loading ? 'Consultando la campaña…' : !hasCampaign ? 'No hay una campaña activa para este shopping. Volvé más tarde.' : null;
-  const hint = codeStatus === 'invalid' ? 'Ese código no figura en esta campaña. Revisá la tarjeta.' : codeStatus === 'repeated' ? 'Esta tarjeta ya la descubriste. Las repetidas no suman progreso.' : codeStatus === 'new' ? 'Tarjeta nueva: lista para girar.' : 'El código está impreso en la tarjeta o en el enlace QR.';
-  const hintTone = codeStatus === 'invalid' ? styles.hintBad : codeStatus === 'repeated' ? styles.hintWarn : styles.hintNeutral;
+function PlayScreen(props: {
+  shopping: ShoppingBrandId; loading: boolean; hasCampaign: boolean; error: string; participating: boolean; spinPhase: 'idle' | 'accel' | 'cruise' | 'land'; wheelAngle: number; participationError: string; result: SpinResult | null; cardCode: string; codeStatus: 'invalid' | 'repeated' | 'new' | null; canSpin: boolean; cards: PublicCard[]; collectedIds: string[]; collectedCount: number; target: number; onChange: (value: string) => void; onClearResult: () => void; onSpin: () => void; onRetry: () => void; onGo: (view: View) => void; rulesUrl?: string | null;
+}) {
+  const { shopping, loading, hasCampaign, error, participating, spinPhase, wheelAngle, participationError, result, cardCode, codeStatus, canSpin, cards, collectedIds, collectedCount, target, onChange, onClearResult, onSpin, onRetry, onGo } = props;
+  const demoCards = cards.filter((c) => /DEMO/i.test(c.publicId)).slice(0, 5);
+  const hint = codeStatus === 'invalid'
+    ? 'Ese código no pertenece a una posta activa de este shopping. Verificá los caracteres.'
+    : codeStatus === 'repeated'
+      ? 'Ya sellaste esta posta antes. Podés volver a girar si tenés intentos, o elegir una posta nueva para tu colección.'
+      : codeStatus === 'new'
+        ? '✓ Posta verificada y nueva para tu pasaporte. ¡Lista para girar!'
+        : 'Ingresá el código impreso bajo el QR de la posta o seleccioná una tarjeta activa.';
+  const hintTone = codeStatus === 'invalid' ? styles.hintBad : codeStatus === 'repeated' ? styles.hintWarn : codeStatus === 'new' ? styles.hintGood : styles.hintNeutral;
   const wheelStatusText = participating
     ? spinPhase === 'accel'
-      ? '¡Girando la ruleta! Validando tu tarjeta en el servidor…'
+      ? '¡Girando la ruleta! Verificando posta…'
       : spinPhase === 'cruise'
-        ? '¡Tomando velocidad! Buscando premios disponibles…'
+        ? '¡A toda velocidad! Consultando beneficios disponibles…'
         : '¡Frenando en tu resultado!…'
     : result
-      ? (result.status === 'won' ? 'Premio confirmado' : 'Participación registrada')
-      : 'La ruleta es decorativa: el premio lo confirma el servidor.';
-  return <section className={styles.play} aria-labelledby="play-title">
-    <div className={styles.screenHead}><span className={styles.kicker}>Minijuego</span><h2 id="play-title">Girá y descubrí</h2></div>
-    <div className={`${styles.wheelWrap} ${participating ? styles.wheelBusy : ''}`} aria-busy={participating}>
-      <Wheel spinning={participating} angle={wheelAngle} shopping={shopping} />
-      <span className={`${styles.pointer} ${participating ? styles.pointerBounce : ''}`} aria-hidden="true" />
-    </div>
-    <p className={styles.wheelState} role="status" aria-live="polite">{wheelStatusText}</p>
+      ? (result.status === 'won' ? '★ Beneficio asignado y guardado en tu billetera' : 'Participación registrada en tu recorrido')
+      : cardCode && codeStatus === 'new'
+        ? `Posta ${cardCode} lista · Tocá «Girar y descubrir»`
+        : `Tu pasaporte hoy: ${collectedCount} de ${target} postas activadas`;
 
-    {result && <ResultCard result={result} onGo={onGo} onPlayAnother={() => { onClearResult(); document.getElementById('card-id')?.focus(); }} />}
+  return (
+    <section className={styles.play} aria-labelledby="play-title">
+      <div className={styles.screenHead}>
+        <span className={styles.kicker}>{shopping === 'centenario' ? 'RULETA DE TEMPORADA' : 'DINÁMICA INTERACTIVA'}</span>
+        <h2 id="play-title">Girá y descubrí</h2>
+        <p>Activá el código de tu posta para sellar tu pasaporte y participar por beneficios instantáneos.</p>
+      </div>
 
-    <form className={styles.codeForm} onSubmit={(event) => { event.preventDefault(); onSpin(); }}>
-      <label className={styles.label} htmlFor="card-id">{result ? '¿Tenés otra tarjeta? Ingresá otro código' : 'Código de tu tarjeta'}</label>
-      <input className={styles.codeInput} id="card-id" value={cardCode} placeholder="Ej.: CEN-DEMO-002" onChange={(event) => onChange(event.target.value)} maxLength={40} disabled={participating || loading} autoComplete="off" inputMode="text" aria-describedby="card-hint" />
-      <small id="card-hint" className={`${styles.hint} ${hintTone}`}>{hint}</small>
-      <button type="submit" className={styles.spinButton} disabled={!canSpin || loading}>{participating ? 'Girando ruleta…' : loading ? 'Cargando campaña…' : !hasCampaign ? 'Participación no disponible' : result ? 'Girar con este nuevo código' : 'Girar y descubrir'}</button>
-    </form>
-    {result && <button className={styles.secondaryWide} onClick={() => onGo('descubrir')}>Buscar otra tarjeta</button>}
+      <div className={`${styles.wheelWrap} ${participating ? styles.wheelBusy : ''}`} aria-busy={participating}>
+        <Wheel spinning={participating} angle={wheelAngle} shopping={shopping} />
+        <span className={`${styles.pointer} ${participating ? styles.pointerBounce : ''}`} aria-hidden="true" />
+      </div>
+      <p className={styles.wheelState} role="status" aria-live="polite">{wheelStatusText}</p>
 
-    {message && <p className={styles.notice} role="status">{message}</p>}
-    {(error || participationError) && <div className={styles.errorBox} role="alert"><span>{participationError || error}</span>{!participating && <button onClick={onRetry}>Reintentar</button>}</div>}
-  </section>;
+      {result && (
+        <ResultCard
+          result={result}
+          onGo={onGo}
+          onPlayAnother={() => {
+            onClearResult();
+            document.getElementById('card-id')?.focus();
+          }}
+        />
+      )}
+
+      <form className={styles.codeForm} onSubmit={(event) => { event.preventDefault(); onSpin(); }}>
+        <div className={styles.codeFormHeader}>
+          <label className={styles.label} htmlFor="card-id">Código de tu tarjeta</label>
+          {result && <span className={styles.multiPlayBadge}>Podés jugar otro código</span>}
+        </div>
+        <input
+          className={styles.codeInput}
+          id="card-id"
+          value={cardCode}
+          placeholder={shopping === 'centenario' ? 'Ej.: CEN-DEMO-001' : 'Ej.: UNI-DEMO-001'}
+          onChange={(event) => onChange(event.target.value)}
+          maxLength={40}
+          disabled={participating || loading}
+          autoComplete="off"
+          inputMode="text"
+          aria-describedby="card-hint"
+        />
+        <small id="card-hint" className={`${styles.hint} ${hintTone}`}>{hint}</small>
+
+        {demoCards.length > 0 && (
+          <div className={styles.quickCards} aria-label="Tarjetas de demostración disponibles">
+            <span className={styles.quickCardsLabel}>Probar posta rápida:</span>
+            <div className={styles.quickCardPills}>
+              {demoCards.map((item) => {
+                const isCollected = collectedIds.includes(item.publicId);
+                const isSelected = cardCode === item.publicId;
+                return (
+                  <button
+                    key={item.publicId}
+                    type="button"
+                    disabled={participating}
+                    className={`${styles.quickPill} ${isSelected ? styles.quickPillActive : ''} ${isCollected ? styles.quickPillDone : ''}`}
+                    onClick={() => onChange(item.publicId)}
+                  >
+                    <span>{item.publicId.replace('-DEMO-', '-')}</span>
+                    <small>{isCollected ? '✓' : 'Nueva'}</small>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <button type="submit" className={styles.spinButton} disabled={!canSpin || loading}>
+          {participating
+            ? 'Girando ruleta…'
+            : loading
+              ? 'Sincronizando campaña…'
+              : !hasCampaign
+                ? 'Campaña no disponible'
+                : result
+                  ? 'Girar con este nuevo código'
+                  : 'Girar y descubrir'}
+        </button>
+        <small className={styles.legalMicrocopy}>La animación es representativa; la asignación se valida en tiempo real según stock de campaña.</small>
+      </form>
+
+      {!loading && !hasCampaign && !error && (
+        <div className={styles.emptyCampaignBox} role="status">
+          <strong>Campaña fuera de ventana activa</strong>
+          <p>En este momento no hay una campaña habilitada para registrar participaciones en este shopping.</p>
+        </div>
+      )}
+
+      {(error || participationError) && (
+        <div className={styles.errorBox} role="alert">
+          <span>{participationError || error}</span>
+          {!participating && <button type="button" onClick={onRetry}>Reintentar</button>}
+        </div>
+      )}
+    </section>
+  );
 }
 
 function ResultCard({ result, onGo, onPlayAnother }: { result: SpinResult; onGo: (view: View) => void; onPlayAnother: () => void }) {
   const won = result.status === 'won';
   const [copied, setCopied] = useState(false);
+  const formattedPrize = formatPrizeName(result.prize?.name);
+
   async function copyVoucherCode() {
     if (!result.redeemCode) return;
     try {
@@ -257,23 +800,49 @@ function ResultCard({ result, onGo, onPlayAnother }: { result: SpinResult; onGo:
       window.setTimeout(() => setCopied(false), 2200);
     } catch { /* fallback manual selection */ }
   }
-  return <article className={`${styles.resultCard} ${won ? styles.resultWon : styles.resultNone}`} role="status" aria-live="polite">
-    <span className={styles.resultKicker}>{won ? 'PREMIO CONFIRMADO' : 'SIN PREMIO ESTA VEZ'}</span>
-    <h3>{won ? result.prize?.name : 'Gracias por jugar'}</h3>
-    <p>{won ? result.prize?.description || 'Presentá el código en el comercio indicado para canjear.' : 'Seguí recorriendo: cada tarjeta nueva suma a tu colección.'}</p>
-    {won && result.redeemCode && <div className={styles.voucherPass}>
-      <p className={styles.redeemInstruction}>Mostrá este QR en el comercio indicado. Tu cupón también quedó guardado en <strong>Mi progreso → Mis cupones</strong>, así que podés cargar otra tarjeta ahora sin perderlo.</p>
-      {result.redeemQr && <Image unoptimized className={styles.redeemQr} src={result.redeemQr} width={220} height={220} alt={`Código QR de canje para ${result.prize?.name ?? 'tu premio'}`} /> }
-      <code className={styles.redeemCode}>{result.redeemCode}</code>
-      <button type="button" className={styles.copyCodeBtn} onClick={copyVoucherCode}>{copied ? '✓ Código copiado' : 'Copiar código de canje'}</button>
-    </div>}
-    {won && result.expiresAt && <small>Válido hasta {new Date(result.expiresAt).toLocaleString('es-AR')}</small>}
-    <div className={styles.resultActions}>
-      <button type="button" className={styles.resultActionBtn} onClick={onPlayAnother}>Ingresar otro código</button>
-      {won && <button type="button" className={styles.resultActionSecondary} onClick={() => onGo('progreso')}>Ver mis cupones QR</button>}
-    </div>
-    {!won && <button className={styles.secondaryWide} onClick={() => onGo('descubrir')}>Buscar tarjetas</button>}
-  </article>;
+
+  return (
+    <article className={`${styles.resultCard} ${won ? styles.resultWon : styles.resultNone}`} role="status" aria-live="polite">
+      <div className={styles.resultHeader}>
+        <span className={styles.resultKicker}>{won ? '★ VOUCHER DIGITAL GENERADO' : 'POSTA REGISTRADA'}</span>
+        <span className={styles.resultCardTag}>{result.cardId}</span>
+      </div>
+      <h3>{won ? formattedPrize.title : '¡Posta sumada a tu recorrido!'}</h3>
+      <p>{won ? result.prize?.description || 'Presentá el código QR en el comercio adherido para hacer efectivo tu beneficio.' : 'Esta posta no asignó premio directo, pero ya quedó registrada. Probá con otra tarjeta del recorrido.'}</p>
+
+      {won && result.redeemCode && (
+        <div className={styles.voucherPass}>
+          <p className={styles.redeemInstruction}>
+            Mostrá este pase QR en caja. Tu cupón quedó guardado automáticamente en <strong>Mi progreso → Mis cupones</strong>.
+          </p>
+          {result.redeemQr && (
+            <Image
+              unoptimized
+              className={styles.redeemQr}
+              src={result.redeemQr}
+              width={220}
+              height={220}
+              alt={`Código QR de canje para ${formattedPrize.title}`}
+            />
+          )}
+          <code className={styles.redeemCode}>{result.redeemCode}</code>
+          <button type="button" className={styles.copyCodeBtn} onClick={copyVoucherCode}>
+            {copied ? '✓ Código copiado al portapapeles' : 'Copiar código alfanumérico'}
+          </button>
+        </div>
+      )}
+      {won && result.expiresAt && <small className={styles.resultExpiry}>Válido hasta el {new Date(result.expiresAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</small>}
+
+      <div className={styles.resultActions}>
+        <button type="button" className={styles.resultActionBtn} onClick={onPlayAnother}>Ingresar otro código</button>
+        {won ? (
+          <button type="button" className={styles.resultActionSecondary} onClick={() => onGo('progreso')}>Ver mis cupones QR</button>
+        ) : (
+          <button type="button" className={styles.resultActionSecondary} onClick={() => onGo('descubrir')}>Ver postas disponibles</button>
+        )}
+      </div>
+    </article>
+  );
 }
 
 function Wheel({ spinning, angle, shopping }: { spinning: boolean; angle: number; shopping: ShoppingBrandId }) {
@@ -281,103 +850,356 @@ function Wheel({ spinning, angle, shopping }: { spinning: boolean; angle: number
     const start = (index * 60 - 90) * (Math.PI / 180);
     const end = ((index + 1) * 60 - 90) * (Math.PI / 180);
     const mid = (index * 60 - 60) * (Math.PI / 180);
-    return { label, d: `M0 0 L${(Math.cos(start) * 92).toFixed(2)} ${(Math.sin(start) * 92).toFixed(2)} A92 92 0 0 1 ${(Math.cos(end) * 92).toFixed(2)} ${(Math.sin(end) * 92).toFixed(2)} Z`, tx: (Math.cos(mid) * 56).toFixed(2), ty: (Math.sin(mid) * 56).toFixed(2), angle: index * 60 };
+    return {
+      label,
+      d: `M0 0 L${(Math.cos(start) * 92).toFixed(2)} ${(Math.sin(start) * 92).toFixed(2)} A92 92 0 0 1 ${(Math.cos(end) * 92).toFixed(2)} ${(Math.sin(end) * 92).toFixed(2)} Z`,
+      tx: (Math.cos(mid) * 56).toFixed(2),
+      ty: (Math.sin(mid) * 56).toFixed(2),
+      angle: index * 60,
+    };
   });
   const bulbs = Array.from({ length: 12 }, (_, idx) => {
     const rad = (idx * 30 - 90) * (Math.PI / 180);
     return { cx: (Math.cos(rad) * 96).toFixed(2), cy: (Math.sin(rad) * 96).toFixed(2), even: idx % 2 === 0 };
   });
-  return <svg data-testid="campaign-wheel" data-spinning={spinning} className={`${styles.wheel} ${spinning ? styles.wheelSpin : ''}`} style={angle > 0 ? { transform: `rotate(${angle}deg)` } : undefined} viewBox="-104 -104 208 208" role="img" aria-label={`Ruleta decorativa de ${shopping === 'centenario' ? 'Centenario' : 'UniPlaza'}`}>
-    <circle r="100" className={styles.wheelOuterRim} />
-    <circle r="93" className={styles.wheelRim} />
-    {segments.map((segment, index) => <g key={segment.label}>
-      <path d={segment.d} className={index % 2 ? styles.segmentB : styles.segmentA} />
-      <text transform={`translate(${segment.tx} ${segment.ty}) rotate(${segment.angle + 30})`} textAnchor="middle" dominantBaseline="middle">{segment.label}</text>
-    </g>)}
-    {bulbs.map((bulb, idx) => <circle key={idx} cx={bulb.cx} cy={bulb.cy} r="2.8" className={`${styles.wheelBulb} ${bulb.even ? styles.wheelBulbA : styles.wheelBulbB}`} />)}
-    <circle r="24" className={styles.wheelHubGlow} />
-    <circle r="20" className={styles.wheelHub} />
-    <text className={styles.hubText} textAnchor="middle" dominantBaseline="middle">{shopping === 'centenario' ? 'C' : 'U'}</text>
-  </svg>;
+  return (
+    <svg
+      data-testid="campaign-wheel"
+      data-spinning={spinning}
+      className={`${styles.wheel} ${spinning ? styles.wheelSpin : ''}`}
+      style={angle > 0 ? { transform: `rotate(${angle}deg)` } : undefined}
+      viewBox="-104 -104 208 208"
+      role="img"
+      aria-label={`Ruleta de campaña de ${shopping === 'centenario' ? 'Centenario' : 'UniPlaza'}`}
+    >
+      <circle r="100" className={styles.wheelOuterRim} />
+      <circle r="93" className={styles.wheelRim} />
+      {segments.map((segment, index) => (
+        <g key={segment.label}>
+          <path d={segment.d} className={index % 2 ? styles.segmentB : styles.segmentA} />
+          <text transform={`translate(${segment.tx} ${segment.ty}) rotate(${segment.angle + 30})`} textAnchor="middle" dominantBaseline="middle">
+            {segment.label}
+          </text>
+        </g>
+      ))}
+      {bulbs.map((bulb, idx) => (
+        <circle key={idx} cx={bulb.cx} cy={bulb.cy} r="2.8" className={`${styles.wheelBulb} ${bulb.even ? styles.wheelBulbA : styles.wheelBulbB}`} />
+      ))}
+      <circle r="24" className={styles.wheelHubGlow} />
+      <circle r="20" className={styles.wheelHub} />
+      <text className={styles.hubText} textAnchor="middle" dominantBaseline="middle">{shopping === 'centenario' ? 'C' : 'U'}</text>
+    </svg>
+  );
 }
 
-function DiscoverScreen({ campaign, collectedIds, target, showClue, onToggleClue, loading, onGo }: { campaign: PublicCampaign | null; collectedIds: string[]; target: number; showClue: boolean; onToggleClue: () => void; loading: boolean; onGo: (view: View) => void }) {
+function DiscoverScreen({
+  shopping, campaign, collectedIds, target, showClue, onToggleClue, loading, error, onRetry, onSelectCard, onGo,
+}: {
+  shopping: ShoppingBrandId; campaign: PublicCampaign | null; collectedIds: string[]; target: number; showClue: boolean; onToggleClue: () => void; loading: boolean; error: string; onRetry: () => void; onSelectCard: (code: string) => void; onGo: (view: View) => void;
+}) {
   const slots = Array.from({ length: target }, (_, index) => collectedIds[index]);
-  const discovered = collectedIds.length;
-  return <section className={styles.discover} aria-labelledby="discover-title">
-    <div className={styles.screenHead}><span className={styles.kicker}>Búsqueda del tesoro</span><h2 id="discover-title">Tu colección</h2><p>Encontrá tarjetas diferentes. Las repetidas no suman progreso.</p></div>
-    <div className={styles.collectionCount}><strong>{Math.min(discovered, target)}<small>/{target}</small></strong><span>{Math.max(0, target - discovered) > 0 ? `faltan ${Math.max(0, target - discovered)}` : 'completa'}</span></div>
-    <div className={styles.discoverBar} aria-hidden="true"><span style={{ width: `${target > 0 ? Math.min(100, Math.round((Math.min(discovered, target) / target) * 100)) : 0}%` }} /></div>
-    <div className={styles.slotGrid} role="list" aria-label={`Tarjetas: ${Math.min(discovered, target)} de ${target} descubiertas`}>
-      {slots.map((publicId, index) => {
-        const card = publicId ? campaign?.cards?.find((item) => item.publicId === publicId) : undefined;
-        return <div role="listitem" key={index} className={`${styles.slot} ${publicId ? styles.slotFound : ''}`}>
-          <span className={styles.slotNumber}>{String(index + 1).padStart(2, '0')}</span>
-          {publicId ? <><strong className={styles.slotId}>{publicId}</strong><small>{card?.location || 'Descubierta'}</small></> : <><strong className={styles.slotMystery} aria-hidden="true">?</strong><small>Por descubrir</small></>}
-        </div>;
-      })}
-    </div>
-    <p className={`${styles.muted} ${styles.inset}`}>{loading ? 'Cargando tarjetas…' :'Escaneá el QR o NFC de cada tarjeta o ingresá su código en Jugar.'}</p>
-    <button className={styles.secondaryWide} onClick={() => onGo('jugar')}>Ir a Jugar</button>
-    <div className={styles.clueBlock}>
-      <div><b>¿Necesitás una pista?</b><p>Una ayuda para seguir explorando.</p></div>
-      <button onClick={onToggleClue} aria-expanded={showClue}>{showClue ? 'Ocultar' : 'Ver pista'}</button>
-      {showClue && <div className={styles.clueText} role="status">{loading ? 'Buscando la pista…' : campaign?.clue?.text ?? 'Hoy no hay pistas activas para este shopping.'}</div>}
-    </div>
-  </section>;
+  const discovered = Math.min(collectedIds.length, target);
+  const allCards = campaign?.cards ?? [];
+
+  return (
+    <section className={styles.discover} aria-labelledby="discover-title">
+      <div className={styles.screenHead}>
+        <span className={styles.kicker}>{shopping === 'centenario' ? 'RECORRIDO DE POSTAS' : 'MAPA DE ESTACIONES'}</span>
+        <h2 id="discover-title">Tu colección</h2>
+        <p>Cada posta distinta suma un sello a tu pasaporte. Podés activarlas escaneando su QR o tocando una estación activa.</p>
+      </div>
+
+      {error && (
+        <div className={styles.stateAlert} role="alert">
+          <div><strong>No pudimos cargar las postas</strong><span>{error}</span></div>
+          <button type="button" onClick={onRetry}>Reintentar</button>
+        </div>
+      )}
+
+      <div className={styles.collectionSummaryCard}>
+        <div className={styles.collectionCount}>
+          <strong>{discovered}<small>/{target}</small></strong>
+          <div>
+            <b>{target - discovered > 0 ? `Te faltan ${target - discovered} postas` : '¡Colección completada!'}</b>
+            <span>{target - discovered > 0 ? 'Las tarjetas repetidas no suman avance' : 'Ya alcanzaste la meta de esta campaña'}</span>
+          </div>
+        </div>
+        <div className={styles.discoverBar} aria-hidden="true">
+          <span style={{ width: `${target > 0 ? Math.min(100, Math.round((discovered / target) * 100)) : 0}%` }} />
+        </div>
+      </div>
+
+      <div className={styles.slotGrid} role="list" aria-label={`Tarjetas: ${discovered} de ${target} descubiertas`}>
+        {slots.map((publicId, index) => {
+          const card = publicId ? allCards.find((item) => item.publicId === publicId) : undefined;
+          const locName = formatLocationName(card?.location, index, shopping);
+          return (
+            <div role="listitem" key={index} className={`${styles.slot} ${publicId ? styles.slotFound : ''}`}>
+              <span className={styles.slotNumber}>POSTA {String(index + 1).padStart(2, '0')}</span>
+              {publicId ? (
+                <>
+                  <span className={styles.slotBadgeOk} aria-hidden="true">✓</span>
+                  <strong className={styles.slotId}>{publicId}</strong>
+                  <small>{locName}</small>
+                </>
+              ) : (
+                <>
+                  <strong className={styles.slotMystery} aria-hidden="true">0{index + 1}</strong>
+                  <small>Pendiente</small>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* PISTA ACTIVA */}
+      <div className={styles.clueBlock}>
+        <div>
+          <span className={styles.clueEyebrow}>PISTA DEL DÍA</span>
+          <b>¿Dónde está la próxima posta?</b>
+          <p>Desplegá la orientación activa del shopping para encontrar tu siguiente código.</p>
+        </div>
+        <button type="button" onClick={onToggleClue} aria-expanded={showClue}>
+          {showClue ? 'Ocultar pista' : 'Revelar pista'}
+        </button>
+        {showClue && (
+          <div className={styles.clueText} role="status">
+            {loading ? 'Consultando pista activa…' : campaign?.clue?.text ?? 'Hoy no hay pistas adicionales programadas. Buscá los tótems QR en los accesos principales.'}
+          </div>
+        )}
+      </div>
+
+      {/* DIRECTORIO INTERACTIVO DE POSTAS DEL SHOPPING */}
+      {allCards.length > 0 && (
+        <div className={styles.stationDirectory}>
+          <div className={styles.directoryHead}>
+            <h3>Postas habilitadas en el shopping</h3>
+            <span>{allCards.length} puntos</span>
+          </div>
+          <ul className={styles.stationList}>
+            {allCards.slice(0, 6).map((card, idx) => {
+              const visited = collectedIds.includes(card.publicId);
+              return (
+                <li key={card.publicId} className={`${styles.stationRow} ${visited ? styles.stationRowVisited : ''}`}>
+                  <div className={styles.stationInfo}>
+                    <strong>{formatLocationName(card.location, idx, shopping)}</strong>
+                    <small>Código: <code>{card.publicId}</code></small>
+                  </div>
+                  <button type="button" className={styles.stationPlayBtn} onClick={() => onSelectCard(card.publicId)}>
+                    {visited ? 'Volver a girar' : 'Usar código →'}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      <button type="button" className={styles.secondaryWide} onClick={() => onGo('jugar')}>
+        Ir a la ruleta manual
+      </button>
+    </section>
+  );
 }
 
-function PrizesScreen({ shopping, prizes, loading, error, onOpen, onGo }: { shopping: ShoppingBrandId; prizes: Prize[]; loading: boolean; error: string; onOpen: (prize: Prize) => void; onGo: (view: View) => void }) {
+function PrizesScreen({
+  shopping, prizes, loading, error, hasCampaign, onRetry, onOpen, onGo,
+}: {
+  shopping: ShoppingBrandId; prizes: Prize[]; loading: boolean; error: string; hasCampaign: boolean; onRetry: () => void; onOpen: (prize: Prize) => void; onGo: (view: View) => void;
+}) {
   const ordered = prizes.slice().sort((a, b) => Number(b.available && b.remainingStock > 0) - Number(a.available && a.remainingStock > 0));
   const [featured, ...rest] = ordered;
-  if (loading) return <section className={styles.prizes}><p className={styles.muted}>Consultando disponibilidad…</p></section>;
-  if (!prizes.length) return <section className={styles.prizes}><div className={styles.screenHead}><h2>Premios</h2></div><p className={styles.notice} role="status">{error || 'Los premios se mostrarán cuando haya una campaña activa.'}</p><button className={styles.secondaryWide} onClick={() => onGo('jugar')}>Ir a Jugar</button></section>;
   const isAvailable = (prize: Prize) => prize.available && prize.remainingStock > 0;
-  return <section className={styles.prizes} aria-labelledby="prizes-title">
-    <div className={styles.screenHead}><span className={styles.kicker}>Catálogo</span><h2 id="prizes-title">Premios</h2><p>Disponibilidad real según la campaña activa.</p></div>
-    {featured && <button className={styles.hero} onClick={() => onOpen(featured)}>
-      <span className={styles.heroThumb}>{featured.imageUrl ? <Image src={featured.imageUrl} alt="" fill sizes="(max-width: 430px) 100vw, 430px" unoptimized /> : <GiftArt shopping={shopping} />}</span>
-      <span className={styles.heroInfo}><small>DESTACADO</small><strong>{featured.name}</strong><em className={isAvailable(featured) ? styles.stockOk : styles.stockOut}>{isAvailable(featured) ? `Quedan ${featured.remainingStock}` : 'Agotado'}</em></span>
-    </button>}
-    <ul className={styles.prizeList}>{rest.map((prize) => <li key={prize.id}><button className={`${styles.prizeRow} ${isAvailable(prize) ? '' : styles.prizeSoldOut}`} onClick={() => onOpen(prize)}>
-      <span className={styles.prizeRowThumb}>{prize.imageUrl ? <Image src={prize.imageUrl} alt="" fill sizes="76px" unoptimized /> : <GiftArt shopping={shopping} />}</span>
-      <span className={styles.prizeRowBody}><strong>{prize.name}</strong><em className={isAvailable(prize) ? styles.stockOk : styles.stockOut}>{isAvailable(prize) ? `Quedan ${prize.remainingStock}` : 'Agotado'}</em></span>
-      <span aria-hidden="true">›</span>
-    </button></li>)}</ul>
-  </section>;
+
+  if (loading) {
+    return (
+      <section className={styles.prizes} aria-labelledby="prizes-title">
+        <div className={styles.screenHead}><span className={styles.kicker}>Catálogo</span><h2 id="prizes-title">Premios</h2><p>Cargando beneficios y stock en tiempo real…</p></div>
+        <div className={styles.skeletonStack} role="status" aria-label="Cargando premios">
+          <div className={styles.skeletonHero} />
+          <div className={styles.skeletonRow} />
+          <div className={styles.skeletonRow} />
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className={styles.prizes} aria-labelledby="prizes-title">
+        <div className={styles.screenHead}><span className={styles.kicker}>Catálogo</span><h2 id="prizes-title">Premios</h2></div>
+        <div className={styles.stateAlert} role="alert">
+          <div><strong>No pudimos cargar el catálogo</strong><span>{error}</span></div>
+          <button type="button" onClick={onRetry}>Reintentar</button>
+        </div>
+      </section>
+    );
+  }
+
+  if (!prizes.length) {
+    return (
+      <section className={styles.prizes} aria-labelledby="prizes-title">
+        <div className={styles.screenHead}><span className={styles.kicker}>Catálogo</span><h2 id="prizes-title">Premios</h2></div>
+        <div className={styles.emptyCampaignBox} role="status">
+          <strong>{hasCampaign ? 'Sin beneficios publicados' : 'Campaña en preparación'}</strong>
+          <p>{hasCampaign ? 'Esta campaña aún no tiene premios visibles en el catálogo público.' : 'Los beneficios y descuentos se publicarán acá apenas comience la campaña activa.'}</p>
+        </div>
+        <button type="button" className={styles.secondaryWide} onClick={() => onGo('jugar')}>Ir a Jugar</button>
+      </section>
+    );
+  }
+
+  const featuredMeta = featured ? formatPrizeName(featured.name) : null;
+
+  return (
+    <section className={styles.prizes} aria-labelledby="prizes-title">
+      <div className={styles.screenHead}>
+        <span className={styles.kicker}>{shopping === 'centenario' ? 'BENEFICIOS DE TEMPORADA' : 'RECOMPENSAS DEL PASEO'}</span>
+        <h2 id="prizes-title">Premios</h2>
+        <p>Stock actualizado en tiempo real. Tocá cualquier beneficio para ver cómo canjearlo en los locales.</p>
+      </div>
+
+      {featured && featuredMeta && (
+        <button type="button" className={styles.hero} onClick={() => onOpen(featured)}>
+          <span className={styles.heroThumb}>
+            {featured.imageUrl ? (
+              <Image src={featured.imageUrl} alt="" fill sizes="(max-width: 430px) 100vw, 430px" unoptimized />
+            ) : (
+              <GiftArt shopping={shopping} />
+            )}
+          </span>
+          <span className={styles.heroInfo}>
+            <div className={styles.prizeTagLine}>
+              <small>★ DESTACADO · {featuredMeta.tag}</small>
+              {featuredMeta.isDemo && <span className={styles.demoMicroTag}>Modo demo</span>}
+            </div>
+            <strong>{featuredMeta.title}</strong>
+            {featured.description && <p className={styles.prizeHeroDesc}>{featured.description}</p>}
+            <em className={isAvailable(featured) ? styles.stockOk : styles.stockOut}>
+              {isAvailable(featured) ? `● Disponibles hoy: ${featured.remainingStock} unidades` : 'Agotado'}
+            </em>
+          </span>
+        </button>
+      )}
+
+      <ul className={styles.prizeList}>
+        {rest.map((prize) => {
+          const meta = formatPrizeName(prize.name);
+          return (
+            <li key={prize.id}>
+              <button
+                type="button"
+                className={`${styles.prizeRow} ${isAvailable(prize) ? '' : styles.prizeSoldOut}`}
+                onClick={() => onOpen(prize)}
+              >
+                <span className={styles.prizeRowThumb}>
+                  {prize.imageUrl ? <Image src={prize.imageUrl} alt="" fill sizes="88px" unoptimized /> : <GiftArt shopping={shopping} />}
+                </span>
+                <span className={styles.prizeRowBody}>
+                  <small className={styles.prizeRowKicker}>{meta.tag}</small>
+                  <strong>{meta.title}</strong>
+                  <em className={isAvailable(prize) ? styles.stockOk : styles.stockOut}>
+                    {isAvailable(prize) ? `Quedan ${prize.remainingStock} disponibles` : 'Agotado'}
+                  </em>
+                </span>
+                <span className={styles.prizeChevron} aria-hidden="true">→</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
 }
 
-function PrizeDetail({ prize, shopping, rulesUrl }: { prize: Prize; shopping: ShoppingBrandId; rulesUrl?: string | null }) {
+function PrizeDetail({ prize, shopping, rulesUrl, onPlay }: { prize: Prize; shopping: ShoppingBrandId; rulesUrl?: string | null; onPlay: () => void }) {
   const available = prize.available && prize.remainingStock > 0;
-  return <div className={styles.detail}>
-    <span className={styles.detailImage}>{prize.imageUrl ? <Image src={prize.imageUrl} alt={prize.name} fill sizes="400px" unoptimized /> : <GiftArt shopping={shopping} />}</span>
-    <span className={available ? styles.stockOk : styles.stockOut}>{available ? `Quedan ${prize.remainingStock} disponibles` : 'Agotado'}</span>
-    <h2 className={styles.sheetTitle}>{prize.name}</h2>
-    <p className={styles.muted}>{prize.description || 'Consultá las condiciones de participación.'}</p>
-    <div className={styles.conditions}><b>Cómo canjear</b><p>Obtené el código participando con una tarjeta. Presentalo en el comercio indicado dentro del plazo que muestre tu resultado.</p>{rulesUrl && <a href={rulesUrl} target="_blank" rel="noreferrer">Leer bases y condiciones</a>}</div>
-  </div>;
+  const meta = formatPrizeName(prize.name);
+  return (
+    <div className={styles.detail}>
+      <span className={styles.detailImage}>
+        {prize.imageUrl ? <Image src={prize.imageUrl} alt={meta.title} fill sizes="400px" unoptimized /> : <GiftArt shopping={shopping} />}
+      </span>
+      <div className={styles.detailMetaRow}>
+        <span className={available ? styles.stockOk : styles.stockOut}>{available ? `● Quedan ${prize.remainingStock} disponibles` : 'Agotado'}</span>
+        {meta.isDemo && <span className={styles.demoMicroTag}>Demo sin valor comercial</span>}
+      </div>
+      <h2 className={styles.sheetTitle}>{meta.title}</h2>
+      <p className={styles.muted}>{prize.description || 'Beneficio sujeto a disponibilidad de stock de la campaña activa.'}</p>
+      <div className={styles.conditions}>
+        <b>Cómo obtener y canjear este beneficio</b>
+        <p>1. Escaneá una posta QR/NFC o ingresá su código en la sección Jugar.<br />2. Si la ruleta te asigna este beneficio, recibirás un voucher QR único en el acto.<br />3. Presentalo en el local adherido antes de su fecha de vencimiento.</p>
+        {rulesUrl && <a href={rulesUrl} target="_blank" rel="noreferrer">Consultar bases y condiciones legales ↗</a>}
+      </div>
+      <button type="button" className={styles.spinButton} onClick={onPlay}>Participar por este beneficio →</button>
+    </div>
+  );
 }
 
-function ProgressScreen({ collected, target, complete, unlockText, wonPrize, rulesUrl, shoppingName, shopping, refreshKey, onGo }: { shopping: ShoppingBrandId; refreshKey: string; collected: number; target: number; complete: boolean; unlockText: string; wonPrize?: string; rulesUrl?: string | null; shoppingName: string; onGo: (view: View) => void }) {
+function ProgressScreen({
+  collected, target, complete, unlockText, wonPrize, rulesUrl, shoppingName, shopping, refreshKey, onGo,
+}: {
+  shopping: ShoppingBrandId; refreshKey: string; collected: number; target: number; complete: boolean; unlockText: string; wonPrize?: string; rulesUrl?: string | null; shoppingName: string; onGo: (view: View) => void;
+}) {
   const ratio = target > 0 ? Math.min(collected / target, 1) : 0;
   const circumference = 2 * Math.PI * 52;
-  return <section className={styles.progress} aria-labelledby="progress-title">
-    <div className={styles.screenHead}><span className={styles.kicker}>Tu avance</span><h2 id="progress-title">Mi progreso</h2></div>
-    <div className={styles.ringCard}>
-      <svg viewBox="0 0 120 120" className={styles.ring} aria-hidden="true"><circle cx="60" cy="60" r="52" className={styles.ringTrack} /><circle cx="60" cy="60" r="52" className={styles.ringFill} strokeLinecap={ratio > 0 ? 'round' : 'butt'} strokeDasharray={`${(ratio * circumference).toFixed(1)} ${circumference.toFixed(1)}`} /></svg>
-      <div className={styles.ringText}><strong>{collected}/{target}</strong><span>tarjetas</span></div>
-      <p>{complete ? `Completaste tu colección en ${shoppingName}.` : `Te faltan ${Math.max(0, target - collected)} tarjetas diferentes.`}</p>
-    </div>
-    <div className={styles.achievements} aria-label="Logros">
-      <div className={collected >= 1 ? styles.achieved : styles.locked}><b>{collected >= 1 ? '★' : '○'}</b><span>Primera tarjeta</span></div>
-      <div className={complete ? styles.achieved : styles.locked}><b>{complete ? '★' : '○'}</b><span>Colección completa</span></div>
-      <div className={wonPrize ? styles.achieved : styles.locked}><b>{wonPrize ? '★' : '○'}</b><span>Premio en esta sesión</span></div>
-    </div>
-    <CouponWallet shopping={shopping} refreshKey={refreshKey} />
-    <div className={styles.rewardBox}><b>Qué desbloquea la colección</b><p>{unlockText}</p></div>
-    <ol className={styles.steps}><li>Encontrá una tarjeta en el shopping.</li><li>Escaneá el QR o NFC, o ingresá el código.</li><li>Girá y revisá tu resultado.</li><li>Canjeá tu premio en el comercio indicado.</li></ol>
-    <div className={styles.linkRow}>{rulesUrl ? <a href={rulesUrl} target="_blank" rel="noreferrer">Bases y condiciones</a> : <span className={styles.muted}>Las condiciones se informarán durante la campaña.</span>}<button onClick={() => onGo('jugar')}>Ir a Jugar</button></div>
-  </section>;
+  return (
+    <section className={styles.progress} aria-labelledby="progress-title">
+      <div className={styles.screenHead}>
+        <span className={styles.kicker}>BILLETERA Y RECORRIDO</span>
+        <h2 id="progress-title">Mi progreso</h2>
+        <p>Tus cupones QR listos para presentar en caja y el estado de tu pasaporte en {shoppingName}.</p>
+      </div>
+
+      {/* BILLETERA DE CUPONES QR PRIMERO PARA ACCESO INMEDIATO EN CAJA */}
+      <CouponWallet shopping={shopping} refreshKey={refreshKey} />
+
+      <div className={styles.ringCard}>
+        <svg viewBox="0 0 120 120" className={styles.ring} aria-hidden="true">
+          <circle cx="60" cy="60" r="52" className={styles.ringTrack} />
+          <circle cx="60" cy="60" r="52" className={styles.ringFill} strokeLinecap={ratio > 0 ? 'round' : 'butt'} strokeDasharray={`${(ratio * circumference).toFixed(1)} ${circumference.toFixed(1)}`} />
+        </svg>
+        <div className={styles.ringText}>
+          <strong>{collected}/{target}</strong>
+          <span>postas</span>
+        </div>
+        <div className={styles.ringCopy}>
+          <b>{complete ? '¡Colección completada!' : 'Pasaporte en curso'}</b>
+          <p>{complete ? `Reuniste todas las postas requeridas en ${shoppingName}.` : `Te faltan ${Math.max(0, target - collected)} postas distintas para completar el álbum.`}</p>
+        </div>
+      </div>
+
+      <div className={styles.achievements} aria-label="Insignias de campaña">
+        <div className={collected >= 1 ? styles.achieved : styles.locked}>
+          <b>{collected >= 1 ? '✓' : '01'}</b>
+          <span>Primera posta</span>
+        </div>
+        <div className={complete ? styles.achieved : styles.locked}>
+          <b>{complete ? '★' : '03'}</b>
+          <span>Pasaporte completo</span>
+        </div>
+        <div className={wonPrize ? styles.achieved : styles.locked}>
+          <b>{wonPrize ? '✦' : 'QR'}</b>
+          <span>Voucher ganado</span>
+        </div>
+      </div>
+
+      <div className={styles.rewardBox}>
+        <b>Beneficio por completar el pasaporte</b>
+        <p>{unlockText}</p>
+      </div>
+
+      <div className={styles.linkRow}>
+        {rulesUrl ? (
+          <a href={rulesUrl} target="_blank" rel="noreferrer">Bases y condiciones ↗</a>
+        ) : (
+          <span className={styles.muted}>Temporada oficial · {shoppingName}</span>
+        )}
+        <button type="button" onClick={() => onGo('jugar')}>Cargar otra tarjeta →</button>
+      </div>
+    </section>
+  );
 }
 
 function Sheet({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
@@ -386,21 +1208,35 @@ function Sheet({ label, onClose, children }: { label: string; onClose: () => voi
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-  return <div className={styles.sheetBackdrop} onClick={onClose}>
-    <div className={styles.sheet} role="dialog" aria-modal="true" aria-label={label} onClick={(event) => event.stopPropagation()}>
-      <span className={styles.grip} aria-hidden="true" />
-      <button className={styles.sheetClose} onClick={onClose} aria-label="Cerrar">×</button>
-      {children}
+  return (
+    <div className={styles.sheetBackdrop} onClick={onClose}>
+      <div className={styles.sheet} role="dialog" aria-modal="true" aria-label={label} onClick={(event) => event.stopPropagation()}>
+        <span className={styles.grip} aria-hidden="true" />
+        <button type="button" className={styles.sheetClose} onClick={onClose} aria-label="Cerrar">×</button>
+        {children}
+      </div>
     </div>
-  </div>;
+  );
 }
 
 function Confetti() {
-  return <div className={styles.confetti} aria-hidden="true">{CONFETTI.map((piece, index) => <i key={index} style={{ left: `${piece.left}%`, animationDelay: `${piece.delay}s`, background: piece.hue === 0 ? 'var(--festive)' : piece.hue === 1 ? 'var(--brand-accent-soft)' : 'var(--brand-accent)' } as CSSProperties} />)}</div>;
+  return (
+    <div className={styles.confetti} aria-hidden="true">
+      {CONFETTI.map((piece, index) => (
+        <i key={index} style={{ left: `${piece.left}%`, animationDelay: `${piece.delay}s`, background: piece.hue === 0 ? 'var(--festive)' : piece.hue === 1 ? 'var(--brand-accent-soft)' : 'var(--brand-accent)' } as CSSProperties} />
+      ))}
+    </div>
+  );
 }
 
 function GiftArt({ shopping }: { shopping: ShoppingBrandId }) {
-  return <svg className={styles.giftArt} viewBox="0 0 80 80" aria-hidden="true" data-shopping={shopping}><rect x="14" y="30" width="52" height="40" rx="5" className={styles.giftBody} /><rect x="14" y="22" width="52" height="12" rx="4" className={styles.giftLid} /><rect x="36" y="22" width="8" height="48" className={styles.giftRibbon} /></svg>;
+  return (
+    <svg className={styles.giftArt} viewBox="0 0 80 80" aria-hidden="true" data-shopping={shopping}>
+      <rect x="14" y="30" width="52" height="40" rx="5" className={styles.giftBody} />
+      <rect x="14" y="22" width="52" height="12" rx="4" className={styles.giftLid} />
+      <rect x="36" y="22" width="8" height="48" className={styles.giftRibbon} />
+    </svg>
+  );
 }
 
 function Icon({ name }: { name: View | 'admin' }) {
@@ -412,5 +1248,9 @@ function Icon({ name }: { name: View | 'admin' }) {
     progreso: <path d="M5 19V11M12 19V5M19 19v-6" />,
     admin: <><circle cx="12" cy="12" r="3" /><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" /></>,
   };
-  return <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      {paths[name]}
+    </svg>
+  );
 }

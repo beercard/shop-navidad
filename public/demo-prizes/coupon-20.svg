@@ -1,1 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" role="img" aria-labelledby="title"><title id="title">Cupón demo de veinte por ciento</title><rect width="240" height="160" rx="18" fill="#f5eae6"/><path d="M30 34h180v92H30a16 16 0 0 0 0-32V66a16 16 0 0 0 0-32Z" fill="#fff" stroke="#b96b57" stroke-width="3" stroke-dasharray="7 5"/><text x="120" y="79" text-anchor="middle" font-family="Arial" font-weight="700" font-size="31" fill="#8b4138">20% OFF</text><text x="120" y="104" text-anchor="middle" font-family="Arial" font-size="11" fill="#53646a">DEMO · SIN VALOR COMERCIAL</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" role="img" aria-labelledby="title">
+  <title id="title">Beneficio preferencial 20% OFF</title>
+  <defs>
+    <linearGradient id="bg20" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8d3826"/>
+      <stop offset="55%" stop-color="#632316"/>
+      <stop offset="100%" stop-color="#38120a"/>
+    </linearGradient>
+    <linearGradient id="gold20" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7e6c4"/>
+      <stop offset="50%" stop-color="#dfb872"/>
+      <stop offset="100%" stop-color="#b08439"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="200" rx="20" fill="url(#bg20)"/>
+  <g opacity="0.16" stroke="#f7e6c4" stroke-width="1" fill="none">
+    <circle cx="270" cy="160" r="55"/>
+    <circle cx="270" cy="160" r="85"/>
+    <circle cx="270" cy="160" r="115"/>
+  </g>
+  <path d="M28 28h264a8 8 0 0 1 8 8v44a16 16 0 0 0 0 40v44a8 8 0 0 1-8 8H28a8 8 0 0 1-8-8v-44a16 16 0 0 0 0-40V36a8 8 0 0 1 8-8Z" fill="none" stroke="url(#gold20)" stroke-width="1.5" stroke-opacity="0.7"/>
+  <line x1="212" y1="32" x2="212" y2="168" stroke="#f7e6c4" stroke-width="1.5" stroke-dasharray="5 5" stroke-opacity="0.45"/>
+  <rect x="42" y="46" width="110" height="22" rx="11" fill="#f7e6c4" fill-opacity="0.18" stroke="#f7e6c4" stroke-width="1" stroke-opacity="0.5"/>
+  <text x="97" y="61" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="10" letter-spacing="1.4" fill="#f7e6c4">PASE PREFERENCIAL</text>
+  <text x="42" y="118" font-family="Georgia, serif" font-weight="700" font-size="48" fill="#ffffff">20% <tspan font-size="26" fill="url(#gold20)">OFF</tspan></text>
+  <text x="42" y="144" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="13" fill="#f2d8d0">Descuento especial de temporada</text>
+  <circle cx="256" cy="100" r="28" fill="url(#gold20)" fill-opacity="0.18" stroke="url(#gold20)" stroke-width="1.5"/>
+  <path d="M246 100l7 7 14-14" fill="none" stroke="url(#gold20)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

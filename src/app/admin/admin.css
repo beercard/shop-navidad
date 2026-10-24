@@ -53,10 +53,12 @@
 .admin-app .metric { border-radius: 12px; }
 
 /* Acceso */
+.admin-login { background: radial-gradient(circle at 20% 10%, #244a3c 0%, #10281f 100%) !important; }
+.admin-login .login-card { border-radius: 22px !important; box-shadow: 0 28px 70px rgb(0 0 0 / 36%) !important; border: 1px solid rgb(212 173 104 / 35%) !important; }
 .admin-login .login-card h1 { font: 600 clamp(30px, 8vw, 36px)/1.1 var(--serif), Georgia, serif; letter-spacing: -.015em; }
 .admin-login .login-card p { font-size: 15px; }
-.admin-login .login-card input { min-height: 52px; font-size: 17px; }
-.admin-login .primary { min-height: 56px; font-size: 17px; border-radius: 10px; }
+.admin-login .login-card input { min-height: 52px; font-size: 17px; border-radius: 12px; }
+.admin-login .primary { min-height: 56px; font-size: 17px; border-radius: 12px; }
 
 /* Móvil: la barra lateral pasa a una tira de secciones con desplazamiento y borde difuminado */
 @media (max-width: 900px) {

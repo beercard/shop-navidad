@@ -21,6 +21,20 @@ const stateMeta: Record<CouponState, { label: string; path: string }> = {
 
 function fmt(value: string) { return new Date(value).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }); }
 
+function formatCouponTitle(rawName: string): { title: string; isDemo: boolean } {
+  const isDemo = /DEMO|SIN VALOR COMERCIAL/i.test(rawName);
+  let clean = rawName
+    .replace(/^DEMO\s*[—\-·:]+\s*SIN VALOR COMERCIAL\s*[—\-·:]+\s*/i, '')
+    .replace(/^DEMO\s*[—\-·:]+\s*/i, '')
+    .trim();
+  if (/Cupón demo del 10%/i.test(clean)) clean = 'Beneficio 10% OFF en locales';
+  else if (/Cupón demo del 20%/i.test(clean)) clean = 'Beneficio 20% OFF en locales';
+  else if (/Gift card demo/i.test(clean)) clean = 'Gift Card Especial de Temporada';
+  else if (/Beneficio sorpresa demo/i.test(clean)) clean = 'Obsequio Sorpresa Instantáneo';
+  else if (/Premio especial demo/i.test(clean)) clean = 'Experiencia VIP del Shopping';
+  return { title: clean || rawName, isDemo };
+}
+
 /** "Vence en 2 días" / "Vence hoy a las 20:30". Se resalta cuando faltan menos de 48 h. */
 function expiryText(iso: string) {
   const ms = new Date(iso).getTime() - Date.now();
@@ -83,10 +97,14 @@ export function CouponWallet({ shopping, refreshKey }: { shopping: ShoppingBrand
           const meta = stateMeta[coupon.state];
           const expiry = expiryText(coupon.expiresAt);
           const expanded = open === coupon.id && coupon.state === 'available';
+          const titleMeta = formatCouponTitle(coupon.prize.name);
           return (
             <li key={coupon.id} className="cw-card" data-state={coupon.state}>
               <div className="cw-top">
-                <h4>{coupon.prize.name}</h4>
+                <div className="cw-heading-group">
+                  <span className="cw-pass-kicker">PASE DIGITAL{titleMeta.isDemo ? ' · DEMO' : ''}</span>
+                  <h4>{titleMeta.title}</h4>
+                </div>
                 <span className="cw-chip" data-state={coupon.state}><svg {...icon}><path d={meta.path} /></svg>{meta.label}</span>
               </div>
               <p className="cw-where">{coupon.merchants.length ? `Canjeable en: ${coupon.merchants.join(', ')}` : 'Consultá en el shopping dónde canjearlo.'}</p>

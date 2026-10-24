@@ -109,23 +109,32 @@ export default function ParticipateClient({ cardId, lockedShopping }: { cardId: 
 
   const brand = getShoppingBrand(shopping);
   const shoppingName = payload?.shopping?.name ?? brand.name;
-  const cardLocation = payload?.cards?.find((card) => card.publicId === cardId)?.location;
+  const rawLocation = payload?.cards?.find((card) => card.publicId === cardId)?.location;
+  const cardLocation = rawLocation
+    ? rawLocation.replace(/^Punto demo\s+(\d+)$/i, 'Posta $1 · Recorrido del Shopping')
+    : undefined;
   const won = result?.status === 'won';
+  const cleanPrizeTitle = result?.prize?.name
+    ? result.prize.name
+        .replace(/^DEMO\s*[—\-·:]+\s*SIN VALOR COMERCIAL\s*[—\-·:]+\s*/i, '')
+        .replace(/^DEMO\s*[—\-·:]+\s*/i, '')
+        .trim()
+    : '';
   return (
     <main className="site-shell participate-shell" data-shopping={shopping} style={brandCssVariables(brand, payload?.shopping?.brandSettings) as CSSProperties}>
       <header className="participate-header"><Link className="brand" href={`/${shopping}`}><span className="brand-mark" aria-hidden="true">✳</span><span>NAVIDAD<span className="brand-light">MÁGICA</span><small className="brand-shopping-name">{brand.name}</small></span></Link><span>{shoppingName}</span></header>
       <section className="participate-card" aria-live="polite">
-        <span className="participate-kicker">Navidad Mágica · {shoppingName}</span>
+        <span className="participate-kicker">{shopping === 'centenario' ? 'Temporada Festiva' : 'Paseo Urbano · Club'} · {shoppingName}</span>
         <div className="participate-icon" aria-hidden="true">{won ? <GiftIcon /> : <StarIcon />}</div>
         <h1 ref={headingRef} tabIndex={-1}>{result ? won ? '¡Encontraste tu premio!' : 'Participación registrada' : 'Encontraste una tarjeta'}</h1>
-        <p className="participate-description">{result ? won ? 'El servidor confirmó este premio para tu participación.' : 'El servidor registró tu participación. Esta tarjeta no asignó un premio.' : 'Validaremos esta tarjeta y la campaña antes de registrar tu participación.'}</p>
-        <div className="participate-card-id"><span>Código de tarjeta</span><strong>{cardId}</strong>{cardLocation && <small>{cardLocation}</small>}</div>
+        <p className="participate-description">{result ? won ? 'Tu beneficio instantáneo quedó validado y listo para canjear en los locales adheridos.' : 'Registramos esta posta en tu pasaporte. Esta tarjeta no tenía premio directo asignado.' : 'Activá esta posta oficial del shopping para sumar un sello a tu colección y participar por beneficios instantáneos.'}</p>
+        <div className="participate-card-id"><span>POSTA OFICIAL ESCANEADA</span><strong>{cardId}</strong>{cardLocation && <small>{cardLocation}</small>}</div>
         {loading && <p className="participate-status" role="status">Verificando tarjeta y campaña…</p>}
         {error && <p className="participate-error" role="alert">{error}</p>}
         {error && !payload?.campaign && !loading && <button className="participate-retry" onClick={() => setReloadKey(key => key + 1)}>Reintentar verificación</button>}
         {won && <div className="pr-result pr-live">
           <p className="pr-eyebrow">Premio confirmado</p>
-          <h2 className="pr-prize">{result?.prize?.name}</h2>
+          <h2 className="pr-prize">{cleanPrizeTitle || result?.prize?.name}</h2>
           {result?.prize?.description && <p className="pr-desc">{result.prize.description}</p>}
           {result?.redeemCode && <div className="pr-voucher">
             <p className="pr-how">Mostrá este QR en el comercio. Si no se puede escanear, dictá el código.</p>

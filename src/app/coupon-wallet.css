@@ -6,11 +6,13 @@
 .cw-tabs button[aria-pressed="true"] { background: var(--brand-surface-raised, #fff); color: var(--brand-text, #203a31); box-shadow: 0 1px 3px rgb(0 0 0 / 14%); }
 .cw :focus-visible { outline: 3px solid var(--brand-focus, #8a5a1f); outline-offset: 2px; }
 .cw-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 12px; }
-.cw-card { padding: 16px; border: 1px solid var(--brand-border, #d6dacd); border-radius: var(--brand-radius-card, 14px); background: var(--brand-surface-raised, #fff); color: var(--brand-text, #203a31); }
-.cw-card[data-state="available"] { border-color: var(--brand-primary, #315d4b); box-shadow: 0 0 0 1px var(--brand-primary, #315d4b) inset; }
+.cw-card { padding: 18px; border: 1px solid var(--brand-border, #d6dacd); border-radius: 18px; background: var(--brand-surface-raised, #fff); color: var(--brand-text, #203a31); box-shadow: 0 10px 24px rgb(0 0 0 / 5%); }
+.cw-card[data-state="available"] { border-color: var(--brand-primary, #315d4b); box-shadow: 0 0 0 1px var(--brand-primary, #315d4b) inset, 0 12px 26px rgb(0 0 0 / 6%); }
 .cw-card:not([data-state="available"]) { background: color-mix(in srgb, var(--brand-surface-raised, #fff) 60%, var(--brand-surface, #f3f0e7)); }
 .cw-card:not([data-state="available"]) h4 { color: var(--brand-text-muted, #55635c); }
 .cw-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.cw-heading-group { display: grid; gap: 3px; min-width: 0; }
+.cw-pass-kicker { font: 800 10px/1.2 var(--brand-font-body, system-ui, sans-serif); letter-spacing: .12em; color: var(--brand-accent, #8a3a2b); }
 .cw-top h4 { margin: 0; font: 700 17px/1.3 var(--brand-font-body, system-ui, sans-serif); overflow-wrap: anywhere; }
 .cw-chip { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 3px 10px 3px 8px; border-radius: 999px; font: 700 13px var(--brand-font-body, system-ui, sans-serif); background: var(--state-success-bg, #e6f4ea); color: var(--state-success-ink, #17603f); }
 .cw-chip[data-state="redeemed"] { background: var(--state-info-bg, #e7f1f5); color: var(--state-info-ink, #1d4d63); }

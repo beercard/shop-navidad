@@ -76,7 +76,7 @@ export default function AdminRoute() {
   }, [user, canManage, shopping, tab, search, participantPage.page, participantPage.limit]);
   const ensureCampaigns = useCallback(() => { void request<{ campaigns: Campaign[] }>(`/api/admin/campaigns?shoppingSlug=${shopping}`).then(({ campaigns: rows }) => setCampaigns(rows)).catch((cause) => setError(cause instanceof Error ? cause.message : "No se pudieron cargar las campañas.")); }, [shopping]);
 
-  useEffect(() => { request<{ user: User }>("/api/auth/me").then(({ user: current }) => { setUser(current); if (current.role === "MERCHANT_VALIDATOR") setTab("redeems"); const accessible = current.role === "SUPERADMIN" ? shops[0].slug : current.shoppingScopes?.[0]?.shopping.slug; if (accessible) setShopping(accessible); }).catch(() => setUser(null)).finally(() => setChecking(false)); }, []);
+  useEffect(() => { request<{ user: User | null }>("/api/auth/me?optional=1").then(({ user: current }) => { if (!current) { setUser(null); return; } setUser(current); if (current.role === "MERCHANT_VALIDATOR") setTab("redeems"); const accessible = current.role === "SUPERADMIN" ? shops[0].slug : current.shoppingScopes?.[0]?.shopping.slug; if (accessible) setShopping(accessible); }).catch(() => setUser(null)).finally(() => setChecking(false)); }, []);
   useEffect(() => { if (user && (canManage || tab === "redeems")) void loadData(tab); }, [user, shopping, tab, loadData, canManage]);
   useEffect(() => { if (!allowedShops.some((item) => item.slug === shopping) && allowedShops[0]) setShopping(allowedShops[0].slug); }, [allowedShops, shopping]);
 

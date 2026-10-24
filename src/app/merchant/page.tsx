@@ -118,10 +118,10 @@ export default function MerchantPage() {
 
   useEffect(() => {
     let active = true;
-    api<MerchantSession>("/api/merchant/session").then((data) => {
+    api<{ user: MerchantSession["user"] | null; merchant: MerchantSession["merchant"] | null }>("/api/merchant/session?optional=1").then((data) => {
       if (!active) return;
-      if (!data.merchant) throw new Error("La cuenta no tiene un único comercio activo asignado. Contactá al administrador.");
-      setSession(data);
+      if (!data.user || !data.merchant) { setSession(null); return; }
+      setSession({ user: data.user, merchant: data.merchant });
     }).catch(() => { if (active) setSession(null); }).finally(() => { if (active) setChecking(false); });
     return () => { active = false; };
   }, []);
