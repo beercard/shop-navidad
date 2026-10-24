@@ -123,6 +123,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
     <main className={styles.app} data-view={view}>
       <header className={styles.topbar}>
         <a className={styles.brand} href="#inicio" onClick={(event) => { event.preventDefault(); goTo('inicio'); }}>
+          <span className={styles.brandMonogram} aria-hidden="true">{shopping === 'centenario' ? 'C' : 'U'}</span>
           <span><strong>{brand.name}</strong><small>Navidad mágica</small></span>
         </a>
         <div className={styles.topActions}>
@@ -163,6 +164,7 @@ function HomeScreen({ brandName, title, emphasis, message, primaryAction, shoppi
     </div>
     <section className={styles.passport} aria-labelledby="passport-title">
       <div className={styles.passportHeading}><h2 id="passport-title">Tu colección</h2><span>{collected} de {target}</span></div>
+      <div className={styles.passportBar} aria-hidden="true"><span style={{ width: `${target > 0 ? Math.min(100, Math.round((collected / target) * 100)) : 0}%` }} /></div>
       <button className={styles.passportSlots} onClick={() => onGo('progreso')} aria-describedby="passport-hint">
         {Array.from({ length: target }, (_, index) => {
           const cardId = [...collectedCards][index];
@@ -240,11 +242,25 @@ function PlayScreen(props: { shopping: ShoppingBrandId; loading: boolean; hasCam
 
 function ResultCard({ result, onGo, onPlayAnother }: { result: SpinResult; onGo: (view: View) => void; onPlayAnother: () => void }) {
   const won = result.status === 'won';
+  const [copied, setCopied] = useState(false);
+  async function copyVoucherCode() {
+    if (!result.redeemCode) return;
+    try {
+      await navigator.clipboard.writeText(result.redeemCode);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch { /* fallback manual selection */ }
+  }
   return <article className={`${styles.resultCard} ${won ? styles.resultWon : styles.resultNone}`} role="status" aria-live="polite">
     <span className={styles.resultKicker}>{won ? 'PREMIO CONFIRMADO' : 'SIN PREMIO ESTA VEZ'}</span>
     <h3>{won ? result.prize?.name : 'Gracias por jugar'}</h3>
     <p>{won ? result.prize?.description || 'Presentá el código en el comercio indicado para canjear.' : 'Seguí recorriendo: cada tarjeta nueva suma a tu colección.'}</p>
-    {won && result.redeemCode && <><p className={styles.redeemInstruction}>Mostrá este QR en el comercio indicado. Tu cupón también quedó guardado en <strong>Mi progreso → Mis cupones</strong>, así que podés cargar otra tarjeta ahora sin perderlo.</p>{result.redeemQr && <Image unoptimized className={styles.redeemQr} src={result.redeemQr} width={220} height={220} alt={`Código QR de canje para ${result.prize?.name ?? 'tu premio'}`} /> }<code className={styles.redeemCode}>{result.redeemCode}</code></>}
+    {won && result.redeemCode && <div className={styles.voucherPass}>
+      <p className={styles.redeemInstruction}>Mostrá este QR en el comercio indicado. Tu cupón también quedó guardado en <strong>Mi progreso → Mis cupones</strong>, así que podés cargar otra tarjeta ahora sin perderlo.</p>
+      {result.redeemQr && <Image unoptimized className={styles.redeemQr} src={result.redeemQr} width={220} height={220} alt={`Código QR de canje para ${result.prize?.name ?? 'tu premio'}`} /> }
+      <code className={styles.redeemCode}>{result.redeemCode}</code>
+      <button type="button" className={styles.copyCodeBtn} onClick={copyVoucherCode}>{copied ? '✓ Código copiado' : 'Copiar código de canje'}</button>
+    </div>}
     {won && result.expiresAt && <small>Válido hasta {new Date(result.expiresAt).toLocaleString('es-AR')}</small>}
     <div className={styles.resultActions}>
       <button type="button" className={styles.resultActionBtn} onClick={onPlayAnother}>Ingresar otro código</button>
@@ -285,6 +301,7 @@ function DiscoverScreen({ campaign, collectedIds, target, showClue, onToggleClue
   return <section className={styles.discover} aria-labelledby="discover-title">
     <div className={styles.screenHead}><span className={styles.kicker}>Búsqueda del tesoro</span><h2 id="discover-title">Tu colección</h2><p>Encontrá tarjetas diferentes. Las repetidas no suman progreso.</p></div>
     <div className={styles.collectionCount}><strong>{Math.min(discovered, target)}<small>/{target}</small></strong><span>{Math.max(0, target - discovered) > 0 ? `faltan ${Math.max(0, target - discovered)}` : 'completa'}</span></div>
+    <div className={styles.discoverBar} aria-hidden="true"><span style={{ width: `${target > 0 ? Math.min(100, Math.round((Math.min(discovered, target) / target) * 100)) : 0}%` }} /></div>
     <div className={styles.slotGrid} role="list" aria-label={`Tarjetas: ${Math.min(discovered, target)} de ${target} descubiertas`}>
       {slots.map((publicId, index) => {
         const card = publicId ? campaign?.cards?.find((item) => item.publicId === publicId) : undefined;

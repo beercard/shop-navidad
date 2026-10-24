@@ -36,6 +36,15 @@ export function CouponWallet({ shopping, refreshKey }: { shopping: ShoppingBrand
   const [error, setError] = useState('');
   const [tab, setTab] = useState<'available' | 'history'>('available');
   const [open, setOpen] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  async function copyCouponCode(id: string, code: string) {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedId(id);
+      window.setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 2200);
+    } catch { /* fallback selection */ }
+  }
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setError('');
@@ -93,6 +102,7 @@ export function CouponWallet({ shopping, refreshKey }: { shopping: ShoppingBrand
                       <p>Mostrá este QR en el comercio. Si no se puede escanear, dictá el código.</p>
                       <Image unoptimized src={coupon.qr} width={240} height={240} alt={`Código QR de canje para ${coupon.prize.name}`} />
                       <code aria-label={`Código de canje ${coupon.code}`}>{coupon.code}</code>
+                      <button type="button" className="cw-copy" onClick={() => void copyCouponCode(coupon.id, coupon.code!)}>{copiedId === coupon.id ? '✓ Código copiado' : 'Copiar código'}</button>
                       {coupon.prize.description && <small>{coupon.prize.description}</small>}
                     </div>
                   )}

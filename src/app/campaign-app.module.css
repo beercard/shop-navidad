@@ -8,15 +8,17 @@
 .stage button:focus-visible,.stage a:focus-visible,.stage input:focus-visible{outline:3px solid var(--brand-focus,#a86e28);outline-offset:3px}
 .stageArt{display:none}
 .app{width:100%;min-height:100svh;display:flex;flex-direction:column;background:var(--brand-surface,#f8f5ed);overflow-x:clip;position:relative}
-.topbar{position:sticky;top:0;z-index:5;min-height:60px;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--brand-surface-raised,#fffdf8);border-bottom:1px solid var(--brand-border,#dfe2d8)}
+.topbar{position:sticky;top:0;z-index:5;min-height:62px;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:color-mix(in srgb,var(--brand-surface-raised,#fffdf8) 92%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--brand-border,#dfe2d8)}
 .brand{display:flex;align-items:center;gap:10px;min-width:0;text-decoration:none}
+.brandMonogram{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border-radius:10px;background:var(--brand-primary-strong,#203f34);color:var(--festive,#e4c17c);font:700 15px/1 var(--brand-font-display,Georgia,serif);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--festive,#e4c17c) 45%,transparent)}
+.stage[data-shopping="centenario"] .app[data-view="inicio"] .brandMonogram{display:none}
 .brand strong{display:block;font:700 16px/1.1 var(--brand-font-display,Georgia,serif)}
 .brand small{display:block;margin-top:2px;font:700 11px/1 var(--brand-font-utility,monospace);letter-spacing:.08em;text-transform:uppercase;color:var(--brand-text-muted,#5f6d66)}
 .seal{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center}
 .seal svg{width:38px;height:38px;fill:none;stroke:var(--brand-accent,#b94f43);stroke-width:2}
 .seal path{fill:var(--brand-accent,#b94f43);stroke:none}
 .topActions{display:flex;align-items:center;gap:8px}
-.progressChip{min-height:34px;padding:0 12px;display:inline-flex;align-items:center;border-radius:999px;background:var(--brand-primary-strong,#203f34);color:#fff;font:700 13px var(--brand-font-utility,monospace)}
+.progressChip{min-height:34px;padding:0 12px;display:inline-flex;align-items:center;border-radius:999px;background:var(--brand-primary-strong,#203f34);color:#fff;border:1px solid color-mix(in srgb,var(--festive,#e4c17c) 50%,transparent);font:700 13px var(--brand-font-utility,monospace);box-shadow:0 2px 8px rgb(0 0 0 / 10%)}
 .iconButton{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--brand-border,#dfe2d8);border-radius:50%;background:transparent;color:var(--brand-text,#203a31)}
 .screen{flex:1;min-width:0;padding-bottom:20px}
 .kicker{display:block;font:700 11px/1.2 var(--brand-font-utility,monospace);letter-spacing:.1em;text-transform:uppercase;color:var(--brand-accent,#b94f43)}
@@ -104,15 +106,21 @@
 .resultCard p{margin:0;font-size:14px;line-height:1.5}
 .resultKicker{font:700 12px var(--brand-font-utility,monospace);letter-spacing:.08em;color:var(--festive,#e4c17c)}
 .resultNone .resultKicker{color:var(--brand-accent,#b94f43)}
-.redeemCode{display:block;padding:12px;border-radius:12px;background:#fff8e7;color:#203a31;font:700 18px var(--brand-font-utility,monospace);overflow-wrap:anywhere}
-.redeemInstruction{margin-top:10px!important}
-.redeemQr{align-self:center;width:min(220px,100%);height:auto;aspect-ratio:1;background:white;padding:8px;border-radius:12px;image-rendering:pixelated}
+.redeemCode{display:block;width:100%;padding:12px;border:1.5px dashed color-mix(in srgb,var(--brand-primary,#315d4b) 45%,transparent);border-radius:12px;background:#f8f6f0;color:#14231d;font:700 18px var(--brand-font-utility,monospace);letter-spacing:.06em;text-align:center;overflow-wrap:anywhere;user-select:all}
+.redeemInstruction{margin:0!important;color:#34463e!important;font-size:13px!important}
+.voucherPass{margin-top:10px;padding:16px;border-radius:16px;background:#fff;color:#14231d;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 10px 24px rgb(0 0 0 / 18%);border-top:2px dashed color-mix(in srgb,var(--festive,#e4c17c) 75%,#cbd5e1)}
+.copyCodeBtn{min-height:42px;padding:0 16px;border-radius:10px;border:1px solid #d0d7d2;background:#f1f4f2;color:#14231d;font:700 13px var(--brand-font-body,Arial,sans-serif);cursor:pointer;transition:background-color .15s}
+.copyCodeBtn:hover{background:#e3e9e5}
+.redeemQr{align-self:center;width:min(220px,100%);height:auto;aspect-ratio:1;background:white;padding:8px;border-radius:12px;border:1px solid #e6eae7;image-rendering:pixelated}
 .resultCard small{font-size:13px}
 .resultActions{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px}
 .resultActionBtn,.resultActionSecondary{min-height:44px;padding:0 14px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer}
 .resultActionBtn{border:0;background:var(--festive,#e4c17c);color:#1d2e27}
 .resultActionSecondary{border:1.5px solid rgb(255 255 255 / 55%);background:transparent;color:inherit}
 .resultNone .resultActionSecondary{border-color:var(--brand-accent,#b94f43);color:var(--brand-accent,#b94f43)}
+.passportBar,.discoverBar{height:8px;margin:0 2px 12px;border-radius:999px;background:color-mix(in srgb,var(--brand-primary,#315d4b) 14%,transparent);overflow:hidden}
+.discoverBar{margin:10px 20px 2px}
+.passportBar>span,.discoverBar>span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand-primary,#315d4b),var(--brand-accent,#b94f43));transition:width .4s ease-out}
 @keyframes pop{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
 
 /* Confetti: short, decorative, disabled for reduced motion */
