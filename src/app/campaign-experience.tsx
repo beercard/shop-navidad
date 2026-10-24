@@ -257,7 +257,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
           <div className={styles.topActions}>
             <button type="button" className={styles.progressChip} onClick={() => goTo('progreso')} title="Ver tus cupones y progreso de colección">
               <span className={styles.progressChipDot} aria-hidden="true" />
-              <b>{collected}/{collectionTarget}</b> <small>postas · {raffleEntriesCount} {raffleEntriesCount === 1 ? 'chance' : 'chances'}</small>
+              <b>{collected}/{collectionTarget}</b> <small>postas</small>
             </button>
           </div>
         </header>

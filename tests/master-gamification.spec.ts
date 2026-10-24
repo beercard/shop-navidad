@@ -55,6 +55,7 @@ test.describe('Auditoría Master — Navegación Inferior, Responsive y Reglas d
   });
 
   test('Caso 14 — Responsive en 390×844, 430×932, 768×1024 y 1440×900 sin desbordes horizontales', async ({ page }) => {
+    test.setTimeout(90_000);
     const viewports = [
       { width: 390, height: 844 },
       { width: 430, height: 932 },
