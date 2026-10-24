@@ -14,7 +14,9 @@ export async function POST(request: NextRequest) {
   if (!process.env.DATABASE_URL) return serviceUnavailable();
   if (request.headers.get('origin')) {
     const expected = process.env.APP_URL ? new URL(process.env.APP_URL).origin : request.nextUrl.origin;
-    const allowedOrigins = new Set([expected]);
+    const allowedOrigins = new Set([expected, request.nextUrl.origin]);
+    if (process.env.VERCEL_URL) allowedOrigins.add(`https://${process.env.VERCEL_URL}`);
+    if (process.env.VERCEL_BRANCH_URL) allowedOrigins.add(`https://${process.env.VERCEL_BRANCH_URL}`);
     const origin = new URL(request.headers.get('origin')!).origin;
     const originUrl = new URL(origin);
     const isLoopback = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(originUrl.hostname.toLowerCase());

@@ -5,7 +5,8 @@ function isLanIpv4(hostname: string) {
 }
 
 export function getPublicBaseUrl() {
-  const value = process.env.APP_BASE_URL?.trim();
+  const previewHost = process.env.VERCEL_ENV === 'preview' ? (process.env.VERCEL_BRANCH_URL || process.env.VERCEL_URL) : undefined;
+  const value = (previewHost ? `https://${previewHost}` : process.env.APP_BASE_URL)?.trim();
   if (!value) throw new Error('APP_BASE_URL es necesaria para crear enlaces QR y NFC.');
   let url: URL;
   try { url = new URL(value); } catch { throw new Error('APP_BASE_URL debe ser una URL absoluta válida.'); }
