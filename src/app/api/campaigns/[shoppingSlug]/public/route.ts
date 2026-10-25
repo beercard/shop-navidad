@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readCompletionRewardState } from '@/lib/completion-reward';
 import { prisma } from '@/lib/db';
 import { apiError, serviceUnavailable } from '@/lib/http';
 import { readCollectionProgress, participantCookieName } from '@/lib/participants';
@@ -84,6 +85,15 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sho
       ? await readCollectionProgress(participant.id, campaign.id)
       : { count: 0, cardIds: [] };
 
+    const activeCardPublicIds = campaign.cards.map((c) => c.publicId);
+    const completionReward = await readCompletionRewardState({
+      campaignId: campaign.id,
+      participantId: participant?.id ?? null,
+      settings: campaign.settings,
+      activeCardPublicIds,
+      collectedPublicIds: collectionProgress.cardIds,
+    });
+
     const priorWin = participant
       ? await prisma.participation.findFirst({
           where: {
@@ -117,7 +127,11 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sho
         cards: campaign.cards,
         clue: campaign.clues[0] ?? null,
         collectionProgress,
-        raffleEntriesCount: collectionProgress.count,
+        completionReward,
+        raffleEntriesCount: completionReward.totalRaffleEntriesCount,
+        scanRaffleEntriesCount: completionReward.scanRaffleEntriesCount,
+        bonusRaffleEntriesCount: completionReward.bonusRaffleEntriesCount,
+        exclusiveDrawEligible: completionReward.exclusiveDrawEligible,
         instantPrizeWon: priorWin?.prize
           ? { id: priorWin.prize.id, name: priorWin.prize.name, status: priorWin.status }
           : null,
@@ -135,7 +149,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ sh
 
 function publicSettings(settings: unknown) {
   if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return {};
-  const allowed = ['collectionTarget', 'collectionUnlockText', 'publicMessage'];
+  const allowed = [
+    'collectionTarget',
+    'collectionUnlockText',
+    'publicMessage',
+    'completionRewardEnabled',
+    'completionRewardMode',
+    'requiredCardIds',
+    'completionRewardTitle',
+    'completionRewardTerms',
+  ];
   return Object.fromEntries(Object.entries(settings).filter(([key]) => allowed.includes(key)));
 }
 

@@ -2777,3 +2777,112 @@
     animation: none !important;
   }
 }
+
+/* =========================================================================
+   CREDENCIAL DE RECOMPENSA ESPECIAL POR RECORRIDO COMPLETO
+   ========================================================================= */
+.completionCredential {
+  margin: 12px 16px 0;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #133126 0%, #0d221b 100%);
+  border: 1.5px solid #d4ad68;
+  color: #fffdf9;
+  box-shadow: 0 14px 32px rgb(13 34 27 / 18%);
+  display: grid;
+  gap: 8px;
+}
+
+.stage[data-shopping="uniplaza"] .completionCredential {
+  background: linear-gradient(145deg, #16303d 0%, #0d1f28 100%);
+  border-color: #d89566;
+}
+
+.completionCredentialInCard {
+  margin: 10px 0 4px;
+}
+
+.completionJustUnlocked {
+  box-shadow: 0 0 0 3px rgb(212 173 104 / 32%), 0 16px 36px rgb(13 34 27 / 24%);
+}
+
+.completionTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.completionKicker {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #f3deb0;
+}
+
+.completionRefBadge {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 12%);
+  border: 1px solid rgb(255 255 255 / 22%);
+  font-family: var(--brand-font-utility, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.completionCredential h4 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.25;
+  color: #ffffff;
+}
+
+.completionCredential p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.48;
+  color: #dce9e2;
+}
+
+.completionMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.completionMetaPill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(212 173 104 / 18%);
+  border: 1px solid rgb(212 173 104 / 38%);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #fae8be;
+}
+
+.completionPendingNote {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgb(20 46 36 / 5%);
+  border: 1px dashed rgb(20 46 36 / 18%);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #264236;
+}
+
+.stage[data-shopping="uniplaza"] .completionPendingNote {
+  background: rgb(22 48 59 / 5%);
+  border-color: rgb(22 48 59 / 18%);
+  color: #1f3c49;
+}
+
+@media (max-width: 380px) {
+  .completionCredential {
+    margin-inline: 12px;
+  }
+}

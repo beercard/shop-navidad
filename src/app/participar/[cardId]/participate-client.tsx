@@ -24,6 +24,21 @@ type PlayResult = {
   duplicateRejected?: boolean;
   instantPrizeLimitReached?: boolean;
   priorInstantPrize?: { id: string; name: string } | null;
+  completionReward?: {
+    enabled: boolean;
+    unlocked: boolean;
+    justUnlocked?: boolean;
+    mode: 'EXTRA_RAFFLE_ENTRY' | 'EXCLUSIVE_DRAW';
+    title: string;
+    terms: string;
+    referenceId: string | null;
+    completedCount: number;
+    target: number;
+    pendingCount: number;
+    scanRaffleEntriesCount: number;
+    bonusRaffleEntriesCount: number;
+    totalRaffleEntriesCount: number;
+  } | null;
   raffleEntriesCount?: number;
   raffleEntryAdded?: boolean;
 };
@@ -156,6 +171,22 @@ export default function ParticipateClient({ cardId, lockedShopping }: { cardId: 
         {result && !won && result.instantPrizeLimitReached && <p className="pr-noprize pr-live">Ya ganaste tu premio instantáneo máximo en esta campaña ({result.priorInstantPrize?.name}). ¡Esta posta sumó +1 participación para el Sorteo Final!</p>}
         {result && !won && !result.instantPrizeLimitReached && <p className="pr-noprize pr-live">Podés seguir buscando otras tarjetas del recorrido para completar tu colección y sumar chances al Sorteo Final.</p>}
         {result && typeof result.raffleEntriesCount === 'number' && <p className="pr-demo">★ Participaciones acumuladas para el Sorteo Final: <strong>{result.raffleEntriesCount}</strong></p>}
+        {result?.completionReward?.unlocked && (
+          <div className="pr-result pr-live" data-testid="completion-reward-credential">
+            <p className="pr-eyebrow">
+              {result.completionReward.justUnlocked ? '★ ¡Recorrido Completo Desbloqueado!' : '★ Recompensa de Recorrido Activa'}
+            </p>
+            <h2 className="pr-prize">
+              {result.completionReward.mode === 'EXCLUSIVE_DRAW'
+                ? 'Acceso habilitado al Sorteo Exclusivo'
+                : '+1 Participación extra en el Sorteo Final'}
+            </h2>
+            <p className="pr-desc">{result.completionReward.terms}</p>
+            {result.completionReward.referenceId && (
+              <p className="pr-demo">Ref. auditoría: <code>{result.completionReward.referenceId}</code></p>
+            )}
+          </div>
+        )}
         {!result && <button className="button button-primary participate-submit" onClick={participate} disabled={loading || submitting || !payload?.campaign}>{submitting ? 'Confirmando con el servidor…' : loading ? 'Verificando…' : payload?.campaign ? 'Participar' : 'Participación no disponible'}</button>}
         {result && <Link className="button button-primary participate-submit" href={`/${shopping}#jugar`}>Jugar otro código de tarjeta</Link>}
         {result && <Link className="participate-back" href={`/${shopping}#progreso`}>Ver todos mis cupones QR</Link>}

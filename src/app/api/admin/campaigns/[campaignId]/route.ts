@@ -18,10 +18,51 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ c
     const startsAt = input.startsAt ? new Date(input.startsAt) : current.startsAt;
     const endsAt = input.endsAt ? new Date(input.endsAt) : current.endsAt;
     if (startsAt >= endsAt) return NextResponse.json({ error: 'El inicio debe ser anterior al cierre.' }, { status: 400 });
+    const currentSettings = current.settings && typeof current.settings === 'object' && !Array.isArray(current.settings)
+      ? (current.settings as Record<string, unknown>)
+      : {};
+    const nextSettings: Record<string, unknown> | undefined = input.settings
+      ? {
+          ...currentSettings,
+          ...input.settings,
+          completionConfigUpdatedAt: new Date().toISOString(),
+        }
+      : undefined;
+    const completionKeys = ['completionRewardEnabled', 'completionRewardMode', 'collectionTarget', 'requiredCardIds', 'completionRewardTitle', 'completionRewardTerms'];
+    const completionChanged = input.settings
+      ? completionKeys.some((key) => key in input.settings! && JSON.stringify(input.settings![key]) !== JSON.stringify(currentSettings[key]))
+      : false;
+
     const campaign = await prisma.$transaction(async (tx) => {
       if (input.status === 'ACTIVE') await tx.campaign.updateMany({ where: { id: { not: campaignId }, status: 'ACTIVE', shoppingId: scope.shopping.id }, data: { status: 'PAUSED' } });
-      const updated = await tx.campaign.update({ where: { id: campaignId }, data: { name: input.name, description: input.description, status: input.status, startsAt: input.startsAt ? startsAt : undefined, endsAt: input.endsAt ? endsAt : undefined, rulesUrl: input.rulesUrl, settings: input.settings as object | undefined } });
+      const updated = await tx.campaign.update({
+        where: { id: campaignId },
+        data: {
+          name: input.name,
+          description: input.description,
+          status: input.status,
+          startsAt: input.startsAt ? startsAt : undefined,
+          endsAt: input.endsAt ? endsAt : undefined,
+          rulesUrl: input.rulesUrl,
+          settings: nextSettings as object | undefined,
+        },
+      });
       await logAudit(tx, { actorId: scope.admin.id, shoppingId: scope.shopping.id, campaignId, action: 'CAMPAIGN_UPDATED', entityType: 'Campaign', entityId: campaignId, metadata: { fields: Object.keys(input).filter((key) => key !== 'shoppingSlug') } });
+      if (completionChanged) {
+        await logAudit(tx, {
+          actorId: scope.admin.id,
+          shoppingId: scope.shopping.id,
+          campaignId,
+          action: 'CAMPAIGN_COMPLETION_RULES_UPDATED',
+          entityType: 'Campaign',
+          entityId: campaignId,
+          metadata: {
+            previousCompletionConfig: Object.fromEntries(completionKeys.map((k) => [k, currentSettings[k] ?? null])),
+            newCompletionConfig: Object.fromEntries(completionKeys.map((k) => [k, nextSettings?.[k] ?? null])),
+            policy: 'PRE_EXISTING_COMPLETION_REWARDS_AND_DISCOVERED_CARDS_PRESERVED',
+          },
+        });
+      }
       return updated;
     });
     return NextResponse.json({ campaign });

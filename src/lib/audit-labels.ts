@@ -9,6 +9,7 @@ const actions: Record<string, string> = {
   ADMIN_USER_DEACTIVATED: 'Usuario suspendido',
   CAMPAIGN_CREATED: 'Campaña creada',
   CAMPAIGN_UPDATED: 'Campaña actualizada',
+  CAMPAIGN_COMPLETION_RULES_UPDATED: 'Reglas de recompensa de recorrido actualizadas',
   CARD_CREATED: 'Tarjeta creada',
   CARD_UPDATED: 'Tarjeta actualizada',
   CLUE_CREATED: 'Pista creada',

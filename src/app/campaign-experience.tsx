@@ -8,6 +8,26 @@ import { CouponWallet } from './coupon-wallet';
 
 type Prize = { id: string; name: string; description?: string | null; imageUrl?: string | null; remainingStock: number; available: boolean };
 type PublicCard = { publicId: string; location?: string | null; kind?: string };
+type CompletionRewardInfo = {
+  enabled: boolean;
+  unlocked: boolean;
+  justUnlocked?: boolean;
+  mode: 'EXTRA_RAFFLE_ENTRY' | 'EXCLUSIVE_DRAW';
+  title: string;
+  terms: string;
+  completedCount: number;
+  target: number;
+  pendingCount: number;
+  completedCardIds: string[];
+  requiredCardIds: string[];
+  completedAt: string | null;
+  rewardId: string | null;
+  referenceId: string | null;
+  bonusRaffleEntriesCount: number;
+  scanRaffleEntriesCount: number;
+  totalRaffleEntriesCount: number;
+  exclusiveDrawEligible: boolean;
+};
 type PublicCampaign = {
   shopping?: { slug: string; name: string; brandSettings?: Record<string, unknown> };
   campaign?: { id: string; name: string; startsAt: string; endsAt: string; rulesUrl?: string | null; settings?: Record<string, unknown> } | null;
@@ -15,7 +35,11 @@ type PublicCampaign = {
   cards?: PublicCard[];
   clue?: { text: string; startsAt: string; endsAt: string } | null;
   collectionProgress?: { count: number; cardIds: string[] };
+  completionReward?: CompletionRewardInfo | null;
   raffleEntriesCount?: number;
+  scanRaffleEntriesCount?: number;
+  bonusRaffleEntriesCount?: number;
+  exclusiveDrawEligible?: boolean;
   instantPrizeWon?: { id: string; name: string; status: string } | null;
 };
 type SpinResult = {
@@ -29,7 +53,11 @@ type SpinResult = {
   duplicateRejected?: boolean;
   instantPrizeLimitReached?: boolean;
   priorInstantPrize?: { id: string; name: string } | null;
+  completionReward?: CompletionRewardInfo | null;
   raffleEntriesCount?: number;
+  scanRaffleEntriesCount?: number;
+  bonusRaffleEntriesCount?: number;
+  exclusiveDrawEligible?: boolean;
   raffleEntryAdded?: boolean;
 };
 type View = 'inicio' | 'jugar' | 'descubrir' | 'premios' | 'progreso';
@@ -116,11 +144,12 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
       ? campaign.shopping.brandSettings.collectionUnlockText
       : 'Al completar las 3 postas del recorrido habilitás el beneficio especial de temporada.';
   const unlockText = formatUnlockCopy(rawUnlockText, brand.name);
-  const collectionTarget = typeof campaign?.campaign?.settings?.collectionTarget === 'number' ? campaign.campaign.settings.collectionTarget : 3;
-  const collected = Math.min(collectedIds.length, collectionTarget);
-  const raffleEntriesCount = campaign?.raffleEntriesCount ?? collectedIds.length;
+  const activeCompletionReward = result?.completionReward ?? campaign?.completionReward ?? null;
+  const collectionTarget = activeCompletionReward?.target ?? (typeof campaign?.campaign?.settings?.collectionTarget === 'number' ? campaign.campaign.settings.collectionTarget : 3);
+  const collected = activeCompletionReward ? activeCompletionReward.completedCount : Math.min(collectedIds.length, collectionTarget);
+  const raffleEntriesCount = activeCompletionReward?.totalRaffleEntriesCount ?? campaign?.raffleEntriesCount ?? collectedIds.length;
   const instantPrizeWon = campaign?.instantPrizeWon ?? (result?.status === 'won' && result.prize?.name ? { id: 'won', name: result.prize.name, status: 'WON' } : null);
-  const complete = collected >= collectionTarget;
+  const complete = Boolean(activeCompletionReward?.unlocked) || collected >= collectionTarget;
   const availablePrizes = campaign?.prizes?.filter((prize) => prize.available && prize.remainingStock > 0) ?? [];
   const featuredPrize = availablePrizes.slice().sort((a, b) => b.remainingStock - a.remainingStock)[0] ?? campaign?.prizes?.[0];
   const cardCode = cardId.trim().toUpperCase();
@@ -279,6 +308,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
               target={collectionTarget}
               raffleEntriesCount={raffleEntriesCount}
               instantPrizeWon={instantPrizeWon}
+              completionReward={activeCompletionReward}
               campaignName={campaign?.campaign?.name}
               clueText={campaign?.clue?.text}
               loading={campaignLoading}
@@ -307,6 +337,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
               collectedCount={collected}
               raffleEntriesCount={raffleEntriesCount}
               instantPrizeWon={instantPrizeWon}
+              completionReward={activeCompletionReward}
               target={collectionTarget}
               onChange={(value) => { setCardId(value.toUpperCase()); setParticipationError(''); }}
               onClearResult={() => { setResult(null); setCardId(''); setParticipationError(''); }}
@@ -322,6 +353,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
               campaign={campaign}
               collectedIds={collectedIds}
               raffleEntriesCount={raffleEntriesCount}
+              completionReward={activeCompletionReward}
               target={collectionTarget}
               showClue={showClue}
               onToggleClue={() => setShowClue((value) => !value)}
@@ -349,6 +381,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
               collected={collected}
               raffleEntriesCount={raffleEntriesCount}
               instantPrizeWon={instantPrizeWon}
+              completionReward={activeCompletionReward}
               target={collectionTarget}
               complete={complete}
               unlockText={unlockText}
@@ -362,7 +395,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
           )}
         </div>
 
-        {view === 'jugar' && result?.status === 'won' && <Confetti />}
+        {view === 'jugar' && (result?.status === 'won' || Boolean(result?.completionReward?.justUnlocked)) && <Confetti />}
         <footer className={styles.appFooter}>
           <span>{brand.name} · {shopping === 'centenario' ? 'Temporada Festiva' : 'Paseo Urbano'}</span>
           <Link href="/merchant">Acceso Comercios</Link>
@@ -393,10 +426,77 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
   );
 }
 
-function HomeScreen({
-  brandName, title, emphasis, message, primaryAction, shopping, featured, totalStock, collectedIds, cards, collected, target, raffleEntriesCount, instantPrizeWon, campaignName, clueText, loading, error, onRetry, onGo, onOpenPrize,
+function CompletionRewardCredential({
+  completionReward,
+  inCard = false,
 }: {
-  brandName: string; title: string; emphasis: string; message: string; primaryAction: string; shopping: ShoppingBrandId; featured?: Prize; totalStock: number; collectedIds: string[]; cards: PublicCard[]; collected: number; target: number; raffleEntriesCount: number; instantPrizeWon?: { id: string; name: string; status: string } | null; campaignName?: string; clueText?: string; loading: boolean; error: string; onRetry: () => void; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void;
+  completionReward?: CompletionRewardInfo | null;
+  inCard?: boolean;
+}) {
+  if (!completionReward || !completionReward.enabled) return null;
+
+  if (completionReward.unlocked) {
+    const isExclusive = completionReward.mode === 'EXCLUSIVE_DRAW';
+    return (
+      <div
+        className={`${styles.completionCredential} ${inCard ? styles.completionCredentialInCard : ''} ${completionReward.justUnlocked ? styles.completionJustUnlocked : ''}`}
+        data-testid="completion-reward-credential"
+        data-mode={completionReward.mode}
+        role="status"
+      >
+        <div className={styles.completionTop}>
+          <span className={styles.completionKicker}>
+            {completionReward.justUnlocked ? '★ ¡RECORRIDO COMPLETO DESBLOQUEADO!' : '★ RECOMPENSA POR RECORRIDO COMPLETO'}
+          </span>
+          {completionReward.referenceId && (
+            <span className={styles.completionRefBadge}>REF. {completionReward.referenceId}</span>
+          )}
+        </div>
+        <h4>
+          {isExclusive
+            ? 'Acceso habilitado al Sorteo Exclusivo'
+            : '+1 Participación extra en el Sorteo Final'}
+        </h4>
+        <p>{completionReward.terms}</p>
+        <div className={styles.completionMetaRow}>
+          {isExclusive ? (
+            <>
+              <span className={styles.completionMetaPill}>Sorteo Exclusivo: Elegible ✓</span>
+              <span className={styles.completionMetaPill}>Chances Sorteo General: {completionReward.scanRaffleEntriesCount}</span>
+            </>
+          ) : (
+            <>
+              <span className={styles.completionMetaPill}>Chances escaneo: {completionReward.scanRaffleEntriesCount}</span>
+              <span className={styles.completionMetaPill}>Extra recorrido: +{completionReward.bonusRaffleEntriesCount}</span>
+              <span className={styles.completionMetaPill}>Total Sorteo Final: {completionReward.totalRaffleEntriesCount}</span>
+            </>
+          )}
+          {completionReward.completedAt && (
+            <span className={styles.completionMetaPill}>
+              Completado: {new Date(completionReward.completedAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const missing = completionReward.pendingCount;
+  const rewardLabel = completionReward.mode === 'EXCLUSIVE_DRAW'
+    ? 'Acceso al Sorteo Exclusivo por completar el recorrido'
+    : '+1 participación extra en el Sorteo Final';
+
+  return (
+    <div className={styles.completionPendingNote} data-testid="completion-reward-pending">
+      <strong>Recompensa por completar todas las postas:</strong> Te {missing === 1 ? 'falta 1 posta válida' : `faltan ${missing} postas válidas`} ({completionReward.completedCount}/{completionReward.target}) para desbloquear <em>{rewardLabel}</em>.
+    </div>
+  );
+}
+
+function HomeScreen({
+  brandName, title, emphasis, message, primaryAction, shopping, featured, totalStock, collectedIds, cards, collected, target, raffleEntriesCount, instantPrizeWon, completionReward, campaignName, clueText, loading, error, onRetry, onGo, onOpenPrize,
+}: {
+  brandName: string; title: string; emphasis: string; message: string; primaryAction: string; shopping: ShoppingBrandId; featured?: Prize; totalStock: number; collectedIds: string[]; cards: PublicCard[]; collected: number; target: number; raffleEntriesCount: number; instantPrizeWon?: { id: string; name: string; status: string } | null; completionReward?: CompletionRewardInfo | null; campaignName?: string; clueText?: string; loading: boolean; error: string; onRetry: () => void; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void;
 }) {
   const collectedCards = new Set(collectedIds);
   const centenario = shopping === 'centenario';
@@ -479,6 +579,7 @@ function HomeScreen({
                 ? `¡Pasaporte completo! Tenés ${raffleEntriesCount} participaciones acumuladas para el Sorteo Final.`
                 : `Cada cartel QR distinto te da 1 giro por premio instantáneo (máx. 1 por campaña) y suma +1 chance para el Sorteo Final.`}
           </p>
+          <CompletionRewardCredential completionReward={completionReward} inCard />
         </section>
 
         {/* VITRINA DE BENEFICIO DESTACADO CON FOTOGRAFÍA REAL */}
@@ -641,6 +742,7 @@ function HomeScreen({
               ? `Circuito completo · ${raffleEntriesCount} participaciones acumuladas para el Sorteo Final.`
               : `Cada estación QR distinta habilita 1 giro (máx. 1 premio directo por campaña) y suma +1 chance para el Sorteo Final.`}
         </p>
+        <CompletionRewardCredential completionReward={completionReward} inCard />
       </section>
 
       {/* SHOWCASE FOTOGRÁFICO NOCTURNO — UNIPLAZA */}
@@ -700,9 +802,9 @@ function StepIcon({ kind }: { kind: 'search' | 'scan' | 'gift' }) {
 }
 
 function PlayScreen(props: {
-  shopping: ShoppingBrandId; loading: boolean; hasCampaign: boolean; error: string; participating: boolean; spinPhase: 'idle' | 'accel' | 'cruise' | 'land'; wheelAngle: number; participationError: string; result: SpinResult | null; cardCode: string; codeStatus: 'invalid' | 'repeated' | 'new' | null; canSpin: boolean; cards: PublicCard[]; collectedIds: string[]; collectedCount: number; raffleEntriesCount: number; instantPrizeWon?: { id: string; name: string; status: string } | null; target: number; onChange: (value: string) => void; onClearResult: () => void; onSpin: () => void; onRetry: () => void; onGo: (view: View) => void; rulesUrl?: string | null;
+  shopping: ShoppingBrandId; loading: boolean; hasCampaign: boolean; error: string; participating: boolean; spinPhase: 'idle' | 'accel' | 'cruise' | 'land'; wheelAngle: number; participationError: string; result: SpinResult | null; cardCode: string; codeStatus: 'invalid' | 'repeated' | 'new' | null; canSpin: boolean; cards: PublicCard[]; collectedIds: string[]; collectedCount: number; raffleEntriesCount: number; instantPrizeWon?: { id: string; name: string; status: string } | null; completionReward?: CompletionRewardInfo | null; target: number; onChange: (value: string) => void; onClearResult: () => void; onSpin: () => void; onRetry: () => void; onGo: (view: View) => void; rulesUrl?: string | null;
 }) {
-  const { shopping, loading, hasCampaign, error, participating, spinPhase, wheelAngle, participationError, result, cardCode, codeStatus, canSpin, cards, collectedIds, collectedCount, raffleEntriesCount, instantPrizeWon, target, onChange, onClearResult, onSpin, onRetry, onGo } = props;
+  const { shopping, loading, hasCampaign, error, participating, spinPhase, wheelAngle, participationError, result, cardCode, codeStatus, canSpin, cards, collectedIds, collectedCount, raffleEntriesCount, instantPrizeWon, completionReward, target, onChange, onClearResult, onSpin, onRetry, onGo } = props;
   const demoCards = cards.filter((c) => /DEMO/i.test(c.publicId)).slice(0, 5);
   const hint = codeStatus === 'invalid'
     ? 'Ese código no pertenece a una posta activa de este shopping. Verificá los caracteres.'
@@ -744,12 +846,16 @@ function PlayScreen(props: {
         <ResultCard
           result={result}
           raffleEntriesCount={result.raffleEntriesCount ?? raffleEntriesCount}
+          completionReward={result.completionReward ?? completionReward}
           onGo={onGo}
           onPlayAnother={() => {
             onClearResult();
             document.getElementById('card-id')?.focus();
           }}
         />
+      )}
+      {!result && completionReward?.unlocked && (
+        <CompletionRewardCredential completionReward={completionReward} />
       )}
 
       <form className={styles.codeForm} onSubmit={(event) => { event.preventDefault(); onSpin(); }}>
@@ -826,7 +932,7 @@ function PlayScreen(props: {
   );
 }
 
-function ResultCard({ result, raffleEntriesCount, onGo, onPlayAnother }: { result: SpinResult; raffleEntriesCount: number; onGo: (view: View) => void; onPlayAnother: () => void }) {
+function ResultCard({ result, raffleEntriesCount, completionReward, onGo, onPlayAnother }: { result: SpinResult; raffleEntriesCount: number; completionReward?: CompletionRewardInfo | null; onGo: (view: View) => void; onPlayAnother: () => void }) {
   const won = result.status === 'won';
   const [copied, setCopied] = useState(false);
   const formattedPrize = formatPrizeName(result.prize?.name);
@@ -870,6 +976,9 @@ function ResultCard({ result, raffleEntriesCount, onGo, onPlayAnother }: { resul
           ★ Participaciones Sorteo Final: <strong>{raffleEntriesCount}</strong> {result.raffleEntryAdded ? '(+1 sumada)' : ''}
         </span>
       </div>
+      {completionReward?.unlocked && (
+        <CompletionRewardCredential completionReward={completionReward} inCard />
+      )}
 
       {won && result.redeemCode && (
         <div className={styles.voucherPass}>
@@ -954,9 +1063,9 @@ function Wheel({ spinning, angle, shopping }: { spinning: boolean; angle: number
 }
 
 function DiscoverScreen({
-  shopping, campaign, collectedIds, raffleEntriesCount, target, showClue, onToggleClue, loading, error, onRetry, onSelectCard, onGo,
+  shopping, campaign, collectedIds, raffleEntriesCount, completionReward, target, showClue, onToggleClue, loading, error, onRetry, onSelectCard, onGo,
 }: {
-  shopping: ShoppingBrandId; campaign: PublicCampaign | null; collectedIds: string[]; raffleEntriesCount: number; target: number; showClue: boolean; onToggleClue: () => void; loading: boolean; error: string; onRetry: () => void; onSelectCard: (code: string) => void; onGo: (view: View) => void;
+  shopping: ShoppingBrandId; campaign: PublicCampaign | null; collectedIds: string[]; raffleEntriesCount: number; completionReward?: CompletionRewardInfo | null; target: number; showClue: boolean; onToggleClue: () => void; loading: boolean; error: string; onRetry: () => void; onSelectCard: (code: string) => void; onGo: (view: View) => void;
 }) {
   const slots = Array.from({ length: target }, (_, index) => collectedIds[index]);
   const discovered = Math.min(collectedIds.length, target);
@@ -988,6 +1097,7 @@ function DiscoverScreen({
         <div className={styles.discoverBar} aria-hidden="true">
           <span style={{ width: `${target > 0 ? Math.min(100, Math.round((discovered / target) * 100)) : 0}%` }} />
         </div>
+        <CompletionRewardCredential completionReward={completionReward} inCard />
       </div>
 
       <div className={styles.slotGrid} role="list" aria-label={`Tarjetas: ${discovered} de ${target} descubiertas`}>
@@ -1199,9 +1309,9 @@ function PrizeDetail({ prize, shopping, rulesUrl, onPlay }: { prize: Prize; shop
 }
 
 function ProgressScreen({
-  collected, raffleEntriesCount, instantPrizeWon, target, complete, unlockText, wonPrize, rulesUrl, shoppingName, shopping, refreshKey, onGo,
+  collected, raffleEntriesCount, instantPrizeWon, completionReward, target, complete, unlockText, wonPrize, rulesUrl, shoppingName, shopping, refreshKey, onGo,
 }: {
-  shopping: ShoppingBrandId; refreshKey: string; collected: number; raffleEntriesCount: number; instantPrizeWon?: { id: string; name: string; status: string } | null; target: number; complete: boolean; unlockText: string; wonPrize?: string; rulesUrl?: string | null; shoppingName: string; onGo: (view: View) => void;
+  shopping: ShoppingBrandId; refreshKey: string; collected: number; raffleEntriesCount: number; instantPrizeWon?: { id: string; name: string; status: string } | null; completionReward?: CompletionRewardInfo | null; target: number; complete: boolean; unlockText: string; wonPrize?: string; rulesUrl?: string | null; shoppingName: string; onGo: (view: View) => void;
 }) {
   const ratio = target > 0 ? Math.min(collected / target, 1) : 0;
   const circumference = 2 * Math.PI * 52;
@@ -1215,6 +1325,8 @@ function ProgressScreen({
 
       {/* BILLETERA DE CUPONES QR PRIMERO PARA ACCESO INMEDIATO EN CAJA */}
       <CouponWallet shopping={shopping} refreshKey={refreshKey} />
+
+      <CompletionRewardCredential completionReward={completionReward} />
 
       <div className={styles.ringCard}>
         <svg viewBox="0 0 120 120" className={styles.ring} aria-hidden="true">
@@ -1253,8 +1365,8 @@ function ProgressScreen({
       </div>
 
       <div className={styles.rewardBox}>
-        <b>Beneficio por completar el pasaporte</b>
-        <p>{unlockText}</p>
+        <b>{completionReward?.title || 'Beneficio por completar el pasaporte'}</b>
+        <p>{completionReward?.terms || unlockText}</p>
       </div>
 
       <div className={styles.linkRow}>

@@ -1,4 +1,5 @@
 import { Prisma, type Participation, type Prize } from '@prisma/client';
+import { evaluateAndIssueCompletionReward, readCompletionRewardState } from '@/lib/completion-reward';
 import { prisma } from '@/lib/db';
 import { findOrCreateParticipant, readCollectionProgress } from '@/lib/participants';
 import { chooseWeighted, decryptCode, encryptCode, newRedeemCode, sha256 } from '@/lib/security';
@@ -27,9 +28,19 @@ async function existingResult(
   existing: Existing,
   participantId: string,
   campaignId: string,
+  campaignSettings: unknown,
+  activeCardPublicIds: string[],
   options?: { duplicateRejected?: boolean; idempotentReplay?: boolean },
 ) {
   const progress = await readCollectionProgress(participantId, campaignId, tx);
+  const completionReward = await readCompletionRewardState({
+    db: tx,
+    campaignId,
+    participantId,
+    settings: campaignSettings,
+    activeCardPublicIds,
+    collectedPublicIds: progress.cardIds,
+  });
   const priorCampaignWin = await tx.participation.findFirst({
     where: {
       participantId,
@@ -51,7 +62,11 @@ async function existingResult(
     redeemCode: canShowCode && existing.redeemCode ? decryptCode(existing.redeemCode.codeEncrypted) : undefined,
     expiresAt: canShowCode ? existing.redeemCode?.expiresAt : undefined,
     collectionProgress: progress,
-    raffleEntriesCount: progress.count,
+    completionReward,
+    raffleEntriesCount: completionReward.totalRaffleEntriesCount,
+    scanRaffleEntriesCount: completionReward.scanRaffleEntriesCount,
+    bonusRaffleEntriesCount: completionReward.bonusRaffleEntriesCount,
+    exclusiveDrawEligible: completionReward.exclusiveDrawEligible,
     raffleEntryAdded: false,
     alreadyParticipated: true,
     duplicateRejected: Boolean(options?.duplicateRejected),
@@ -138,12 +153,24 @@ export async function playCard(input: {
           // Bloqueo de fila por participante para serializar solicitudes concurrentes (mismo cartel o dos carteles distintos a la vez).
           await tx.$queryRaw`SELECT id FROM "participants" WHERE id = ${participant.id} FOR UPDATE`;
 
+          const activeCardsRows = await tx.card.findMany({
+            where: {
+              campaignId: campaign.id,
+              shoppingId: shopping.id,
+              status: 'ACTIVE',
+              OR: [{ locationId: null }, { place: { active: true } }],
+            },
+            select: { publicId: true },
+            orderBy: { publicId: 'asc' },
+          });
+          const activeCardPublicIds = activeCardsRows.map((row) => row.publicId);
+
           const priorByKey = await tx.participation.findFirst({
             where: { participantId: participant.id, idempotencyKey: input.idempotencyKey },
             include: { prize: true, redeemCode: { select: { codeEncrypted: true, expiresAt: true, status: true } } },
           });
           if (priorByKey) {
-            return existingResult(tx, priorByKey, participant.id, campaign.id, { idempotentReplay: true });
+            return existingResult(tx, priorByKey, participant.id, campaign.id, campaign.settings, activeCardPublicIds, { idempotentReplay: true });
           }
 
           const priorCard = await tx.participation.findUnique({
@@ -167,7 +194,7 @@ export async function playCard(input: {
                 metadata: { publicId: card.publicId },
               },
             });
-            return existingResult(tx, priorCard, participant.id, campaign.id, { duplicateRejected: true });
+            return existingResult(tx, priorCard, participant.id, campaign.id, campaign.settings, activeCardPublicIds, { duplicateRejected: true });
           }
 
           // REGLA 2: Un solo premio instantáneo como máximo por participante y campaña.
@@ -320,6 +347,18 @@ export async function playCard(input: {
             where: { progressId: collection.id },
             select: { card: { select: { publicId: true } } },
           });
+          const collectedPublicIds = collected.map(({ card: collectedCard }) => collectedCard.publicId);
+
+          const completionReward = await evaluateAndIssueCompletionReward({
+            tx,
+            shoppingId: shopping.id,
+            campaignId: campaign.id,
+            participantId: participant.id,
+            triggerCardId: card.id,
+            settings: campaign.settings,
+            activeCardPublicIds,
+            collectedPublicIds,
+          });
 
           return {
             status: selected ? ('won' as const) : ('no_prize' as const),
@@ -329,10 +368,14 @@ export async function playCard(input: {
             redeemCode: rawCode,
             expiresAt,
             collectionProgress: {
-              count: collected.length,
-              cardIds: collected.map(({ card: collectedCard }) => collectedCard.publicId),
+              count: collectedPublicIds.length,
+              cardIds: collectedPublicIds,
             },
-            raffleEntriesCount: collected.length,
+            completionReward,
+            raffleEntriesCount: completionReward.totalRaffleEntriesCount,
+            scanRaffleEntriesCount: completionReward.scanRaffleEntriesCount,
+            bonusRaffleEntriesCount: completionReward.bonusRaffleEntriesCount,
+            exclusiveDrawEligible: completionReward.exclusiveDrawEligible,
             raffleEntryAdded: true,
             alreadyParticipated: false,
             instantPrizeLimitReached: alreadyWonInCampaign,

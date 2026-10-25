@@ -68,7 +68,11 @@ const REPORT_LABELS: Record<string, string> = {
   consumedStock: "Stock consumido",
   couponsIssued: "Cupones emitidos",
   couponsRedeemed: "Cupones canjeados",
-  raffleEntries: "Participaciones sorteo final",
+  raffleEntries: "Participaciones totales sorteo final",
+  scanRaffleEntries: "Participaciones por escaneo individual",
+  bonusRaffleEntries: "Participaciones extra por recorrido completo",
+  completedRoutesCount: "Usuarios con recorrido completo",
+  exclusiveDrawEligibleCount: "Elegibles sorteo exclusivo",
   suspiciousAttempts: "Intentos sospechosos",
   completionRate: "Tasa de completitud",
   redemptionRate: "Tasa de canje",
@@ -102,6 +106,100 @@ function label(value: string) {
   return REPORT_LABELS[value] ?? value.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ").replace(/^./, (character) => character.toUpperCase());
 }
 function Breakdown({ title, rows }: { title: string; rows: unknown[] }) { const records = rows.filter((row): row is Record<string, unknown> => !!row && typeof row === "object" && !Array.isArray(row)); const columns = Array.from(new Set(records.flatMap((row) => Object.keys(row)))); return <section className="report-block"><h3>{title}</h3>{!rows.length ? <Empty message="Sin datos en este período."/> : records.length && columns.length ? <div className="table-wrap stack-sm"><table><thead><tr>{columns.map((column) => <th key={column}>{label(column)}</th>)}</tr></thead><tbody>{records.map((row, index) => <tr key={index}>{columns.map((column) => <td key={column} data-label={label(column)}>{typeof row[column] === "object" ? JSON.stringify(row[column]) : String(row[column] ?? "—")}</td>)}</tr>)}</tbody></table></div> : <p>{rows.map(String).join(", ")}</p>}</section>; }
+
+export function CampaignCompletionConfigForm({
+  shopping,
+  campaignName,
+  settings = {},
+  onSave,
+}: {
+  shopping: string;
+  campaignName: string;
+  settings?: Record<string, unknown> | null;
+  onSave: Save;
+}) {
+  const cfg = settings ?? {};
+  const enabled = cfg.completionRewardEnabled !== false;
+  const mode = cfg.completionRewardMode === "EXCLUSIVE_DRAW" ? "EXCLUSIVE_DRAW" : "EXTRA_RAFFLE_ENTRY";
+  const target = typeof cfg.collectionTarget === "number" ? cfg.collectionTarget : 3;
+  const requiredCardIds = Array.isArray(cfg.requiredCardIds) ? cfg.requiredCardIds.map(String).join(", ") : "";
+  const title = typeof cfg.completionRewardTitle === "string" ? cfg.completionRewardTitle : "";
+  const terms = typeof cfg.completionRewardTerms === "string"
+    ? cfg.completionRewardTerms
+    : typeof cfg.collectionUnlockText === "string"
+      ? cfg.collectionUnlockText
+      : "";
+
+  return (
+    <details className="create-panel" style={{ width: "100%", marginTop: 10 }}>
+      <summary>★ Configurar recompensa por completar todas las postas ({campaignName})</summary>
+      <form
+        action={(data) => {
+          const parsedCards = String(data.get("requiredCardIds") ?? "")
+            .split(",")
+            .map((id) => id.trim().toUpperCase())
+            .filter(Boolean);
+          const nextMode = data.get("completionRewardMode") === "EXCLUSIVE_DRAW" ? "EXCLUSIVE_DRAW" : "EXTRA_RAFFLE_ENTRY";
+          const nextTerms = String(data.get("completionRewardTerms") ?? "").trim();
+          onSave({
+            shoppingSlug: shopping,
+            settings: {
+              completionRewardEnabled: data.get("completionRewardEnabled") === "true",
+              completionRewardMode: nextMode,
+              collectionTarget: Math.max(1, Number(data.get("collectionTarget") || 3)),
+              requiredCardIds: parsedCards,
+              completionRewardTitle: String(data.get("completionRewardTitle") ?? "").trim() || undefined,
+              completionRewardTerms: nextTerms || undefined,
+              collectionUnlockText: nextTerms || undefined,
+            },
+          });
+        }}
+      >
+        <div className="form-grid">
+          <label>
+            Estado de la recompensa especial
+            <select name="completionRewardEnabled" defaultValue={enabled ? "true" : "false"}>
+              <option value="true">Activa en esta campaña</option>
+              <option value="false">Desactivada</option>
+            </select>
+          </label>
+          <label>
+            Modalidad de recompensa
+            <select name="completionRewardMode" defaultValue={mode}>
+              <option value="EXTRA_RAFFLE_ENTRY">Modalidad A — +1 Participación extra en el sorteo final</option>
+              <option value="EXCLUSIVE_DRAW">Modalidad B — Acceso a un sorteo exclusivo</option>
+            </select>
+          </label>
+          <Field
+            name="collectionTarget"
+            label="Cantidad de postas requeridas"
+            type="number"
+            defaultValue={String(target)}
+          />
+          <Field
+            name="requiredCardIds"
+            label="Postas específicas requeridas (opcional, separadas por coma)"
+            defaultValue={requiredCardIds}
+          />
+          <Field
+            name="completionRewardTitle"
+            label="Título de la recompensa"
+            defaultValue={title}
+          />
+          <Field
+            name="completionRewardTerms"
+            label="Descripción y condiciones para el usuario"
+            defaultValue={terms}
+          />
+        </div>
+        <small className="hint" style={{ display: "block", marginBottom: 10 }}>
+          Regla de consistencia: si modificás las postas requeridas de una campaña activa, las recompensas y postas ya obtenidas por los usuarios se preservan intactas y el cambio queda registrado en auditoría.
+        </small>
+        <button className="primary">Guardar configuración de recorrido</button>
+      </form>
+    </details>
+  );
+}
 
 export async function validateRedeem(shopping: string, code: string) {
   const response = await fetch("/api/redeems/validate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shoppingSlug: shopping, code: code.trim() }), cache: "no-store" });

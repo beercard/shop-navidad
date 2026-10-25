@@ -44,6 +44,9 @@ export async function GET(request: NextRequest) {
     const discoveredCards = cards.filter((c) => c._count.participations > 0).length;
     const duplicatePlaysRejected = eventMap.get('DUPLICATE_PLAY_REJECTED') ?? 0;
     const suspiciousAttempts = eventMap.get('SUSPICIOUS_ATTEMPT') ?? 0;
+    const bonusRaffleEntries = eventMap.get('EXTRA_RAFFLE_ENTRY_ISSUED') ?? 0;
+    const completedRoutesCount = eventMap.get('ROUTE_COMPLETION_REWARD_ISSUED') ?? 0;
+    const exclusiveDrawEligibleCount = eventMap.get('EXCLUSIVE_DRAW_ELIGIBILITY_ISSUED') ?? 0;
     const completionRate = cards.length > 0 ? `${Math.round((discoveredCards / cards.length) * 100)}%` : '0%';
     const redemptionRate = couponsIssued > 0 ? `${Math.round((couponsRedeemed / couponsIssued) * 100)}%` : '0%';
     return NextResponse.json({
@@ -58,7 +61,11 @@ export async function GET(request: NextRequest) {
       consumedStock,
       couponsIssued,
       couponsRedeemed,
-      raffleEntries: raffleEntriesCount,
+      scanRaffleEntries: raffleEntriesCount,
+      bonusRaffleEntries,
+      raffleEntries: raffleEntriesCount + bonusRaffleEntries,
+      completedRoutesCount,
+      exclusiveDrawEligibleCount,
       suspiciousAttempts,
       completionRate,
       redemptionRate,

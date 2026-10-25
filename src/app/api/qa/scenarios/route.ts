@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/auth';
 import { executeQaScenario } from '@/lib/qa-fixtures';
 import { isQaEnvironmentReady } from '@/lib/qa-safety';
 
-const schema = z.object({ shoppingSlug: z.enum(['centenario', 'uniplaza']), scenario: z.enum(['all-available', 'one-exhausted', 'all-exhausted', 'campaign-inactive', 'campaign-expired', 'cross-tenant-card', 'duplicate-card', 'collection-complete', 'last-prize-concurrent', 'redeem-cycle', 'instant-prize-limit', 'concurrent-same-card', 'concurrent-two-cards', 'concurrent-redeem']) });
+const schema = z.object({ shoppingSlug: z.enum(['centenario', 'uniplaza']), scenario: z.enum(['all-available', 'one-exhausted', 'all-exhausted', 'campaign-inactive', 'campaign-expired', 'cross-tenant-card', 'duplicate-card', 'collection-complete', 'last-prize-concurrent', 'redeem-cycle', 'instant-prize-limit', 'concurrent-same-card', 'concurrent-two-cards', 'concurrent-redeem', 'completion-reward-modes', 'completion-reward-concurrency']) });
 
 export async function POST(request: NextRequest) {
   if (!isQaEnvironmentReady()) return NextResponse.json({ error: 'Entorno QA no habilitado.' }, { status: 404 });

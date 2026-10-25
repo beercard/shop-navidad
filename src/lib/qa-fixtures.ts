@@ -200,16 +200,72 @@ export async function executeQaScenario(input: { actorId: string; shoppingSlug: 
       const firstPlay = await playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[0].publicId, idempotencyKey: randomUUID() });
       const secondPlay = await playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[1].publicId, idempotencyKey: randomUUID() });
       const thirdPlay = await playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[2].publicId, idempotencyKey: randomUUID() });
-      expected = 'Un usuario que gana premio instantáneo en el primer cartel no puede ganar un segundo premio instantáneo en otros carteles de la misma campaña, pero acumula participaciones para el sorteo final.';
+      expected = 'Un usuario que gana premio instantáneo en el primer cartel no puede ganar un segundo premio instantáneo en otros carteles de la misma campaña, pero acumula participaciones para el sorteo final y desbloquea la recompensa por recorrido completo.';
       observed = {
         firstStatus: firstPlay.status,
         secondStatus: secondPlay.status,
         secondLimitReached: secondPlay.instantPrizeLimitReached,
         thirdStatus: thirdPlay.status,
         thirdLimitReached: thirdPlay.instantPrizeLimitReached,
+        scanRaffleEntriesCount: thirdPlay.scanRaffleEntriesCount,
+        bonusRaffleEntriesCount: thirdPlay.bonusRaffleEntriesCount,
         raffleEntriesCount: thirdPlay.raffleEntriesCount,
+        completionUnlocked: thirdPlay.completionReward?.unlocked,
       };
-      passed = firstPlay.status === 'won' && secondPlay.status === 'no_prize' && secondPlay.instantPrizeLimitReached === true && thirdPlay.status === 'no_prize' && thirdPlay.raffleEntriesCount === 3;
+      passed = firstPlay.status === 'won' && secondPlay.status === 'no_prize' && secondPlay.instantPrizeLimitReached === true && thirdPlay.status === 'no_prize' && thirdPlay.scanRaffleEntriesCount === 3 && thirdPlay.bonusRaffleEntriesCount === 1 && thirdPlay.raffleEntriesCount === 4 && thirdPlay.completionReward?.unlocked === true;
+      break;
+    }
+    case 'completion-reward-modes': {
+      await activateFixture(fixture.id);
+      // 1. Test EXCLUSIVE_DRAW mode
+      await prisma.campaign.update({
+        where: { id: fixture.id },
+        data: { settings: { collectionTarget: 3, completionRewardEnabled: true, completionRewardMode: 'EXCLUSIVE_DRAW' } },
+      });
+      const tokenExclusive = randomUUID();
+      const p1 = await playCard({ token: tokenExclusive, shoppingSlug: shop.slug, cardId: fixture.cards[0].publicId, idempotencyKey: randomUUID() });
+      const p2 = await playCard({ token: tokenExclusive, shoppingSlug: shop.slug, cardId: fixture.cards[1].publicId, idempotencyKey: randomUUID() });
+      const p3 = await playCard({ token: tokenExclusive, shoppingSlug: shop.slug, cardId: fixture.cards[2].publicId, idempotencyKey: randomUUID() });
+      // 2. Modify campaign target to 5 and mode back to EXTRA_RAFFLE_ENTRY; verify previously unlocked reward for tokenExclusive is preserved
+      await prisma.campaign.update({
+        where: { id: fixture.id },
+        data: { settings: { collectionTarget: 3, completionRewardEnabled: true, completionRewardMode: 'EXTRA_RAFFLE_ENTRY' } },
+      });
+      const replayAfterConfigChange = await playCard({ token: tokenExclusive, shoppingSlug: shop.slug, cardId: fixture.cards[2].publicId, idempotencyKey: randomUUID() });
+      expected = 'La modalidad EXCLUSIVE_DRAW habilita elegibilidad al sorteo exclusivo al completar 3/3 postas y preserva la recompensa emitida aunque cambie la configuración de la campaña.';
+      observed = {
+        step1Unlocked: p1.completionReward.unlocked,
+        step2Unlocked: p2.completionReward.unlocked,
+        step3Unlocked: p3.completionReward.unlocked,
+        step3Mode: p3.completionReward.mode,
+        exclusiveDrawEligible: p3.exclusiveDrawEligible,
+        preservedUnlocked: replayAfterConfigChange.completionReward.unlocked,
+        preservedMode: replayAfterConfigChange.completionReward.mode,
+        preservedRef: replayAfterConfigChange.completionReward.referenceId === p3.completionReward.referenceId,
+      };
+      passed = !p1.completionReward.unlocked && !p2.completionReward.unlocked && p3.completionReward.unlocked && p3.completionReward.mode === 'EXCLUSIVE_DRAW' && p3.exclusiveDrawEligible === true && replayAfterConfigChange.completionReward.unlocked && replayAfterConfigChange.completionReward.mode === 'EXCLUSIVE_DRAW' && observed.preservedRef === true;
+      break;
+    }
+    case 'completion-reward-concurrency': {
+      await activateFixture(fixture.id);
+      await prisma.campaign.update({
+        where: { id: fixture.id },
+        data: { settings: { collectionTarget: 3, completionRewardEnabled: true, completionRewardMode: 'EXTRA_RAFFLE_ENTRY' } },
+      });
+      const token = randomUUID();
+      await playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[0].publicId, idempotencyKey: randomUUID() });
+      await playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[1].publicId, idempotencyKey: randomUUID() });
+      await Promise.allSettled([
+        playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[2].publicId, idempotencyKey: randomUUID() }),
+        playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[2].publicId, idempotencyKey: randomUUID() }),
+        playCard({ token, shoppingSlug: shop.slug, cardId: fixture.cards[2].publicId, idempotencyKey: randomUUID() }),
+      ]);
+      const participant = await prisma.participant.findUnique({ where: { sessionHash_campaignId_shoppingId: { sessionHash: sha256(token), campaignId: fixture.id, shoppingId: fixture.shoppingId } } });
+      const rewardEvents = participant ? await prisma.event.count({ where: { participantId: participant.id, campaignId: fixture.id, eventType: 'ROUTE_COMPLETION_REWARD_ISSUED' } }) : 0;
+      const bonusEvents = participant ? await prisma.event.count({ where: { participantId: participant.id, campaignId: fixture.id, eventType: 'EXTRA_RAFFLE_ENTRY_ISSUED' } }) : 0;
+      expected = 'Solicitudes simultáneas al completar la última posta emiten exactamente 1 recompensa de recorrido completo y 1 participación extra.';
+      observed = { rewardEvents, bonusEvents };
+      passed = rewardEvents === 1 && bonusEvents === 1;
       break;
     }
     case 'concurrent-same-card': {

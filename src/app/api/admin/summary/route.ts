@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const to = new Date(request.nextUrl.searchParams.get('to') ?? new Date().toISOString());
     if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from >= to) return NextResponse.json({ error: 'El rango de fechas no es válido.' }, { status: 400 });
     const where = { shoppingId: scope.shopping.id, createdAt: { gte: from, lt: to } };
-    const [participants, plays, wonPlays, issuedCoupons, redeemed, stock, prizes, cards, recentAudit, raffleEntries, duplicatePlaysRejected, suspiciousAttempts] = await Promise.all([
+    const [participants, plays, wonPlays, issuedCoupons, redeemed, stock, prizes, cards, recentAudit, scanRaffleEntries, bonusRaffleEntries, completedRoutesCount, exclusiveDrawEligibleCount, duplicatePlaysRejected, suspiciousAttempts] = await Promise.all([
       prisma.participant.count({ where: { shoppingId: scope.shopping.id, createdAt: { gte: from, lt: to } } }),
       prisma.participation.count({ where }),
       prisma.participation.count({ where: { ...where, status: 'WON' } }),
@@ -24,6 +24,9 @@ export async function GET(request: NextRequest) {
       prisma.card.findMany({ where: { shoppingId: scope.shopping.id }, select: { id: true, publicId: true, location: true, _count: { select: { participations: true } } }, orderBy: { publicId: 'asc' }, take: 100 }),
       prisma.auditLog.findMany({ where: { shoppingId: scope.shopping.id }, select: { action: true, entityType: true, createdAt: true, actor: { select: { name: true } } }, orderBy: { createdAt: 'desc' }, take: 8 }),
       prisma.collectionCard.count({ where: { card: { shoppingId: scope.shopping.id }, collectedAt: { gte: from, lt: to } } }),
+      prisma.event.count({ where: { shoppingId: scope.shopping.id, eventType: 'EXTRA_RAFFLE_ENTRY_ISSUED', createdAt: { gte: from, lt: to } } }),
+      prisma.event.count({ where: { shoppingId: scope.shopping.id, eventType: 'ROUTE_COMPLETION_REWARD_ISSUED', createdAt: { gte: from, lt: to } } }),
+      prisma.event.count({ where: { shoppingId: scope.shopping.id, eventType: 'EXCLUSIVE_DRAW_ELIGIBILITY_ISSUED', createdAt: { gte: from, lt: to } } }),
       prisma.event.count({ where: { shoppingId: scope.shopping.id, eventType: 'DUPLICATE_PLAY_REJECTED', createdAt: { gte: from, lt: to } } }),
       prisma.event.count({ where: { shoppingId: scope.shopping.id, eventType: 'SUSPICIOUS_ATTEMPT', createdAt: { gte: from, lt: to } } }),
     ]);
@@ -31,6 +34,7 @@ export async function GET(request: NextRequest) {
     const totalStock = stock._sum.totalStock ?? 0;
     const consumedStock = Math.max(0, totalStock - availableStock);
     const discoveredCards = cards.filter((c) => c._count.participations > 0).length;
+    const raffleEntries = scanRaffleEntries + bonusRaffleEntries;
     return NextResponse.json({
       range: { from, to },
       metrics: {
@@ -46,6 +50,10 @@ export async function GET(request: NextRequest) {
         availableStock,
         consumedStock,
         raffleEntries,
+        scanRaffleEntries,
+        bonusRaffleEntries,
+        completedRoutesCount,
+        exclusiveDrawEligibleCount,
         suspiciousAttempts,
         redemptionRate: issuedCoupons > 0 ? `${Math.round((redeemed / issuedCoupons) * 100)}%` : '0%',
       },

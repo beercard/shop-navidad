@@ -211,6 +211,8 @@ test.describe('Auditoría Master — Navegación Inferior, Responsive y Reglas d
         'campaign-expired',        // Caso 9
         'cross-tenant-card',       // Caso 11
         'concurrent-redeem',       // Caso 12
+        'completion-reward-modes', // Modalidad A / Modalidad B + preservación ante cambios de config
+        'completion-reward-concurrency', // Concurrencia en última posta
       ]) {
         const res = await page3.request.post('/api/qa/scenarios', {
           data: { shoppingSlug: 'centenario', scenario },
@@ -228,5 +230,129 @@ test.describe('Auditoría Master — Navegación Inferior, Responsive y Reglas d
     await ctx1.close();
     await ctx2.close();
     await ctx3.close();
+  });
+
+  test('Sección 8 — Recompensa especial por completar todas las postas (progreso, desbloqueo único, persistencia, concurrencia y aislamiento entre shoppings)', async ({ browser }) => {
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+
+    // 1. Intento de forzar desbloqueo desde el cliente -> 400 CLIENT_TAMPERING_DETECTED
+    const tamperedUnlock = await page.request.post('/api/participations', {
+      data: {
+        shoppingSlug: 'centenario',
+        cardId: 'CEN-DEMO-001',
+        idempotencyKey: randomUUID(),
+        completedAll: true,
+        forceReward: true,
+      },
+    });
+    expect(tamperedUnlock.status()).toBe(400);
+    expect((await tamperedUnlock.json()).code).toBe('CLIENT_TAMPERING_DETECTED');
+
+    // 2. Posta 1 de 3 -> Usuario con postas pendientes (1/3) no desbloquea la recompensa
+    const s1 = await page.request.post('/api/participations', {
+      data: { shoppingSlug: 'centenario', cardId: 'CEN-DEMO-001', idempotencyKey: randomUUID() },
+    });
+    expect(s1.status()).toBe(200);
+    const b1 = await s1.json();
+    expect(b1.completionReward).toBeTruthy();
+    expect(b1.completionReward.unlocked).toBe(false);
+    expect(b1.completionReward.completedCount).toBe(1);
+    expect(b1.completionReward.pendingCount).toBe(2);
+    expect(b1.bonusRaffleEntriesCount).toBe(0);
+    expect(b1.scanRaffleEntriesCount).toBe(1);
+    expect(b1.raffleEntriesCount).toBe(1);
+
+    // 3. Escanear el mismo QR dos veces no avanza el progreso de recorrido
+    const s1Dup = await page.request.post('/api/participations', {
+      data: { shoppingSlug: 'centenario', cardId: 'CEN-DEMO-001', idempotencyKey: randomUUID() },
+    });
+    expect(s1Dup.status()).toBe(200);
+    const b1Dup = await s1Dup.json();
+    expect(b1Dup.alreadyParticipated).toBe(true);
+    expect(b1Dup.completionReward.unlocked).toBe(false);
+    expect(b1Dup.completionReward.completedCount).toBe(1);
+    expect(b1Dup.completionReward.pendingCount).toBe(2);
+    expect(b1Dup.raffleEntriesCount).toBe(1);
+
+    // 4. Posta 2 de 3 -> Sigue con postas pendientes (2/3), no desbloquea aún
+    const s2 = await page.request.post('/api/participations', {
+      data: { shoppingSlug: 'centenario', cardId: 'CEN-DEMO-002', idempotencyKey: randomUUID() },
+    });
+    expect(s2.status()).toBe(200);
+    const b2 = await s2.json();
+    expect(b2.completionReward.unlocked).toBe(false);
+    expect(b2.completionReward.completedCount).toBe(2);
+    expect(b2.completionReward.pendingCount).toBe(1);
+    expect(b2.bonusRaffleEntriesCount).toBe(0);
+    expect(b2.scanRaffleEntriesCount).toBe(2);
+    expect(b2.raffleEntriesCount).toBe(2);
+
+    // 5. Posta 3 de 3 (con solicitudes simultáneas a la última posta) -> Desbloquea exactamente 1 vez la recompensa especial
+    const [s3a, s3b] = await Promise.all([
+      page.request.post('/api/participations', {
+        data: { shoppingSlug: 'centenario', cardId: 'CEN-DEMO-003', idempotencyKey: randomUUID() },
+      }),
+      page.request.post('/api/participations', {
+        data: { shoppingSlug: 'centenario', cardId: 'CEN-DEMO-003', idempotencyKey: randomUUID() },
+      }),
+    ]);
+    expect(s3a.status()).toBe(200);
+    expect(s3b.status()).toBe(200);
+    const b3a = await s3a.json();
+    const b3b = await s3b.json();
+    expect(b3a.completionReward.unlocked).toBe(true);
+    expect(b3b.completionReward.unlocked).toBe(true);
+    expect(b3a.completionReward.completedCount).toBe(3);
+    expect(b3a.completionReward.pendingCount).toBe(0);
+    expect(b3a.completionReward.referenceId).toBeTruthy();
+    expect(b3a.completionReward.referenceId).toBe(b3b.completionReward.referenceId);
+    expect(b3a.completionReward.rewardId).toBe(b3b.completionReward.rewardId);
+    // 3 participaciones por escaneo + 1 extra por recorrido completo = 4 totales
+    expect(b3a.scanRaffleEntriesCount).toBe(3);
+    expect(b3a.bonusRaffleEntriesCount).toBe(1);
+    expect(b3a.raffleEntriesCount).toBe(4);
+    expect(b3b.raffleEntriesCount).toBe(4);
+    // Si el usuario ya había ganado su premio instantáneo en Posta 1, al completar el recorrido NO recibe un segundo premio instantáneo
+    if (b1.status === 'won' || b2.status === 'won') {
+      expect(b3a.status).toBe('no_prize');
+      expect(b3a.instantPrizeLimitReached).toBe(true);
+    }
+
+    // 6. Repetir solicitud a Posta 3 o escanear una 4ta posta no duplica la recompensa de recorrido completo
+    const s3Repeat = await page.request.post('/api/participations', {
+      data: { shoppingSlug: 'centenario', cardId: 'CEN-DEMO-003', idempotencyKey: randomUUID() },
+    });
+    const b3Repeat = await s3Repeat.json();
+    expect(b3Repeat.completionReward.unlocked).toBe(true);
+    expect(b3Repeat.completionReward.justUnlocked).toBe(false);
+    expect(b3Repeat.completionReward.referenceId).toBe(b3a.completionReward.referenceId);
+    expect(b3Repeat.bonusRaffleEntriesCount).toBe(1);
+    expect(b3Repeat.raffleEntriesCount).toBe(4);
+
+    // 7. Persistencia al recargar la campaña pública y renderizado en la PWA
+    const publicRes = await page.request.get('/api/campaigns/centenario/public');
+    expect(publicRes.status()).toBe(200);
+    const publicBody = await publicRes.json();
+    expect(publicBody.completionReward.unlocked).toBe(true);
+    expect(publicBody.completionReward.referenceId).toBe(b3a.completionReward.referenceId);
+    expect(publicBody.scanRaffleEntriesCount).toBe(3);
+    expect(publicBody.bonusRaffleEntriesCount).toBe(1);
+    expect(publicBody.raffleEntriesCount).toBe(4);
+
+    await page.goto('/centenario#progreso', { waitUntil: 'networkidle' });
+    const credential = page.getByTestId('completion-reward-credential').first();
+    await expect(credential).toBeVisible();
+    await expect(credential).toContainText(b3a.completionReward.referenceId);
+
+    // 8. Aislamiento entre Centenario y UniPlaza: el progreso y la recompensa de Centenario no contaminan UniPlaza
+    const uniplazaPublic = await page.request.get('/api/campaigns/uniplaza/public');
+    expect(uniplazaPublic.status()).toBe(200);
+    const uniplazaBody = await uniplazaPublic.json();
+    expect(uniplazaBody.completionReward.unlocked).toBe(false);
+    expect(uniplazaBody.completionReward.completedCount).toBe(0);
+    expect(uniplazaBody.raffleEntriesCount).toBe(0);
+
+    await ctx.close();
   });
 });

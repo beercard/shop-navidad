@@ -24,6 +24,12 @@ const TAMPER_KEYS = new Set([
   'forceWin',
   'token',
   'sessionHash',
+  'completionReward',
+  'completedAll',
+  'forceReward',
+  'rewardMode',
+  'collectionProgress',
+  'unlocked',
 ]);
 
 const schema = z
