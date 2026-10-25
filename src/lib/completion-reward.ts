@@ -62,7 +62,7 @@ export function parseCompletionRewardConfig(
 
   const configuredTarget = typeof raw.collectionTarget === 'number' && Number.isFinite(raw.collectionTarget) && raw.collectionTarget >= 1
     ? Math.floor(raw.collectionTarget)
-    : 3;
+    : (activeCardPublicIds.length > 0 ? activeCardPublicIds.length : 3);
 
   const target = uniqueRequired.length > 0
     ? uniqueRequired.length

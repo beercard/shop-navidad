@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { requireAdmin } from '@/lib/auth';
+import { getAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { apiError, serviceUnavailable } from '@/lib/http';
 import { logAudit } from '@/lib/admin';
@@ -10,8 +10,9 @@ const schema = z.object({ name: z.string().trim().min(2).max(120), email: z.stri
 
 export async function GET() {
   if (!process.env.DATABASE_URL) return serviceUnavailable();
-  const admin = await requireAdmin(['SUPERADMIN']);
-  if (!admin) return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
+  const admin = await getAdmin();
+  if (!admin) return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
+  if (admin.role !== 'SUPERADMIN') return NextResponse.json({ error: 'Acceso denegado.' }, { status: 403 });
   try {
     const users = await prisma.adminUser.findMany({ select: { id: true, email: true, name: true, role: true, active: true, lastLoginAt: true, createdAt: true, shoppingScopes: { select: { shopping: { select: { slug: true, name: true } } } }, merchantScopes: { select: { merchant: { select: { id: true, slug: true, name: true, shoppingId: true, active: true, shopping: { select: { name: true, slug: true } } } } } } }, orderBy: { name: 'asc' } });
     return NextResponse.json({ users });
@@ -21,8 +22,9 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   if (!process.env.DATABASE_URL) return serviceUnavailable();
   try {
-    const admin = await requireAdmin(['SUPERADMIN']);
-    if (!admin) return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
+    const admin = await getAdmin();
+    if (!admin) return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
+    if (admin.role !== 'SUPERADMIN') return NextResponse.json({ error: 'Acceso denegado.' }, { status: 403 });
     const input = schema.parse(await request.json());
     if (input.role !== 'SUPERADMIN' && input.shoppingSlugs.length === 0) return NextResponse.json({ error: 'Asigná al menos un shopping a este usuario.' }, { status: 400 });
     if (input.role === 'SUPERADMIN' && input.shoppingSlugs.length > 0) return NextResponse.json({ error: 'El administrador general no necesita asignación de shopping.' }, { status: 400 });

@@ -145,7 +145,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
       : 'Al completar las 3 postas del recorrido habilitás el beneficio especial de temporada.';
   const unlockText = formatUnlockCopy(rawUnlockText, brand.name);
   const activeCompletionReward = result?.completionReward ?? campaign?.completionReward ?? null;
-  const collectionTarget = activeCompletionReward?.target ?? (typeof campaign?.campaign?.settings?.collectionTarget === 'number' ? campaign.campaign.settings.collectionTarget : 3);
+  const collectionTarget = activeCompletionReward?.target ?? (typeof campaign?.campaign?.settings?.collectionTarget === 'number' ? campaign.campaign.settings.collectionTarget : (campaign?.cards?.length || 3));
   const collected = activeCompletionReward ? activeCompletionReward.completedCount : Math.min(collectedIds.length, collectionTarget);
   const raffleEntriesCount = activeCompletionReward?.totalRaffleEntriesCount ?? campaign?.raffleEntriesCount ?? collectedIds.length;
   const instantPrizeWon = campaign?.instantPrizeWon ?? (result?.status === 'won' && result.prize?.name ? { id: 'won', name: result.prize.name, status: 'WON' } : null);
