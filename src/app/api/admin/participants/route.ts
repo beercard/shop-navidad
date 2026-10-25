@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authFailure, getAdminShopping } from '@/lib/admin';
+import { maskPhone } from '@/lib/phone';
 import { prisma } from '@/lib/db';
 import { apiError, serviceUnavailable } from '@/lib/http';
 
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
         take: limit,
       }),
     ]);
-    const participants = rows.map(({ id, createdAt, collections, participations, events }) => {
+    const participants = rows.map(({ id, createdAt, collections, participations, events, phone, phoneNormalized }) => {
       const cardIds = Array.from(new Set(collections.flatMap((col) => col.cards.map(({ card }) => card.publicId))));
       const winningPlay = participations.find((p) => p.status === 'WON' && p.prize);
       const rewardEvent = events.find((e) => e.eventType === 'ROUTE_COMPLETION_REWARD_ISSUED');
@@ -48,8 +49,11 @@ export async function GET(request: NextRequest) {
       const rewardMeta = rewardEvent?.metadata && typeof rewardEvent.metadata === 'object' && !Array.isArray(rewardEvent.metadata)
         ? (rewardEvent.metadata as Record<string, unknown>)
         : null;
+      const displayPhone = scope.admin.role === 'SUPERADMIN' ? (phoneNormalized ?? phone ?? null) : maskPhone(phone);
       return {
         id: `P-${id.slice(0, 8).toUpperCase()}`,
+        phone: displayPhone,
+        phoneMasked: maskPhone(phone),
         createdAt,
         collectionProgress: { count: cardIds.length, cardIds },
         scanRaffleEntries: cardIds.length,

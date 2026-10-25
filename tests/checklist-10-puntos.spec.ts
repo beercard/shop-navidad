@@ -632,6 +632,11 @@ test.describe.serial('Verificación Real de los 10 Puntos del Checklist E2E', ()
         await page.setViewportSize({ width: vp.width, height: vp.height });
         await page.goto(shopping, { waitUntil: 'networkidle' });
 
+        const closeReg = page.getByTestId('close-registration-btn');
+        if (await closeReg.isVisible().catch(() => false)) {
+          await closeReg.click();
+        }
+
         // Sin desborde horizontal
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         expect(overflow, `${shopping} en ${vp.label} tiene overflow horizontal`).toBeLessThanOrEqual(0);

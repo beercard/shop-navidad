@@ -187,12 +187,18 @@ model Prize {
 }
 
 model Participant {
-  id             String               @id @default(cuid())
-  sessionHash    String
-  campaignId     String
-  shoppingId     String
-  consentAt      DateTime?
-  createdAt      DateTime             @default(now())
+  id               String               @id @default(cuid())
+  sessionHash      String
+  campaignId       String
+  shoppingId       String
+  phone            String?
+  phoneNormalized  String?
+  phoneHash        String?
+  recoveryCodeHash String?
+  consentAt        DateTime?
+  consentVersion   String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @default(now()) @updatedAt
   campaign       Campaign             @relation(fields: [campaignId, shoppingId], references: [id, shoppingId])
   shopping       Shopping             @relation(fields: [shoppingId], references: [id])
   participations Participation[]
@@ -201,6 +207,7 @@ model Participant {
 
   @@unique([sessionHash, campaignId, shoppingId])
   @@unique([id, shoppingId, campaignId])
+  @@index([campaignId, shoppingId, phoneHash])
   @@map("participants")
 }
 

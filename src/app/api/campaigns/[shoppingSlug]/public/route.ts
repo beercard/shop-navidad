@@ -3,6 +3,7 @@ import { readCompletionRewardState } from '@/lib/completion-reward';
 import { prisma } from '@/lib/db';
 import { apiError, serviceUnavailable } from '@/lib/http';
 import { readCollectionProgress, participantCookieName } from '@/lib/participants';
+import { maskPhone } from '@/lib/phone';
 import { sha256 } from '@/lib/security';
 
 export async function GET(request: NextRequest, context: { params: Promise<{ shoppingSlug: string }> }) {
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sho
               shoppingId: shopping.id,
             },
           },
-          select: { id: true },
+          select: { id: true, phone: true, consentAt: true },
         })
       : null;
 
@@ -132,6 +133,13 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sho
         scanRaffleEntriesCount: completionReward.scanRaffleEntriesCount,
         bonusRaffleEntriesCount: completionReward.bonusRaffleEntriesCount,
         exclusiveDrawEligible: completionReward.exclusiveDrawEligible,
+        participant: participant
+          ? {
+              id: participant.id,
+              registered: Boolean(participant.phone),
+              maskedPhone: maskPhone(participant.phone),
+            }
+          : null,
         instantPrizeWon: priorWin?.prize
           ? { id: priorWin.prize.id, name: priorWin.prize.name, status: priorWin.status }
           : null,

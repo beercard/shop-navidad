@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { brandCssVariables, getShoppingBrand, type ShoppingBrandId } from '@/lib/brand';
 import styles from './campaign-app.module.css';
 import { CouponWallet } from './coupon-wallet';
+import { ParticipantRegistration } from './participant-registration';
 
 type Prize = { id: string; name: string; description?: string | null; imageUrl?: string | null; remainingStock: number; available: boolean };
 type PublicCard = { publicId: string; location?: string | null; kind?: string };
@@ -137,6 +138,8 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
   const [wheelAngle, setWheelAngle] = useState(0);
   const [spinPhase, setSpinPhase] = useState<'idle' | 'accel' | 'cruise' | 'land'>('idle');
+  const [participantState, setParticipantState] = useState<{ registered: boolean; maskedPhone?: string } | null>(null);
+  const [dismissedReg, setDismissedReg] = useState(false);
 
   const rawUnlockText = typeof campaign?.campaign?.settings?.collectionUnlockText === 'string'
     ? campaign.campaign.settings.collectionUnlockText
@@ -176,6 +179,14 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
         if (!response.ok) throw new Error(payload.error || 'No pudimos consultar la campaña.');
         setCampaign(payload);
         setCollectedIds(payload.collectionProgress?.cardIds ?? []);
+        if (payload.participant) {
+          setParticipantState({
+            registered: Boolean(payload.participant.registered),
+            maskedPhone: payload.participant.maskedPhone,
+          });
+        } else {
+          setParticipantState({ registered: false });
+        }
       })
       .catch((error: unknown) => {
         if (!(error instanceof Error && error.name === 'AbortError')) {
@@ -251,6 +262,18 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
 
   return (
     <div className={styles.stage} data-testid="campaign-stage" data-shopping={shopping} style={brandCssVariables(brand, campaign?.shopping?.brandSettings) as CSSProperties}>
+      {!campaignLoading && participantState && !participantState.registered && !dismissedReg && view !== 'progreso' && (
+        <ParticipantRegistration
+          shopping={shopping}
+          campaignName={campaign?.campaign?.name}
+          rulesUrl={campaign?.campaign?.rulesUrl}
+          onDismiss={() => setDismissedReg(true)}
+          onSuccess={(data) => {
+            setParticipantState({ registered: true, maskedPhone: data.phone });
+            setReloadKey((k) => k + 1);
+          }}
+        />
+      )}
       <aside className={styles.stageArt} aria-label="Presentación editorial del shopping">
         <div className={styles.stagePhotoWrap} aria-hidden="true">
           <Image src={heroPhotoSrc} alt="" fill sizes="50vw" priority className={styles.stagePhoto} />
