@@ -8,6 +8,7 @@ import { CouponWallet } from './coupon-wallet';
 import { ParticipantRegistration } from './participant-registration';
 import { playFeedback, readSoundPreference, saveSoundPreference } from './play-feedback';
 import { campaignEndLabel, expiryLabel } from '@/lib/countdown';
+import { formatMerchants } from '@/lib/merchant-list';
 
 type Prize = { id: string; name: string; description?: string | null; imageUrl?: string | null; remainingStock: number; available: boolean; merchants?: string[] };
 type PublicCard = { publicId: string; location?: string | null; kind?: string };
@@ -37,7 +38,8 @@ type PublicCampaign = {
   prizes?: Prize[];
   cards?: PublicCard[];
   cardCount?: number;
-  clue?: { text: string; startsAt: string; endsAt: string } | null;
+  clue?: { text: string; startsAt: string; endsAt: string; forNextCard?: boolean } | null;
+  zones?: Array<{ name: string; total: number; found: number }>;
   collectionProgress?: { count: number; cardIds: string[] };
   completionReward?: CompletionRewardInfo | null;
   raffleEntriesCount?: number;
@@ -1047,7 +1049,7 @@ function ResultCard({ result, raffleEntriesCount, completionReward, merchants, m
       </p>
       {won && (
         <p className={styles.resultWhere}>
-          <b>Dónde canjearlo:</b> {formatMerchants(merchants, 3)}
+          <b>Dónde canjearlo:</b> {formatMerchants(merchants, 3) ?? 'consultá en atención al cliente del shopping.'}
         </p>
       )}
       {missing === 1 && !completionReward?.unlocked && (
@@ -1210,9 +1212,9 @@ function DiscoverScreen({
       {/* PISTA ACTIVA */}
       <div className={styles.clueBlock}>
         <div>
-          <span className={styles.clueEyebrow}>PISTA DEL DÍA</span>
+          <span className={styles.clueEyebrow}>{campaign?.clue?.forNextCard ? 'PISTA PARA TU PRÓXIMA POSTA' : 'PISTA DEL DÍA'}</span>
           <b>¿Dónde está la próxima posta?</b>
-          <p>Desplegá la orientación activa del shopping para encontrar tu siguiente código.</p>
+          <p>{campaign?.clue?.forNextCard ? 'Cada posta que encontrás desbloquea la pista de la siguiente.' : 'Desplegá la orientación activa del shopping para encontrar tu siguiente código.'}</p>
         </div>
         <button type="button" onClick={onToggleClue} aria-expanded={showClue}>
           {showClue ? 'Ocultar pista' : 'Revelar pista'}
@@ -1223,6 +1225,22 @@ function DiscoverScreen({
           </div>
         )}
       </div>
+
+      {/* MAPA POR ZONAS: avance por sector sin revelar la ubicación exacta de cada posta */}
+      {Boolean(campaign?.zones?.length) && (
+        <section className={styles.zoneMap} aria-labelledby="zones-title">
+          <h3 id="zones-title">Postas por zona</h3>
+          <ul>
+            {campaign!.zones!.map((zone) => (
+              <li key={zone.name} className={zone.found >= zone.total ? styles.zoneDone : ''}>
+                <span className={styles.zoneName}>{zone.name}</span>
+                <span className={styles.zoneCount}>{zone.found}/{zone.total}</span>
+                <span className={styles.zoneBar} aria-hidden="true"><i style={{ width: `${Math.round((zone.found / zone.total) * 100)}%` }} /></span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* DIRECTORIO INTERACTIVO DE POSTAS DEL SHOPPING */}
       {allCards.length > 0 && (
@@ -1384,7 +1402,7 @@ function PrizeDetail({ prize, shopping, rulesUrl, onPlay }: { prize: Prize; shop
       <div className={styles.conditions}>
         <b>Cómo obtener y canjear este beneficio</b>
         <p>1. Escaneá una posta QR/NFC o ingresá su código en la sección Jugar.<br />2. Si la ruleta te asigna este beneficio, recibirás un voucher QR único en el acto.<br />3. Presentalo en el local adherido antes de su fecha de vencimiento.</p>
-        <p><b>Dónde canjearlo:</b> {formatMerchants(prize.merchants, 6)}</p>
+        <p><b>Dónde canjearlo:</b> {formatMerchants(prize.merchants, 6) ?? 'consultá en atención al cliente del shopping.'}</p>
         {rulesUrl && <a href={rulesUrl} target="_blank" rel="noreferrer">Consultar bases y condiciones legales ↗</a>}
       </div>
       <button type="button" className={styles.spinButton} onClick={onPlay}>Participar por este beneficio →</button>
@@ -1409,6 +1427,8 @@ function ProgressScreen({
 
       {/* BILLETERA DE CUPONES QR PRIMERO PARA ACCESO INMEDIATO EN CAJA */}
       <CouponWallet shopping={shopping} refreshKey={refreshKey} />
+
+      <NotificationOptIn shopping={shopping} />
 
       <CompletionRewardCredential completionReward={completionReward} />
 
@@ -1502,15 +1522,6 @@ function GiftArt({ shopping }: { shopping: ShoppingBrandId }) {
   );
 }
 
-// Lista legible de comercios: sin repetidos y acotada ("A, B, C y 12 locales más").
-function formatMerchants(names: string[] | undefined, limit: number) {
-  const unique = [...new Set((names ?? []).map((name) => name.trim()).filter(Boolean))];
-  if (!unique.length) return 'consultá en atención al cliente del shopping.';
-  if (unique.length <= limit) return unique.join(', ');
-  const rest = unique.length - limit;
-  return `${unique.slice(0, limit).join(', ')} y ${rest} ${rest === 1 ? 'local más' : 'locales más'}`;
-}
-
 // Franja de estado de Inicio: muestra un solo mensaje, el más útil. Primero el empujón de "te falta 1 posta";
 // si no aplica, el cierre de campaña cuando falta poco. Ambos salen de datos reales.
 function HomeStatusStrip({ missing, endsAt, onGo }: { missing: number; endsAt?: string; onGo: (view: View) => void }) {
@@ -1545,6 +1556,103 @@ function ShareButton({ shopping, brandName }: { shopping: ShoppingBrandId; brand
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></svg>
     <span aria-live="polite">{copied ? 'Enlace copiado' : 'Contale a alguien'}</span>
   </button>;
+}
+
+// Avisos push opcionales: el permiso se pide solo al tocar "Activar avisos", nunca al cargar la página.
+type NotifyState = 'checking' | 'unsupported' | 'ios-install' | 'off' | 'on' | 'denied' | 'busy';
+
+function urlBase64ToUint8Array(base64: string) {
+  const padded = (base64 + '='.repeat((4 - (base64.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = window.atob(padded);
+  return Uint8Array.from(raw, (char) => char.charCodeAt(0));
+}
+
+function NotificationOptIn({ shopping }: { shopping: ShoppingBrandId }) {
+  const [state, setState] = useState<NotifyState>('checking');
+  const [publicKey, setPublicKey] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+      const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+      if (!supported) { if (active) setState(isIos && !standalone ? 'ios-install' : 'unsupported'); return; }
+      const config = await fetch('/api/push', { cache: 'no-store' }).then((response) => response.json()).catch(() => null) as { enabled?: boolean; publicKey?: string | null } | null;
+      if (!active) return;
+      if (!config?.enabled || !config.publicKey) { setState('unsupported'); return; }
+      setPublicKey(config.publicKey);
+      if (Notification.permission === 'denied') { setState('denied'); return; }
+      const registration = await navigator.serviceWorker.getRegistration();
+      const existing = await registration?.pushManager.getSubscription();
+      if (active) setState(existing ? 'on' : 'off');
+    })();
+    return () => { active = false; };
+  }, []);
+
+  async function enable() {
+    if (!publicKey) return;
+    setState('busy');
+    setMessage('');
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') { setState(permission === 'denied' ? 'denied' : 'off'); return; }
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) throw new Error('Los avisos necesitan la app instalada o abierta desde el sitio publicado.');
+      const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(publicKey) });
+      const response = await fetch('/api/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shoppingSlug: shopping, subscription: subscription.toJSON() }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        await subscription.unsubscribe().catch(() => undefined);
+        throw new Error(payload.error || 'No pudimos activar los avisos.');
+      }
+      setState('on');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'No pudimos activar los avisos.');
+      setState('off');
+    }
+  }
+
+  async function disable() {
+    setState('busy');
+    setMessage('');
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+      const subscription = await registration?.pushManager.getSubscription();
+      if (subscription) {
+        await fetch('/api/push', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: subscription.endpoint }) });
+        await subscription.unsubscribe();
+      }
+      setState('off');
+    } catch {
+      setMessage('No pudimos desactivar los avisos. Probá de nuevo.');
+      setState('on');
+    }
+  }
+
+  if (state === 'checking' || state === 'unsupported') return null;
+  const copy: Record<Exclude<NotifyState, 'checking' | 'unsupported'>, string> = {
+    'ios-install': 'En iPhone, primero instalá la app (Compartir → Agregar a inicio) para recibir avisos.',
+    off: 'Te avisamos si un cupón está por vencer o si hay una pista nueva. Nada más.',
+    on: 'Avisos activados: cupón por vencer y pistas nuevas.',
+    denied: 'Bloqueaste las notificaciones. Podés habilitarlas desde la configuración del navegador.',
+    busy: 'Un momento…',
+  };
+  return <section className={styles.notifyCard} aria-labelledby="notify-title">
+    <div>
+      <h3 id="notify-title">Avisos</h3>
+      <p>{copy[state]}</p>
+      {message && <p className={styles.notifyError} role="alert">{message}</p>}
+    </div>
+    {state === 'off' && <button type="button" className={styles.notifyButton} onClick={enable}>Activar avisos</button>}
+    {state === 'on' && <button type="button" className={styles.notifyButtonSecondary} onClick={disable}>Desactivar</button>}
+    {state === 'busy' && <button type="button" className={styles.notifyButton} disabled>Un momento…</button>}
+  </section>;
 }
 
 function SoundIcon({ on }: { on: boolean }) {

@@ -2919,3 +2919,25 @@
 .soundToggle[aria-pressed="true"]{border-color:var(--brand-primary,#315d4b);color:var(--brand-primary,#315d4b)}
 .resultWhere{margin:4px 0 0;font-size:14px;line-height:1.45}
 .nudge{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:var(--brand-accent-soft,#f3e6d1);color:var(--brand-text,#203a31);font-size:14px;font-weight:700}
+
+/* Mapa por zonas: avance por sector, sin ubicaciones exactas. */
+.zoneMap{margin:16px 16px 0;padding:14px 16px;border-radius:18px;background:var(--brand-surface-raised,#fffdf8);border:1px solid var(--brand-border,#dfe2d8)}
+.zoneMap h3{margin:0 0 10px;font:700 18px var(--brand-font-display,Georgia,serif)}
+.zoneMap ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.zoneMap li{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;font-size:14px}
+.zoneName{font-weight:700}
+.zoneCount{font:700 14px var(--brand-font-utility,monospace);color:var(--brand-text-muted,#5f6d66)}
+.zoneBar{grid-column:1/-1;height:6px;border-radius:6px;background:var(--brand-border,#dfe2d8);overflow:hidden}
+.zoneBar i{display:block;height:100%;border-radius:6px;background:var(--brand-primary,#315d4b)}
+.zoneDone .zoneCount{color:var(--brand-success,#287450)}
+
+/* Avisos push opcionales en Mi progreso. */
+.notifyCard{margin:16px 16px 0;padding:14px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;border-radius:18px;background:var(--brand-surface-raised,#fffdf8);border:1px solid var(--brand-border,#dfe2d8)}
+.notifyCard>div{flex:1 1 200px;min-width:0}
+.notifyCard h3{margin:0 0 4px;font:700 17px var(--brand-font-display,Georgia,serif)}
+.notifyCard p{margin:0;font-size:14px;line-height:1.45;color:var(--brand-text-muted,#5f6d66)}
+.notifyCard .notifyError{margin-top:6px;color:var(--brand-danger,#a63f37);font-weight:700}
+.notifyButton,.notifyButtonSecondary{min-height:46px;padding:0 16px;border-radius:12px;font-size:15px;font-weight:700}
+.notifyButton{border:0;background:var(--brand-accent,#b94f43);color:#fff}
+.notifyButton:disabled{opacity:.6}
+.notifyButtonSecondary{border:2px solid var(--brand-primary,#315d4b);background:transparent;color:var(--brand-primary,#315d4b)}

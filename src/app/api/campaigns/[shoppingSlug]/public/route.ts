@@ -53,13 +53,13 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sho
             status: 'ACTIVE',
             OR: [{ locationId: null }, { place: { active: true } }],
           },
-          select: { publicId: true, location: true, kind: true },
+          select: { publicId: true, location: true, kind: true, place: { select: { sector: true } } },
           orderBy: { publicId: 'asc' },
         },
         clues: {
           where: { shoppingId: shopping.id, active: true, startsAt: { lte: now }, endsAt: { gt: now } },
           orderBy: { startsAt: 'desc' },
-          take: 1,
+          select: { text: true, startsAt: true, endsAt: true, card: { select: { publicId: true } } },
         },
       },
     });
@@ -131,9 +131,12 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sho
           available: remainingStock > 0 && (!startsAt || startsAt <= now) && (!endsAt || endsAt > now),
         })),
         // Solo se revelan ubicaciones de tarjetas ya descubiertas por esta persona; el resto queda oculto.
-        cards: campaign.cards.filter((card) => collectionProgress.cardIds.includes(card.publicId)),
+        cards: campaign.cards
+          .filter((card) => collectionProgress.cardIds.includes(card.publicId))
+          .map(({ publicId, location, kind }) => ({ publicId, location, kind })),
         cardCount: campaign.cards.length,
-        clue: campaign.clues[0] ?? null,
+        zones: zoneProgress(campaign.cards, collectionProgress.cardIds),
+        clue: nextClue(campaign.clues, collectionProgress.cardIds),
         collectionProgress,
         completionReward,
         raffleEntriesCount: completionReward.totalRaffleEntriesCount,
@@ -160,6 +163,37 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sho
 
 export async function POST(request: NextRequest, context: { params: Promise<{ shoppingSlug: string }> }) {
   return GET(request, context);
+}
+
+type ClueRow = { text: string; startsAt: Date; endsAt: Date; card: { publicId: string } | null };
+
+/**
+ * Pista progresiva: primero la de la próxima tarjeta que esta persona todavía no encontró (orden por código);
+ * si ya encontró todas las que tienen pista, una pista general. Cada hallazgo hace aparecer la siguiente.
+ */
+function nextClue(clues: ClueRow[], foundIds: string[]) {
+  const found = new Set(foundIds);
+  const pending = clues
+    .filter((clue) => clue.card && !found.has(clue.card.publicId))
+    .sort((a, b) => a.card!.publicId.localeCompare(b.card!.publicId))[0];
+  const chosen = pending ?? clues.find((clue) => !clue.card);
+  if (!chosen) return null;
+  return { text: chosen.text, startsAt: chosen.startsAt, endsAt: chosen.endsAt, forNextCard: Boolean(pending) };
+}
+
+/** Avance por zona (sector de la ubicación). Solo cuenta tarjetas: no revela dónde está cada una. */
+function zoneProgress(cards: Array<{ publicId: string; place: { sector: string | null } | null }>, foundIds: string[]) {
+  const found = new Set(foundIds);
+  const zones = new Map<string, { name: string; total: number; found: number }>();
+  for (const card of cards) {
+    const sector = card.place?.sector?.trim();
+    if (!sector) continue;
+    const zone = zones.get(sector) ?? { name: sector, total: 0, found: 0 };
+    zone.total += 1;
+    if (found.has(card.publicId)) zone.found += 1;
+    zones.set(sector, zone);
+  }
+  return [...zones.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 }
 
 function publicSettings(settings: unknown) {

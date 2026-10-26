@@ -108,6 +108,32 @@ export function ParticipantRegistration({
     }
   };
 
+  // Genera en el propio celular una imagen con el código para guardarla en la galería; no se envía a ningún servidor.
+  const saveRecoveryImage = () => {
+    if (!newRecoveryCode) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = 900;
+    canvas.height = 480;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    context.fillStyle = '#fffdf8';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#203a31';
+    context.font = 'bold 40px Georgia, serif';
+    context.fillText(`Navidad Mágica · ${brand.name}`, 60, 100);
+    context.font = '28px Arial, sans-serif';
+    context.fillText('Código de recuperación', 60, 170);
+    context.font = 'bold 72px monospace';
+    context.fillText(newRecoveryCode, 60, 270);
+    context.font = '24px Arial, sans-serif';
+    context.fillText('Te permite recuperar tus cupones si cambiás de celular.', 60, 360);
+    context.fillText('No lo compartas con nadie.', 60, 400);
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = `codigo-recuperacion-${brand.shortName.toLowerCase()}.png`;
+    link.click();
+  };
+
   const handleFinishNewRegistration = () => {
     if (!newRecoveryCode) return;
     onSuccess({
@@ -180,6 +206,14 @@ export function ParticipantRegistration({
                 data-testid="copy-recovery-code-btn"
               >
                 {copied ? '✓ Código copiado' : 'Copiar código'}
+              </button>
+              <button
+                type="button"
+                className="registration-secondary-btn"
+                onClick={saveRecoveryImage}
+                data-testid="save-recovery-image-btn"
+              >
+                Guardar como imagen
               </button>
               <button
                 type="button"

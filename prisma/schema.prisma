@@ -204,11 +204,26 @@ model Participant {
   participations Participation[]
   collections    CollectionProgress[]
   events         Event[]
+  pushSubscriptions PushSubscription[]
 
   @@unique([sessionHash, campaignId, shoppingId])
   @@unique([id, shoppingId, campaignId])
   @@index([campaignId, shoppingId, phoneHash])
   @@map("participants")
+}
+
+/// Suscripción Web Push opcional de un participante (cupón por vencer, pista nueva).
+model PushSubscription {
+  id            String      @id @default(cuid())
+  participantId String
+  endpoint      String      @unique
+  p256dh        String
+  auth          String
+  createdAt     DateTime    @default(now())
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([participantId])
+  @@map("push_subscriptions")
 }
 
 model Participation {

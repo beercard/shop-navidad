@@ -66,6 +66,16 @@ Iniciá el servidor visible en la red local con `npm run dev -- --hostname 0.0.0
 
 No uses datos personales ni credenciales productivas en QA. No configures `QA_MODE=true` en producción: la aplicación lo rechaza. Si no hay una base QA configurada, `/qa` y sus APIs responden como no encontradas y no ofrecen simulaciones. El simulador incrustado usa la experiencia pública real de la aplicación en el mismo modo QA.
 
+## Notificaciones push
+
+Los avisos son opcionales: la persona los activa desde **Mi progreso → Avisos** después de jugar su primera posta. Se envían dos tipos: cupón que vence en las próximas 24 horas y pista nueva publicada en las últimas 24 horas (solo a quien todavía no encontró esa posta). Cada aviso se registra en `events` con un `dedupeKey`, así nunca se envía dos veces.
+
+1. Generá claves propias con `npx web-push generate-vapid-keys` y configurá `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT` (un `mailto:` o `https:` de contacto del responsable). Sin claves, la función queda oculta.
+2. Configurá `CRON_SECRET` con 32 caracteres aleatorios o más.
+3. Programá una llamada cada hora a `GET /api/push/reminders` con la cabecera `Authorization: Bearer <CRON_SECRET>` (por ejemplo, desde el cron de la plataforma de despliegue).
+
+En iPhone, los avisos solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4 o posterior). El service worker solo se registra en producción, así que en `npm run dev` la tarjeta de avisos aparece pero no puede completar la suscripción.
+
 ## Seguridad y operación
 
 - Las contraseñas se guardan con bcrypt. Las sesiones administrativas usan JWT HS256 firmado en una cookie `HttpOnly`, `SameSite=Lax`, con vencimiento de ocho horas y `Secure` en producción.

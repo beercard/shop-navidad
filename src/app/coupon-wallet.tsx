@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 import type { ShoppingBrandId } from '@/lib/brand';
 import { expiryLabel } from '@/lib/countdown';
+import { formatMerchants } from '@/lib/merchant-list';
 import './coupon-wallet.css';
 
 type CouponState = 'available' | 'redeemed' | 'expired' | 'void';
@@ -87,6 +88,7 @@ export function CouponWallet({ shopping, refreshKey }: { shopping: ShoppingBrand
         {shown.map((coupon) => {
           const meta = stateMeta[coupon.state];
           const expiry = expiryLabel(coupon.expiresAt);
+          const where = formatMerchants(coupon.merchants, 3);
           const expanded = open === coupon.id && coupon.state === 'available';
           const titleMeta = formatCouponTitle(coupon.prize.name);
           return (
@@ -98,7 +100,7 @@ export function CouponWallet({ shopping, refreshKey }: { shopping: ShoppingBrand
                 </div>
                 <span className="cw-chip" data-state={coupon.state}><svg {...icon}><path d={meta.path} /></svg>{meta.label}</span>
               </div>
-              <p className="cw-where">{coupon.merchants.length ? `Canjeable en: ${coupon.merchants.join(', ')}` : 'Consultá en el shopping dónde canjearlo.'}</p>
+              <p className="cw-where">{where ? `Canjeable en: ${where}` : 'Consultá en el shopping dónde canjearlo.'}</p>
               {coupon.state === 'available' && <p className="cw-expiry" data-soon={expiry.soon}>{expiry.text}</p>}
               {coupon.state === 'redeemed' && coupon.redeemedAt && <p className="cw-expiry">Canjeado el {fmt(coupon.redeemedAt)}</p>}
               {coupon.state === 'expired' && <p className="cw-expiry">{expiry.text}. Ya no se puede canjear.</p>}

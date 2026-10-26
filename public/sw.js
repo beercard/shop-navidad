@@ -1,4 +1,4 @@
-const CACHE_NAME = 'navidad-magica-static-v6';
+const CACHE_NAME = 'navidad-magica-static-v7';
 const OFFLINE_URL = '/offline';
 
 self.addEventListener('install', (event) => {
@@ -14,6 +14,30 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+// Avisos opcionales (cupón por vencer, pista nueva). Solo se aceptan rutas internas de la app.
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
+  const url = typeof data.url === 'string' && data.url.startsWith('/') && !data.url.startsWith('//') ? data.url : '/';
+  event.waitUntil(self.registration.showNotification(data.title || 'Navidad Mágica', {
+    body: data.body || '',
+    tag: data.tag,
+    icon: '/pwa/navidad-magica-192.png',
+    badge: '/pwa/navidad-magica-192.png',
+    data: { url },
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || '/', self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+    const existing = windows.find((client) => client.url.startsWith(self.location.origin));
+    if (existing) return existing.navigate(target).then((client) => (client || existing).focus());
+    return self.clients.openWindow(target);
+  }));
 });
 
 self.addEventListener('fetch', (event) => {
