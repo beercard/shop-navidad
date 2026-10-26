@@ -282,7 +282,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
     }
   }
 
-  const heroPhotoSrc = shopping === 'centenario' ? '/campaign/centenario/hero-photo.webp' : '/campaign/uniplaza/hero-photo.jpg';
+  const heroPhotoSrc = shopping === 'centenario' ? '/campaign/centenario/fachada-oficial.webp' : '/campaign/uniplaza/fachada-oficial.jpg';
   const totalStock = availablePrizes.reduce((acc, item) => acc + item.remainingStock, 0);
 
   return (
@@ -306,7 +306,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
           <div className={styles.stageOverlay} />
         </div>
         <div className={styles.stageEditorial}>
-          <span className={styles.stageBadge}>{shopping === 'centenario' ? 'COLECCIÓN DE TEMPORADA · CENTENARIO' : 'PASEO URBANO A CIELO ABIERTO · UNIPLAZA'}</span>
+          <span className={styles.stageBadge}>{shopping === 'centenario' ? 'EL PRIMER SHOPPING DE CORRIENTES' : 'EL NUEVO PUENTE, ENTRE VOS Y LO QUE AMÁS'}</span>
           <p className={styles.stageHeadline}>{brand.experience.heroTitle} <em>{brand.experience.heroEmphasis}</em></p>
           <p>{brand.experience.heroMessage}</p>
           <div className={styles.stageStats}>
@@ -572,7 +572,7 @@ function HomeScreen({
         {/* HERO EDITORIAL BOUTIQUE — CENTENARIO */}
         <div className={styles.centenarioHeroCard}>
           <div className={styles.centenarioHeroMedia} aria-hidden="true">
-            <Image src="/campaign/centenario/hero-photo.webp" alt="" fill sizes="(max-width: 900px) 100vw, 460px" priority className={styles.heroImg} />
+            <Image src="/campaign/centenario/fachada-oficial.webp" alt="" fill sizes="(max-width: 900px) 100vw, 460px" priority className={styles.heroImg} />
             <div className={styles.centenarioHeroScrim} />
           </div>
           <div className={styles.centenarioHeroContent}>
@@ -724,7 +724,7 @@ function HomeScreen({
       {/* HERO ARQUITECTÓNICO NOCTURNO — UNIPLAZA */}
       <div className={styles.uniplazaHeroCard}>
         <div className={styles.uniplazaHeroMedia} aria-hidden="true">
-          <Image src="/campaign/uniplaza/hero-photo.jpg" alt="" fill sizes="(max-width: 900px) 100vw, 460px" priority className={styles.heroImg} />
+          <Image src="/campaign/uniplaza/fachada-oficial.jpg" alt="" fill sizes="(max-width: 900px) 100vw, 460px" priority className={styles.heroImg} />
           <div className={styles.uniplazaHeroScrim} />
         </div>
         <div className={styles.uniplazaHeroContent}>
@@ -763,11 +763,11 @@ function HomeScreen({
         </div>
       )}
 
-      {/* CIRCUITO URBANO DE ESTACIONES (WAYFINDING TRACK) — UNIPLAZA */}
+      {/* RECORRIDO DE ESTACIONES — UNIPLAZA */}
       <section className={styles.uniplazaCircuit} aria-labelledby="passport-title">
         <div className={styles.circuitTop}>
           <div>
-            <small className={styles.uniplazaEyebrow}>CIRCUITO URBANO · WAYFINDING</small>
+            <small className={styles.uniplazaEyebrow}>TU RECORRIDO EN UNIPLAZA</small>
             <h2 id="passport-title">Tu colección</h2>
           </div>
           <div className={styles.circuitBadge}>
@@ -814,7 +814,7 @@ function HomeScreen({
         onClick={() => (error ? onRetry() : featured ? onOpenPrize(featured) : onGo('premios'))}
       >
         <div className={styles.uniplazaFeatureMedia} aria-hidden="true">
-          <Image src="/campaign/uniplaza/featured-gift.jpg" alt="" fill sizes="(max-width: 900px) 100vw, 440px" className={styles.featureImg} />
+          <Image src="/campaign/uniplaza/galeria-oficial.jpg" alt="" fill sizes="(max-width: 900px) 100vw, 440px" className={styles.featureImg} />
           <div className={styles.uniplazaFeatureScrim} />
         </div>
         <div className={styles.uniplazaFeatureBody}>
@@ -892,7 +892,7 @@ function PlayScreen(props: {
   return (
     <section className={styles.play} aria-labelledby="play-title">
       <div className={styles.screenHead}>
-        <span className={styles.kicker}>{shopping === 'centenario' ? 'RULETA DE TEMPORADA' : 'DINÁMICA INTERACTIVA'}</span>
+        <span className={styles.kicker}>{shopping === 'centenario' ? 'RULETA NAVIDEÑA · CENTENARIO' : 'RULETA NAVIDEÑA · UNIPLAZA'}</span>
         <h2 id="play-title">Girá y descubrí</h2>
         <ul className={styles.ruleChips} aria-label="Reglas del juego">
           <li>1 jugada por posta</li>
@@ -1324,7 +1324,7 @@ function PrizesScreen({
   return (
     <section className={styles.prizes} aria-labelledby="prizes-title">
       <div className={styles.screenHead}>
-        <span className={styles.kicker}>{shopping === 'centenario' ? 'BENEFICIOS DE TEMPORADA' : 'RECOMPENSAS DEL PASEO'}</span>
+        <span className={styles.kicker}>{shopping === 'centenario' ? 'REGALOS DE NAVIDAD' : 'PREMIOS DE NAVIDAD'}</span>
         <h2 id="prizes-title">Premios</h2>
         <p>Stock actualizado en tiempo real. Tocá cualquier beneficio para ver cómo canjearlo en los locales.</p>
       </div>

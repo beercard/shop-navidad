@@ -2,7 +2,7 @@
   "id": "/centenario",
   "name": "Navidad Mágica · Centenario Shopping",
   "short_name": "Centenario",
-  "description": "Recorré Centenario con quienes más querés. Una tarjeta puede esconder una sorpresa para compartir.",
+  "description": "Esta Navidad, vivila en Centenario: encontrá las postas y girá por regalos para disfrutar en familia.",
   "start_url": "/centenario",
   "scope": "/centenario",
   "display": "standalone",

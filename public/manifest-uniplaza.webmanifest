@@ -2,7 +2,7 @@
   "id": "/uniplaza",
   "name": "Navidad Mágica · UniPlaza Shopping",
   "short_name": "UniPlaza",
-  "description": "Recorré los espacios abiertos de UniPlaza. Seguí las pistas y descubrí qué sorpresa te espera.",
+  "description": "Esta Navidad, UniPlaza se vive: recorré las postas y descubrí qué sorpresa te espera.",
   "start_url": "/uniplaza",
   "scope": "/uniplaza",
   "display": "standalone",

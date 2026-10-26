@@ -219,8 +219,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgb(10 26 20 / 28%) 0%, rgb(13 35 27 / 78%) 72%, #0d231b 100%),
-    radial-gradient(circle at 50% 30%, transparent 20%, rgb(9 24 18 / 45%) 100%);
+    /* La foto oficial de la fachada queda visible; solo se funde abajo con el bloque de texto. */
+    linear-gradient(180deg, rgb(10 26 20 / 6%) 0%, rgb(13 35 27 / 18%) 55%, rgb(13 35 27 / 72%) 88%, #0d231b 100%);
 }
 
 .centenarioHeroContent {
@@ -719,8 +719,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgb(12 28 36 / 24%) 0%, rgb(15 34 44 / 84%) 74%, #0f222c 100%),
-    linear-gradient(90deg, rgb(12 28 36 / 65%) 0%, transparent 100%);
+    /* La foto oficial de la fachada queda visible; solo se funde abajo con el bloque de texto. */
+    linear-gradient(180deg, rgb(12 28 36 / 6%) 0%, rgb(15 34 44 / 18%) 55%, rgb(15 34 44 / 74%) 88%, #0f222c 100%);
 }
 
 .uniplazaHeroContent {
@@ -2618,12 +2618,12 @@
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(180deg, rgb(8 22 17 / 25%) 0%, rgb(8 22 17 / 82%) 62%, #091913 100%);
+      linear-gradient(180deg, rgb(8 22 17 / 8%) 0%, rgb(8 22 17 / 30%) 45%, rgb(8 22 17 / 86%) 78%, #091913 100%);
   }
 
   .stage[data-shopping="uniplaza"] .stageOverlay {
     background:
-      linear-gradient(180deg, rgb(10 24 31 / 25%) 0%, rgb(10 24 31 / 84%) 62%, #09171e 100%);
+      linear-gradient(180deg, rgb(10 24 31 / 8%) 0%, rgb(10 24 31 / 30%) 45%, rgb(10 24 31 / 86%) 78%, #09171e 100%);
   }
 
   .stageEditorial {
