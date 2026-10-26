@@ -1,3 +1,5 @@
+// Manifiesto de la portada (/): identidad de instalación propia del selector de shopping.
+// Cada shopping tiene su manifiesto estático (public/manifest-*.webmanifest) con scope y start_url propios.
 import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {

@@ -94,7 +94,7 @@ export const shoppingBrands: Record<ShoppingBrandId, BrandTheme> = {
     name: "Centenario Shopping",
     shortName: "Centenario",
     logo: {
-      src: null,
+      src: "/brand/centenario-logo.png",
       lightSrc: null,
       alt: "Centenario Shopping",
       wordmark: "CENTENARIO SHOPPING",
@@ -154,7 +154,7 @@ export const shoppingBrands: Record<ShoppingBrandId, BrandTheme> = {
     name: "UniPlaza Shopping",
     shortName: "UniPlaza",
     logo: {
-      src: null,
+      src: "/brand/uniplaza-logo.png",
       lightSrc: null,
       alt: "UniPlaza Shopping",
       wordmark: "UniPlaza Shopping",

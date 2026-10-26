@@ -145,7 +145,6 @@ export function ParticipantRegistration({
           ) : (
             <div className="registration-wordmark">{brand.name}</div>
           )}
-          <span className="registration-pill">Temporada Navideña</span>
           <h2 className="registration-title">
             {newRecoveryCode
               ? '¡Tu Pasaporte está Listo!'
@@ -403,384 +402,251 @@ export function ParticipantRegistration({
       </div>
 
       <style jsx>{`
+        /* Piel ligada a los tokens de marca de cada shopping (--brand-*). Hoja inferior en móvil, diálogo en pantallas anchas. */
         .registration-overlay {
           position: fixed;
           inset: 0;
           z-index: 9999;
-          background: rgba(10, 16, 26, 0.88);
-          backdrop-filter: blur(8px);
+          background: rgb(16 24 20 / 0.55);
           display: flex;
-          align-items: center;
+          align-items: flex-end;
           justify-content: center;
-          padding: 16px;
           overflow-y: auto;
-        }
-
-        .close-modal-btn {
-          position: absolute;
-          top: 16px;
-          right: 16px;
-          background: rgba(255, 255, 255, 0.1);
-          border: none;
-          color: #9ca3af;
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 14px;
-        }
-        .close-modal-btn:hover {
-          color: #ffffff;
-          background: rgba(255, 255, 255, 0.2);
         }
         .registration-card {
           position: relative;
           width: 100%;
-          max-width: 440px;
-          background: #111827;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: 24px;
-          padding: 28px 24px;
-          color: #f9fafb;
-          box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
+          max-width: 460px;
+          max-height: 92svh;
+          overflow-y: auto;
+          background: var(--brand-surface-raised, #fffdf8);
+          color: var(--brand-text, #203a31);
+          border-radius: 24px 24px 0 0;
+          padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+          box-shadow: 0 -12px 40px rgb(0 0 0 / 0.18);
           display: flex;
           flex-direction: column;
-          gap: 20px;
-          animation: popIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+          gap: 18px;
+          animation: sheetIn 0.26s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        @keyframes popIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95) translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
+        .registration-card::before {
+          content: "";
+          align-self: center;
+          width: 40px;
+          height: 4px;
+          border-radius: 4px;
+          background: var(--brand-border, #dfe2d8);
         }
-
+        @keyframes sheetIn {
+          from { transform: translateY(24px); opacity: 0; }
+          to { transform: none; opacity: 1; }
+        }
+        @media (min-width: 600px) {
+          .registration-overlay { align-items: center; padding: 24px; }
+          .registration-card { border-radius: 24px; padding: 24px 28px 28px; box-shadow: 0 24px 60px rgb(0 0 0 / 0.22); }
+          .registration-card::before { display: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .registration-card { animation: none; }
+        }
+        .close-modal-btn {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          width: 44px;
+          height: 44px;
+          border: none;
+          border-radius: 50%;
+          background: var(--brand-surface, #f8f5ed);
+          color: var(--brand-text, #203a31);
+          font-size: 15px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
         .registration-header {
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
-          gap: 10px;
+          gap: 8px;
+          padding-top: 6px;
         }
-
-        .registration-logo {
-          max-height: 48px;
-          width: auto;
-          object-fit: contain;
-        }
-
-        .registration-wordmark {
-          font-size: 20px;
-          font-weight: 800;
-          letter-spacing: -0.02em;
-          color: #f3f4f6;
-        }
-
-        .registration-pill {
-          display: inline-flex;
-          align-items: center;
-          padding: 4px 12px;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-          border-radius: 9999px;
-          background: rgba(220, 38, 38, 0.15);
-          color: #f87171;
-          border: 1px solid rgba(220, 38, 38, 0.3);
-        }
-
+        .registration-logo { max-height: 40px; width: auto; object-fit: contain; }
+        .registration-wordmark { font: 700 20px var(--brand-font-display, Georgia, serif); }
         .registration-title {
-          font-size: 22px;
-          font-weight: 800;
-          line-height: 1.25;
-          margin: 0;
-          color: #ffffff;
+          margin: 6px 0 0;
+          font: 700 24px/1.2 var(--brand-font-display, Georgia, serif);
+          letter-spacing: -0.01em;
+          color: var(--brand-text, #203a31);
         }
-
         .registration-subtitle {
-          font-size: 13.5px;
-          line-height: 1.45;
-          color: #9ca3af;
           margin: 0;
-          max-width: 360px;
+          max-width: 36ch;
+          font-size: 15px;
+          line-height: 1.5;
+          color: var(--brand-text-muted, #5f6d66);
         }
-
-        .registration-form {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .form-label {
-          font-size: 13px;
-          font-weight: 600;
-          color: #d1d5db;
-        }
-
+        .registration-form { display: flex; flex-direction: column; gap: 16px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-label { font-size: 14px; font-weight: 700; color: var(--brand-text, #203a31); }
         .phone-input-wrap {
           display: flex;
-          align-items: center;
-          border: 1.5px solid rgba(255, 255, 255, 0.16);
+          align-items: stretch;
+          min-height: 52px;
+          border: 2px solid var(--brand-border, #dfe2d8);
           border-radius: 14px;
-          background: rgba(17, 24, 39, 0.8);
+          background: var(--brand-surface-raised, #fffdf8);
           overflow: hidden;
-          transition: border-color 0.2s, box-shadow 0.2s;
         }
-
-        .phone-input-wrap:focus-within {
-          border-color: #38bdf8;
-          box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
-        }
-
+        .phone-input-wrap:focus-within { border-color: var(--brand-primary, #315d4b); }
         .phone-prefix {
-          padding: 0 12px;
-          font-size: 14px;
-          font-weight: 700;
-          color: #9ca3af;
-          border-right: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(255, 255, 255, 0.03);
-          height: 48px;
           display: flex;
           align-items: center;
+          padding: 0 12px;
+          font-weight: 700;
+          color: var(--brand-text-muted, #5f6d66);
+          background: var(--brand-surface, #f8f5ed);
+          border-right: 1px solid var(--brand-border, #dfe2d8);
         }
-
         .form-input {
           flex: 1;
-          height: 48px;
+          min-width: 0;
+          min-height: 48px;
           padding: 0 14px;
-          background: transparent;
           border: none;
-          color: #ffffff;
-          font-size: 15px;
-          font-weight: 500;
+          background: transparent;
+          color: var(--brand-text, #203a31);
+          font-size: 17px;
           outline: none;
         }
-
-        .form-input::placeholder {
-          color: #6b7280;
-          font-size: 13.5px;
-        }
-
-        .form-help {
-          font-size: 11.5px;
-          color: #9ca3af;
-          line-height: 1.35;
-        }
-
+        .form-input::placeholder { color: var(--brand-text-muted, #5f6d66); opacity: 0.7; font-size: 15px; }
+        .form-help { font-size: 13px; line-height: 1.4; color: var(--brand-text-muted, #5f6d66); }
         .recovery-group .form-input {
-          border: 1.5px solid rgba(255, 255, 255, 0.16);
+          border: 2px solid var(--brand-border, #dfe2d8);
           border-radius: 14px;
-          background: rgba(17, 24, 39, 0.8);
+          font-family: var(--brand-font-utility, monospace);
           letter-spacing: 0.05em;
-          font-family: monospace;
-          font-size: 16px;
         }
-
-        .have-code-link-wrap {
-          text-align: right;
-          margin-top: -6px;
-        }
-
-        .text-toggle-btn {
-          background: none;
-          border: none;
-          color: #38bdf8;
-          font-size: 12px;
-          cursor: pointer;
+        .recovery-group .form-input:focus { border-color: var(--brand-primary, #315d4b); }
+        .have-code-link-wrap { text-align: left; }
+        .text-toggle-btn, .link-inline {
           padding: 0;
+          border: none;
+          background: none;
+          color: var(--brand-primary, #315d4b);
+          font-size: inherit;
+          font-weight: 700;
           text-decoration: underline;
+          text-underline-offset: 2px;
+          cursor: pointer;
         }
-
-        .form-checkbox-group {
-          margin-top: 4px;
-        }
-
+        .text-toggle-btn { min-height: 44px; font-size: 14px; }
         .checkbox-label {
           display: flex;
           align-items: flex-start;
-          gap: 10px;
-          font-size: 12.5px;
+          gap: 12px;
+          font-size: 14px;
           line-height: 1.45;
-          color: #d1d5db;
+          color: var(--brand-text, #203a31);
           cursor: pointer;
         }
-
         .checkbox-input {
-          margin-top: 2px;
-          width: 17px;
-          height: 17px;
-          accent-color: #ef4444;
-          cursor: pointer;
           flex-shrink: 0;
-        }
-
-        .link-inline {
-          background: none;
-          border: none;
-          color: #38bdf8;
-          text-decoration: underline;
+          width: 22px;
+          height: 22px;
+          margin-top: 1px;
+          accent-color: var(--brand-primary, #315d4b);
           cursor: pointer;
-          padding: 0;
-          font-size: inherit;
         }
-
         .registration-error {
-          padding: 10px 14px;
+          padding: 12px 14px;
           border-radius: 12px;
-          background: rgba(239, 68, 68, 0.15);
-          border: 1px solid rgba(239, 68, 68, 0.4);
-          color: #fca5a5;
-          font-size: 12.5px;
-          line-height: 1.4;
+          border: 1.5px solid var(--brand-danger, #a63f37);
+          background: color-mix(in srgb, var(--brand-danger, #a63f37) 8%, white);
+          color: var(--brand-danger, #a63f37);
+          font-size: 14px;
+          line-height: 1.45;
         }
-
         .registration-submit-btn {
-          height: 50px;
+          min-height: 54px;
+          border: none;
           border-radius: 14px;
-          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-          color: #ffffff;
+          background: var(--brand-accent, #b94f43);
+          color: #fff;
+          font-size: 17px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: transform 0.12s, opacity 0.15s;
+        }
+        .registration-submit-btn:active:not(:disabled) { transform: scale(0.98); }
+        .registration-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .registration-secondary-btn {
+          min-height: 48px;
+          padding: 0 16px;
+          border: 2px solid var(--brand-primary, #315d4b);
+          border-radius: 14px;
+          background: transparent;
+          color: var(--brand-primary, #315d4b);
           font-size: 15px;
           font-weight: 700;
-          border: none;
           cursor: pointer;
-          box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
-          transition: transform 0.15s, opacity 0.15s;
         }
-
-        .registration-submit-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-        }
-
-        .registration-submit-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .registration-secondary-btn {
-          height: 44px;
-          border-radius: 12px;
-          background: rgba(255, 255, 255, 0.08);
-          color: #ffffff;
-          font-size: 14px;
-          font-weight: 600;
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          cursor: pointer;
-          padding: 0 16px;
-        }
-
-        .full-w {
-          width: 100%;
-        }
-
-        /* Success / Recovery Card */
+        .full-w { width: 100%; }
         .registration-success-box {
           display: flex;
           flex-direction: column;
           align-items: center;
-          text-align: center;
           gap: 14px;
-          padding: 12px 0;
+          text-align: center;
         }
-
         .recovery-badge {
-          font-size: 11px;
+          padding: 4px 12px;
+          border-radius: 999px;
+          background: var(--brand-accent-soft, #f3e6d1);
+          color: var(--brand-text, #203a31);
+          font-size: 12px;
           font-weight: 700;
-          text-transform: uppercase;
-          color: #10b981;
-          background: rgba(16, 185, 129, 0.12);
-          border: 1px solid rgba(16, 185, 129, 0.25);
-          padding: 3px 10px;
-          border-radius: 9999px;
         }
-
         .recovery-code-display {
-          font-family: monospace;
-          font-size: 26px;
-          font-weight: 800;
-          letter-spacing: 0.12em;
-          color: #34d399;
-          background: rgba(0, 0, 0, 0.35);
-          padding: 12px 20px;
+          padding: 14px 20px;
+          border: 2px dashed var(--brand-primary, #315d4b);
           border-radius: 14px;
-          border: 1.5px dashed rgba(52, 211, 153, 0.4);
+          background: var(--brand-surface, #f8f5ed);
+          color: var(--brand-text, #203a31);
+          font: 700 26px var(--brand-font-utility, monospace);
+          letter-spacing: 0.1em;
           user-select: all;
         }
-
-        .recovery-hint {
-          font-size: 12.5px;
-          line-height: 1.45;
-          color: #9ca3af;
-          margin: 0;
-        }
-
-        .recovery-actions {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          width: 100%;
-          margin-top: 8px;
-        }
-
-        /* Legal Modals */
+        .recovery-hint { margin: 0; font-size: 14px; line-height: 1.5; color: var(--brand-text-muted, #5f6d66); }
+        .recovery-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; }
         .legal-modal-backdrop {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.8);
           z-index: 10000;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 16px;
+          background: rgb(16 24 20 / 0.6);
         }
-
         .legal-modal-card {
-          background: #1f2937;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: 18px;
-          padding: 24px;
-          max-width: 480px;
           width: 100%;
-          max-height: 80vh;
+          max-width: 480px;
+          max-height: 80svh;
           overflow-y: auto;
+          padding: 24px;
+          border-radius: 20px;
+          background: var(--brand-surface-raised, #fffdf8);
+          color: var(--brand-text, #203a31);
           display: flex;
           flex-direction: column;
           gap: 16px;
         }
-
-        .legal-modal-card h3 {
-          margin: 0;
-          font-size: 17px;
-          font-weight: 700;
-          color: #ffffff;
-        }
-
-        .legal-content {
-          font-size: 13px;
-          line-height: 1.5;
-          color: #d1d5db;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        .legal-content p {
-          margin: 0;
-        }
+        .legal-modal-card h3 { margin: 0; font: 700 19px var(--brand-font-display, Georgia, serif); }
+        .legal-content { display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.55; color: var(--brand-text-muted, #5f6d66); }
+        .legal-content p { margin: 0; }
       `}</style>
     </div>
   );

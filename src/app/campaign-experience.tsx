@@ -129,6 +129,8 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
   const [campaign, setCampaign] = useState<PublicCampaign | null>(null);
   const [campaignLoading, setCampaignLoading] = useState(true);
   const [campaignError, setCampaignError] = useState('');
+  // Campaña inexistente o inactiva: no es un fallo de conexión, se informa como aviso neutro.
+  const [campaignNotice, setCampaignNotice] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
   const [participating, setParticipating] = useState(false);
   const [participationError, setParticipationError] = useState('');
@@ -173,12 +175,13 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
     const controller = new AbortController();
     setCampaignLoading(true);
     setCampaignError('');
+    setCampaignNotice('');
     const campaignSlug = new URLSearchParams(window.location.search).get('campaign');
     const query = campaignSlug ? `?campaign=${encodeURIComponent(campaignSlug)}` : '';
     fetch(`/api/campaigns/${shopping}/public${query}`, { signal: controller.signal, cache: 'no-store' })
       .then(async (response) => {
         const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || 'No pudimos consultar la campaña.');
+        if (!response.ok) throw Object.assign(new Error(payload.error || 'No pudimos consultar la campaña.'), { status: response.status });
         setCampaign(payload);
         setCollectedIds(payload.collectionProgress?.cardIds ?? []);
         if (payload.participant) {
@@ -191,9 +194,16 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
         }
       })
       .catch((error: unknown) => {
-        if (!(error instanceof Error && error.name === 'AbortError')) {
-          setCampaignError('No pudimos conectar con la campaña en este momento. Verificá tu conexión e intentá nuevamente.');
-          setCampaign(null);
+        if (error instanceof Error && error.name === 'AbortError') return;
+        setCampaign(null);
+        const status = (error as { status?: number }).status;
+        if (status === 404) {
+          // Sin campaña activa el servidor responde 404 con un mensaje claro: no es un fallo de conexión.
+          setCampaignNotice(error instanceof Error ? error.message : 'Todavía no hay una campaña activa en este shopping.');
+        } else {
+          setCampaignError(status
+            ? 'La campaña no está disponible en este momento. Intentá nuevamente en unos minutos.'
+            : 'No pudimos conectar con la campaña. Verificá tu conexión e intentá nuevamente.');
         }
       })
       .finally(() => {
@@ -264,7 +274,8 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
 
   return (
     <div className={styles.stage} data-testid="campaign-stage" data-shopping={shopping} style={brandCssVariables(brand, campaign?.shopping?.brandSettings) as CSSProperties}>
-      {!campaignLoading && participantState && !participantState.registered && !dismissedReg && view !== 'progreso' && (
+      {/* El registro con celular es opcional: se ofrece al entrar a Jugar, no bloquea el resto de la app. */}
+      {!campaignLoading && participantState && !participantState.registered && !dismissedReg && view === 'jugar' && (
         <ParticipantRegistration
           shopping={shopping}
           campaignName={campaign?.campaign?.name}
@@ -302,11 +313,15 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
       <main className={styles.app} data-view={view}>
         <header className={styles.topbar}>
           <a className={styles.brand} href="#inicio" onClick={(event) => { event.preventDefault(); goTo('inicio'); }}>
-            <span className={styles.brandMonogram} aria-hidden="true">{shopping === 'centenario' ? 'C' : 'U'}</span>
+            {brand.logo.src ? (
+              <span className={`${styles.brandLogo} ${shopping === 'uniplaza' ? styles.brandLogoDark : ''}`}>
+                <Image src={brand.logo.src} alt={brand.logo.alt} width={shopping === 'centenario' ? 584 : 661} height={shopping === 'centenario' ? 161 : 172} unoptimized priority style={{ height: 34, width: 'auto' }} />
+              </span>
+            ) : (
+              <span className={styles.brandMonogram} aria-hidden="true">{shopping === 'centenario' ? 'C' : 'U'}</span>
+            )}
             <span className={styles.brandCopy}>
-              <strong>{brand.name}</strong>
-              <small>{shopping === 'centenario' ? 'Temporada Festiva' : 'Paseo Urbano · Club'}</small>
-            </span>
+              <strong className={brand.logo.src ? styles.srOnly : undefined}>{brand.name}</strong>            </span>
           </a>
           <div className={styles.topActions}>
             <button type="button" className={styles.progressChip} onClick={() => goTo('progreso')} title="Ver tus cupones y progreso de colección">
@@ -315,6 +330,9 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
             </button>
           </div>
         </header>
+
+        {campaignNotice && <p className={styles.campaignNotice} role="status">{campaignNotice}</p>}
+        <InstallPrompt shopping={shopping} />
 
         <div className={styles.screen}>
           {view === 'inicio' && (
@@ -423,7 +441,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
 
         {view === 'jugar' && (result?.status === 'won' || Boolean(result?.completionReward?.justUnlocked)) && <Confetti />}
         <footer className={styles.appFooter}>
-          <span>{brand.name} · {shopping === 'centenario' ? 'Temporada Festiva' : 'Paseo Urbano'}</span>
+          <span>{brand.name}</span>
           <Link href="/merchant">Acceso Comercios</Link>
         </footer>
 
@@ -513,7 +531,7 @@ function CompletionRewardCredential({
     : '+1 participación extra en el Sorteo Final';
 
   return (
-    <div className={styles.completionPendingNote} data-testid="completion-reward-pending">
+    <div className={`${styles.completionPendingNote} ${inCard ? '' : styles.completionPendingStandalone}`} data-testid="completion-reward-pending">
       <strong>Recompensa por completar todas las postas:</strong> Te {missing === 1 ? 'falta 1 posta válida' : `faltan ${missing} postas válidas`} ({completionReward.completedCount}/{completionReward.target}) para desbloquear <em>{rewardLabel}</em>.
     </div>
   );
@@ -564,7 +582,7 @@ function HomeScreen({
         {error && (
           <div className={styles.stateAlert} role="alert">
             <div>
-              <strong>Conexión interrumpida</strong>
+              <strong>No pudimos cargar la campaña</strong>
               <span>{error}</span>
             </div>
             <button type="button" onClick={onRetry}>Reintentar</button>
@@ -720,7 +738,7 @@ function HomeScreen({
       {error && (
         <div className={styles.stateAlert} role="alert">
           <div>
-            <strong>Sin respuesta del servidor</strong>
+            <strong>No pudimos cargar la campaña</strong>
             <span>{error}</span>
           </div>
           <button type="button" onClick={onRetry}>Reintentar</button>
@@ -838,7 +856,7 @@ function PlayScreen(props: {
         ? instantPrizeWon
           ? `✓ Posta nueva verificada. Ya tenés tu premio instantáneo de campaña; activarla suma +1 participación al Sorteo Final.`
           : '✓ Posta verificada y nueva para tu pasaporte. ¡Lista para girar y sumar +1 chance al Sorteo Final!'
-        : 'Ingresá el código impreso bajo el QR de la posta o seleccioná una tarjeta activa.';
+        : 'Ingresá el código impreso debajo del QR de la posta.';
   const hintTone = codeStatus === 'repeated' ? styles.hintWarn : codeStatus === 'new' ? styles.hintGood : styles.hintNeutral;
   const wheelStatusText = participating
     ? spinPhase === 'accel'
@@ -857,7 +875,11 @@ function PlayScreen(props: {
       <div className={styles.screenHead}>
         <span className={styles.kicker}>{shopping === 'centenario' ? 'RULETA DE TEMPORADA' : 'DINÁMICA INTERACTIVA'}</span>
         <h2 id="play-title">Girá y descubrí</h2>
-        <p>1 jugada por cada cartel distinto · Máximo 1 premio instantáneo por campaña · Cada nuevo cartel suma +1 participación para el Sorteo Final.</p>
+        <ul className={styles.ruleChips} aria-label="Reglas del juego">
+          <li>1 jugada por posta</li>
+          <li>1 premio instantáneo</li>
+          <li>+1 chance por posta nueva</li>
+        </ul>
       </div>
 
       <div className={`${styles.wheelWrap} ${participating ? styles.wheelBusy : ''}`} aria-busy={participating}>
@@ -1440,6 +1462,57 @@ function GiftArt({ shopping }: { shopping: ShoppingBrandId }) {
       <rect x="36" y="22" width="8" height="48" className={styles.giftRibbon} />
     </svg>
   );
+}
+
+// Invitación a instalar la PWA. Chrome/Edge/Android disparan beforeinstallprompt; iOS Safari no, así que se muestra una guía manual.
+const INSTALL_DISMISSED_KEY = 'navidad-install-dismissed';
+
+type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> };
+
+function InstallPrompt({ shopping }: { shopping: ShoppingBrandId }) {
+  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
+  const [mode, setMode] = useState<'hidden' | 'install' | 'ios'>('hidden');
+
+  useEffect(() => {
+    let dismissed = false;
+    try { dismissed = window.localStorage.getItem(INSTALL_DISMISSED_KEY) === shopping; } catch { dismissed = false; }
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (dismissed || standalone) return;
+    const onPrompt = (event: Event) => { event.preventDefault(); setDeferred(event as BeforeInstallPromptEvent); setMode('install'); };
+    const onInstalled = () => setMode('hidden');
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    window.addEventListener('appinstalled', onInstalled);
+    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios|fxios|edgios/i.test(navigator.userAgent);
+    if (isIos) setMode('ios');
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
+  }, [shopping]);
+
+  if (mode === 'hidden') return null;
+
+  function dismiss() {
+    try { window.localStorage.setItem(INSTALL_DISMISSED_KEY, shopping); } catch { /* sin almacenamiento: solo se oculta en esta visita */ }
+    setMode('hidden');
+  }
+
+  async function install() {
+    if (!deferred) return;
+    await deferred.prompt();
+    const choice = await deferred.userChoice;
+    if (choice.outcome === 'accepted') setMode('hidden');
+    setDeferred(null);
+  }
+
+  return <aside className={styles.installBar} aria-label="Instalar la aplicación">
+    <div>
+      <strong>Tenela a mano</strong>
+      <span>{mode === 'ios' ? 'Tocá Compartir y después “Agregar a inicio” para instalarla.' : 'Instalala en tu celular para volver a la campaña en un toque.'}</span>
+    </div>
+    {mode === 'install' && <button type="button" className={styles.installButton} onClick={install}>Instalar</button>}
+    <button type="button" className={styles.installDismiss} onClick={dismiss}>Ahora no</button>
+  </aside>;
 }
 
 function Icon({ name }: { name: View | 'admin' }) {

@@ -100,3 +100,7 @@
   .admin-app .stack-sm .bar-cell { justify-content: flex-start; }
   .admin-app .stack-sm .bar-cell::before { min-width: 120px; }
 }
+
+/* Campos del login con el mismo lenguaje que el portal de comercios: borde visible, fondo cálido y foco claro. */
+.admin-login .login-card input { border: 2px solid #8d9a92; background: #fffdf8; color: #203a31; padding: 12px 14px; }
+.admin-login .login-card input:focus { border-color: #315d4b; }
