@@ -6,8 +6,10 @@ import { brandCssVariables, getShoppingBrand, type ShoppingBrandId } from '@/lib
 import styles from './campaign-app.module.css';
 import { CouponWallet } from './coupon-wallet';
 import { ParticipantRegistration } from './participant-registration';
+import { playFeedback, readSoundPreference, saveSoundPreference } from './play-feedback';
+import { campaignEndLabel, expiryLabel } from '@/lib/countdown';
 
-type Prize = { id: string; name: string; description?: string | null; imageUrl?: string | null; remainingStock: number; available: boolean };
+type Prize = { id: string; name: string; description?: string | null; imageUrl?: string | null; remainingStock: number; available: boolean; merchants?: string[] };
 type PublicCard = { publicId: string; location?: string | null; kind?: string };
 type CompletionRewardInfo = {
   enabled: boolean;
@@ -46,7 +48,7 @@ type PublicCampaign = {
 };
 type SpinResult = {
   status: 'won' | 'no_prize';
-  prize?: { name?: string; description?: string };
+  prize?: { id?: string; name?: string; description?: string };
   redeemCode?: string;
   redeemQr?: string;
   expiresAt?: string;
@@ -141,6 +143,12 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
   const [wheelAngle, setWheelAngle] = useState(0);
   const [spinPhase, setSpinPhase] = useState<'idle' | 'accel' | 'cruise' | 'land'>('idle');
+  // Sonido del minijuego: apagado por defecto, se recuerda por dispositivo.
+  const [soundOn, setSoundOn] = useState(false);
+  useEffect(() => { setSoundOn(readSoundPreference()); }, []);
+  function toggleSound() {
+    setSoundOn((current) => { saveSoundPreference(!current); return !current; });
+  }
   const [participantState, setParticipantState] = useState<{ registered: boolean; maskedPhone?: string } | null>(null);
   const [dismissedReg, setDismissedReg] = useState(false);
 
@@ -231,6 +239,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
     setParticipationError('');
     setResult(null);
     setSpinPhase('accel');
+    playFeedback.spinStart(soundOn);
     const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const spinDurationMs = reducedMotion ? 0 : 3200;
     const t1 = !reducedMotion ? window.setTimeout(() => setSpinPhase('cruise'), 1000) : undefined;
@@ -256,10 +265,12 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
         await new Promise((resolve) => window.setTimeout(resolve, spinDurationMs - elapsed));
       }
       setResult({ ...payload, cardId: submittedCode });
+      if (payload.status === 'won') playFeedback.win(soundOn); else playFeedback.noPrize(soundOn);
       setCardId('');
       setCollectedIds(payload.collectionProgress?.cardIds ?? collectedIds);
       setReloadKey((key) => key + 1);
     } catch (error) {
+      playFeedback.error();
       setParticipationError(error instanceof Error ? error.message : 'No pudimos registrar tu participación. Revisá la conexión e intentá de nuevo.');
     } finally {
       if (t1) window.clearTimeout(t1);
@@ -336,6 +347,8 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
 
         <div className={styles.screen}>
           {view === 'inicio' && (
+            <>
+            <HomeStatusStrip missing={Math.max(0, collectionTarget - collected)} endsAt={campaign?.campaign?.endsAt} onGo={goTo} />
             <HomeScreen
               brandName={brand.name}
               title={brand.experience.heroTitle}
@@ -361,6 +374,8 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
               onGo={goTo}
               onOpenPrize={(prize) => { goTo('premios'); setSelectedPrize(prize); }}
             />
+            <div className={styles.homeShare}><ShareButton shopping={shopping} brandName={brand.name} /></div>
+            </>
           )}
           {view === 'jugar' && (
             <PlayScreen
@@ -389,6 +404,10 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
               onRetry={() => setReloadKey((key) => key + 1)}
               onGo={goTo}
               rulesUrl={campaign?.campaign?.rulesUrl}
+              soundOn={soundOn}
+              onToggleSound={toggleSound}
+              brandName={brand.name}
+              resultMerchants={result?.status === 'won' ? campaign?.prizes?.find((prize) => prize.id === result.prize?.id)?.merchants : undefined}
             />
           )}
           {view === 'descubrir' && (
@@ -847,8 +866,9 @@ function StepIcon({ kind }: { kind: 'search' | 'scan' | 'gift' }) {
 
 function PlayScreen(props: {
   shopping: ShoppingBrandId; loading: boolean; hasCampaign: boolean; error: string; participating: boolean; spinPhase: 'idle' | 'accel' | 'cruise' | 'land'; wheelAngle: number; participationError: string; result: SpinResult | null; cardCode: string; codeStatus: 'invalid' | 'repeated' | 'new' | null; canSpin: boolean; cards: PublicCard[]; collectedIds: string[]; collectedCount: number; raffleEntriesCount: number; instantPrizeWon?: { id: string; name: string; status: string } | null; completionReward?: CompletionRewardInfo | null; target: number; onChange: (value: string) => void; onClearResult: () => void; onSpin: () => void; onRetry: () => void; onGo: (view: View) => void; rulesUrl?: string | null;
+  soundOn: boolean; onToggleSound: () => void; brandName: string; resultMerchants?: string[];
 }) {
-  const { shopping, loading, hasCampaign, error, participating, spinPhase, wheelAngle, participationError, result, cardCode, codeStatus, canSpin, cards, collectedIds, collectedCount, raffleEntriesCount, instantPrizeWon, completionReward, target, onChange, onClearResult, onSpin, onRetry, onGo } = props;
+  const { shopping, loading, hasCampaign, error, participating, spinPhase, wheelAngle, participationError, result, cardCode, codeStatus, canSpin, cards, collectedIds, collectedCount, raffleEntriesCount, instantPrizeWon, completionReward, target, onChange, onClearResult, onSpin, onRetry, onGo, soundOn, onToggleSound, brandName, resultMerchants } = props;
   const demoCards = cards.filter((c) => /DEMO/i.test(c.publicId)).slice(0, 5);
   const hint = codeStatus === 'repeated'
       ? 'Ya utilizaste esta posta en esta campaña. Consultar de nuevo recupera tu resultado previo sin sumar jugadas ni chances extra.'
@@ -880,6 +900,10 @@ function PlayScreen(props: {
           <li>1 premio instantáneo</li>
           <li>+1 chance por posta nueva</li>
         </ul>
+        <button type="button" className={styles.soundToggle} aria-pressed={soundOn} onClick={onToggleSound}>
+          <SoundIcon on={soundOn} />
+          {soundOn ? 'Sonido activado' : 'Sonido desactivado'}
+        </button>
       </div>
 
       <div className={`${styles.wheelWrap} ${participating ? styles.wheelBusy : ''}`} aria-busy={participating}>
@@ -893,6 +917,10 @@ function PlayScreen(props: {
           result={result}
           raffleEntriesCount={result.raffleEntriesCount ?? raffleEntriesCount}
           completionReward={result.completionReward ?? completionReward}
+          merchants={resultMerchants}
+          missing={Math.max(0, target - collectedCount)}
+          shopping={shopping}
+          brandName={brandName}
           onGo={onGo}
           onPlayAnother={() => {
             onClearResult();
@@ -978,7 +1006,7 @@ function PlayScreen(props: {
   );
 }
 
-function ResultCard({ result, raffleEntriesCount, completionReward, onGo, onPlayAnother }: { result: SpinResult; raffleEntriesCount: number; completionReward?: CompletionRewardInfo | null; onGo: (view: View) => void; onPlayAnother: () => void }) {
+function ResultCard({ result, raffleEntriesCount, completionReward, merchants, missing, shopping, brandName, onGo, onPlayAnother }: { result: SpinResult; raffleEntriesCount: number; completionReward?: CompletionRewardInfo | null; merchants?: string[]; missing: number; shopping: ShoppingBrandId; brandName: string; onGo: (view: View) => void; onPlayAnother: () => void }) {
   const won = result.status === 'won';
   const [copied, setCopied] = useState(false);
   const formattedPrize = formatPrizeName(result.prize?.name);
@@ -1017,6 +1045,14 @@ function ResultCard({ result, raffleEntriesCount, completionReward, onGo, onPlay
             ? 'Este cartel QR ya había sido utilizado. Escaneá otro cartel distinto del shopping para sumar una nueva participación al Sorteo Final.'
             : 'Esta posta quedó registrada en tu pasaporte y sumó +1 participación para el Sorteo Final. Probá con otra tarjeta del recorrido.'}
       </p>
+      {won && (
+        <p className={styles.resultWhere}>
+          <b>Dónde canjearlo:</b> {formatMerchants(merchants, 3)}
+        </p>
+      )}
+      {missing === 1 && !completionReward?.unlocked && (
+        <p className={styles.nudge} role="note">¡Te falta 1 posta para completar tu colección!</p>
+      )}
       <div className={styles.rafflePillRow}>
         <span className={styles.raffleEntryBadge}>
           ★ Participaciones Sorteo Final: <strong>{raffleEntriesCount}</strong> {result.raffleEntryAdded ? '(+1 sumada)' : ''}
@@ -1047,7 +1083,7 @@ function ResultCard({ result, raffleEntriesCount, completionReward, onGo, onPlay
           </button>
         </div>
       )}
-      {won && result.expiresAt && <small className={styles.resultExpiry}>Válido hasta el {new Date(result.expiresAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</small>}
+      {won && result.expiresAt && <small className={styles.resultExpiry}>{expiryLabel(result.expiresAt).text}</small>}
 
       <div className={styles.resultActions}>
         <button type="button" className={styles.resultActionBtn} onClick={onPlayAnother}>Buscar otra tarjeta</button>
@@ -1057,6 +1093,7 @@ function ResultCard({ result, raffleEntriesCount, completionReward, onGo, onPlay
           <button type="button" className={styles.resultActionSecondary} onClick={() => onGo('descubrir')}>Ver postas disponibles</button>
         )}
       </div>
+      <ShareButton shopping={shopping} brandName={brandName} />
     </article>
   );
 }
@@ -1347,6 +1384,7 @@ function PrizeDetail({ prize, shopping, rulesUrl, onPlay }: { prize: Prize; shop
       <div className={styles.conditions}>
         <b>Cómo obtener y canjear este beneficio</b>
         <p>1. Escaneá una posta QR/NFC o ingresá su código en la sección Jugar.<br />2. Si la ruleta te asigna este beneficio, recibirás un voucher QR único en el acto.<br />3. Presentalo en el local adherido antes de su fecha de vencimiento.</p>
+        <p><b>Dónde canjearlo:</b> {formatMerchants(prize.merchants, 6)}</p>
         {rulesUrl && <a href={rulesUrl} target="_blank" rel="noreferrer">Consultar bases y condiciones legales ↗</a>}
       </div>
       <button type="button" className={styles.spinButton} onClick={onPlay}>Participar por este beneficio →</button>
@@ -1462,6 +1500,58 @@ function GiftArt({ shopping }: { shopping: ShoppingBrandId }) {
       <rect x="36" y="22" width="8" height="48" className={styles.giftRibbon} />
     </svg>
   );
+}
+
+// Lista legible de comercios: sin repetidos y acotada ("A, B, C y 12 locales más").
+function formatMerchants(names: string[] | undefined, limit: number) {
+  const unique = [...new Set((names ?? []).map((name) => name.trim()).filter(Boolean))];
+  if (!unique.length) return 'consultá en atención al cliente del shopping.';
+  if (unique.length <= limit) return unique.join(', ');
+  const rest = unique.length - limit;
+  return `${unique.slice(0, limit).join(', ')} y ${rest} ${rest === 1 ? 'local más' : 'locales más'}`;
+}
+
+// Franja de estado de Inicio: muestra un solo mensaje, el más útil. Primero el empujón de "te falta 1 posta";
+// si no aplica, el cierre de campaña cuando falta poco. Ambos salen de datos reales.
+function HomeStatusStrip({ missing, endsAt, onGo }: { missing: number; endsAt?: string; onGo: (view: View) => void }) {
+  if (missing === 1) {
+    return <div className={styles.statusStrip} role="note">
+      <span>¡Te falta 1 posta para completar tu colección!</span>
+      <button type="button" onClick={() => onGo('descubrir')}>Buscarla</button>
+    </div>;
+  }
+  const endLabel = endsAt ? campaignEndLabel(endsAt) : null;
+  if (!endLabel) return null;
+  return <div className={styles.statusStrip} role="note"><span>{endLabel}</span></div>;
+}
+
+// Compartir la campaña con el menú nativo; sin códigos ni datos de cupones. Si no hay menú nativo, copia el enlace.
+function ShareButton({ shopping, brandName }: { shopping: ShoppingBrandId; brandName: string }) {
+  const [copied, setCopied] = useState(false);
+  async function share() {
+    const url = `${window.location.origin}/${shopping}`;
+    const text = `Estoy jugando a Navidad Mágica en ${brandName}: buscá las postas y girá la ruleta.`;
+    if (typeof navigator.share === 'function') {
+      try { await navigator.share({ title: `Navidad Mágica · ${brandName}`, text, url }); } catch { /* la persona canceló */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch { /* sin portapapeles disponible */ }
+  }
+  return <button type="button" className={styles.shareButton} onClick={share}>
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></svg>
+    <span aria-live="polite">{copied ? 'Enlace copiado' : 'Contale a alguien'}</span>
+  </button>;
+}
+
+function SoundIcon({ on }: { on: boolean }) {
+  return <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 5 6 9H3v6h3l5 4z" />
+    {on ? <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /> : <path d="m22 9-6 6M16 9l6 6" />}
+  </svg>;
 }
 
 // Invitación a instalar la PWA. Chrome/Edge/Android disparan beforeinstallprompt; iOS Safari no, así que se muestra una guía manual.

@@ -42,7 +42,11 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sho
         endsAt: { gt: now },
       },
       include: {
-        prizes: { where: { shoppingId: shopping.id, active: true }, orderBy: { name: 'asc' } },
+        prizes: {
+          where: { shoppingId: shopping.id, active: true },
+          orderBy: { name: 'asc' },
+          include: { merchants: { where: { merchant: { active: true } }, select: { merchant: { select: { name: true } } } } },
+        },
         cards: {
           where: {
             shoppingId: shopping.id,
@@ -117,7 +121,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sho
           rulesUrl: campaign.rulesUrl,
           settings: publicSettings(campaign.settings),
         },
-        prizes: campaign.prizes.map(({ id, name, description, imageUrl, remainingStock, startsAt, endsAt }) => ({
+        prizes: campaign.prizes.map(({ id, name, description, imageUrl, remainingStock, startsAt, endsAt, merchants }) => ({
+          merchants: merchants.map(({ merchant }) => merchant.name),
           id,
           name,
           description,

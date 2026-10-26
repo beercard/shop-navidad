@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 import type { ShoppingBrandId } from '@/lib/brand';
+import { expiryLabel } from '@/lib/countdown';
 import './coupon-wallet.css';
 
 type CouponState = 'available' | 'redeemed' | 'expired' | 'void';
@@ -33,16 +34,6 @@ function formatCouponTitle(rawName: string): { title: string; isDemo: boolean } 
   else if (/Beneficio sorpresa demo/i.test(clean)) clean = 'Obsequio Sorpresa Instantáneo';
   else if (/Premio especial demo/i.test(clean)) clean = 'Experiencia VIP del Shopping';
   return { title: clean || rawName, isDemo };
-}
-
-/** "Vence en 2 días" / "Vence hoy a las 20:30". Se resalta cuando faltan menos de 48 h. */
-function expiryText(iso: string) {
-  const ms = new Date(iso).getTime() - Date.now();
-  const hours = ms / 3_600_000;
-  if (hours < 0) return { text: `Venció el ${fmt(iso)}`, soon: false };
-  if (hours < 24) return { text: `Vence hoy a las ${new Date(iso).toLocaleTimeString('es-AR', { timeStyle: 'short' })}`, soon: true };
-  const days = Math.floor(hours / 24);
-  return { text: `Vence ${days === 1 ? 'mañana' : `en ${days} días`} (${new Date(iso).toLocaleDateString('es-AR', { dateStyle: 'short' })})`, soon: hours < 48 };
 }
 
 export function CouponWallet({ shopping, refreshKey }: { shopping: ShoppingBrandId; refreshKey?: string }) {
@@ -95,7 +86,7 @@ export function CouponWallet({ shopping, refreshKey }: { shopping: ShoppingBrand
       <ul className="cw-list">
         {shown.map((coupon) => {
           const meta = stateMeta[coupon.state];
-          const expiry = expiryText(coupon.expiresAt);
+          const expiry = expiryLabel(coupon.expiresAt);
           const expanded = open === coupon.id && coupon.state === 'available';
           const titleMeta = formatCouponTitle(coupon.prize.name);
           return (

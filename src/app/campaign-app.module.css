@@ -2907,3 +2907,15 @@
 /* Reglas del minijuego como chips cortos en lugar de un párrafo. */
 .ruleChips{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
 .ruleChips li{min-height:30px;padding:5px 11px;display:inline-flex;align-items:center;border-radius:999px;background:var(--brand-accent-soft,#f3e6d1);color:var(--brand-text,#203a31);font-size:13px;font-weight:700;line-height:1.2}
+
+/* Primer bloque de experiencia: estado en Inicio, compartir, sonido, dónde canjear y empujón de colección. */
+.statusStrip{margin:12px 16px 0;padding:10px 12px 10px 14px;min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:14px;background:var(--brand-primary-strong,#203f34);color:#fff;font-size:14px;font-weight:700;line-height:1.35}
+.statusStrip button{flex:0 0 auto;min-height:40px;padding:0 14px;border:0;border-radius:10px;background:var(--brand-accent,#b94f43);color:#fff;font-weight:700}
+.homeShare{margin:16px 16px 0;display:flex;justify-content:center}
+.shareButton{min-height:48px;padding:0 18px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:2px solid var(--brand-primary,#315d4b);border-radius:14px;background:transparent;color:var(--brand-primary,#315d4b);font-size:15px;font-weight:700}
+.resultCard .shareButton{margin-top:12px;width:100%}
+.resultWon .shareButton{border-color:rgb(255 255 255 / 55%);color:#fff}
+.soundToggle{margin-top:10px;min-height:40px;padding:0 12px;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--brand-border,#dfe2d8);border-radius:999px;background:var(--brand-surface-raised,#fffdf8);color:var(--brand-text,#203a31);font-size:13px;font-weight:700}
+.soundToggle[aria-pressed="true"]{border-color:var(--brand-primary,#315d4b);color:var(--brand-primary,#315d4b)}
+.resultWhere{margin:4px 0 0;font-size:14px;line-height:1.45}
+.nudge{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:var(--brand-accent-soft,#f3e6d1);color:var(--brand-text,#203a31);font-size:14px;font-weight:700}
