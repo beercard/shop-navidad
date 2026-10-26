@@ -42,6 +42,7 @@ Abrí http://localhost:3000. La portada `/` deriva a la experiencia correcta. `/
 
 - `npm run db:migrate:dev` crea/aplica migraciones en desarrollo y puede solicitar una base local.
 - `npm run db:migrate:deploy` aplica las migraciones versionadas a la base configurada, sin crear migraciones.
+- En Vercel, el script `vercel-build` corre `prisma migrate deploy` antes de compilar: cada despliegue (preview o producción) aplica sus migraciones pendientes sobre la base de su entorno. Las migraciones deben ser compatibles con la versión anterior en ejecución (agregar columnas o tablas, no borrar).
 - `npm run db:generate` regenera el cliente Prisma después de cambiar el esquema.
 - `npm run db:seed` inicializa los dos shoppings y, si recibe las variables opcionales, el primer administrador.
 
