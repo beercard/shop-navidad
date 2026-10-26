@@ -1,3 +1,4 @@
+import { getClientIp } from '@/lib/client-ip';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { apiError, serviceUnavailable } from '@/lib/http';
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
 
   const token = readParticipantToken(request);
   const clientIp =
-    request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    getClientIp(request);
 
   try {
     const body = await request.json();

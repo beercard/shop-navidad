@@ -1,3 +1,4 @@
+import { getClientIp } from '@/lib/client-ip';
 import { NextRequest, NextResponse } from 'next/server';
 import QRCode from 'qrcode';
 import { z } from 'zod';
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     const token = request.cookies.get(participantCookieName)?.value;
     if (!token) return NextResponse.json({ coupons: [] }, { headers });
 
-    const clientIp = request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    const clientIp = getClientIp(request);
     const limit = await checkRateLimit(`coupons:${sha256(token)}:${sha256(clientIp)}`, 60, 15 * 60_000);
     if (!limit.allowed) return NextResponse.json({ error: 'Hiciste varias consultas seguidas. Probá de nuevo en unos minutos.', code: 'RATE_LIMITED' }, { status: 429, headers });
 

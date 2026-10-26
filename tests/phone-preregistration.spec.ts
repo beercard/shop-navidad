@@ -1,4 +1,4 @@
-import { expect, request as pwRequest, test, type APIRequestContext } from '@playwright/test';
+import { expect, request as pwRequest, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import fs from 'node:fs';
@@ -45,9 +45,9 @@ async function cleanupParticipantByHash(phoneHash: string) {
     const parts = await prisma.participant.findMany({ where: { phoneHash }, select: { id: true } });
     const partIds = parts.map((p) => p.id);
     if (partIds.length === 0) return;
-    await prisma.redeemCode.deleteMany({ where: { participantId: { in: partIds } } });
+    await prisma.redeemCode.deleteMany({ where: { participation: { participantId: { in: partIds } } } });
     await prisma.participation.deleteMany({ where: { participantId: { in: partIds } } });
-    await prisma.collectionProgressCard.deleteMany({ where: { progress: { participantId: { in: partIds } } } });
+    await prisma.collectionCard.deleteMany({ where: { progress: { participantId: { in: partIds } } } });
     await prisma.collectionProgress.deleteMany({ where: { participantId: { in: partIds } } });
     await prisma.event.deleteMany({ where: { participantId: { in: partIds } } });
     await prisma.participant.deleteMany({ where: { id: { in: partIds } } });

@@ -1,3 +1,4 @@
+import { getClientIp } from '@/lib/client-ip';
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
   try {
     const admin = await getAdmin();
     if (!admin) return NextResponse.json({ error: 'Iniciá sesión nuevamente para cambiar la contraseña.' }, { status: 401 });
-    const ip = request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    const ip = getClientIp(request);
     const limit = await checkRateLimit(`password-change:${sha256(admin.id)}:${sha256(ip)}`, 5, 15 * 60_000);
     if (!limit.allowed) return NextResponse.json({ error: 'Hubo varios intentos. Esperá unos minutos e intentá de nuevo.' }, { status: 429 });
     const input = schema.parse(await request.json());

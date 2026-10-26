@@ -1,15 +1,18 @@
+import { getClientIp } from '@/lib/client-ip';
 import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { GameError, playCard } from '@/lib/game';
 import { apiError, serviceUnavailable } from '@/lib/http';
-import { readParticipantToken, setParticipantCookie } from '@/lib/participants';
+import { participantCookieName, readParticipantToken, setParticipantCookie } from '@/lib/participants';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sha256 } from '@/lib/security';
 import QRCode from 'qrcode';
 
 const ALLOWED_KEYS = new Set(['shoppingSlug', 'cardId', 'idempotencyKey']);
+// Compromiso: sin verificación de teléfono, una IP puede abrir hasta este número de identidades nuevas por día y shopping.
+const NEW_PLAYER_LIMIT_PER_DAY = 5;
 const TAMPER_KEYS = new Set([
   'prizeId',
   'prize',
@@ -103,7 +106,7 @@ export async function POST(request: NextRequest) {
     const payload = schema.parse(rawBody);
     token = readParticipantToken(request);
     const clientIp =
-      request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+      getClientIp(request);
     const limit = await checkRateLimit(`play:${sha256(clientIp)}:${payload.shoppingSlug}`, 30, 15 * 60_000);
     if (!limit.allowed) {
       await logSuspiciousPlay(payload.shoppingSlug, 'RATE_LIMITED', []);
@@ -111,6 +114,19 @@ export async function POST(request: NextRequest) {
         { error: 'Hiciste varios intentos seguidos. Esperá un rato y probá otra vez.', code: 'RATE_LIMITED' },
         { status: 429 },
       );
+    }
+
+    // Sin cookie, cada petición crea una identidad de participante nueva y con ella un premio instantáneo posible.
+    // Limitamos cuántas identidades nuevas puede abrir una IP por shopping y día.
+    if (!request.cookies.get(participantCookieName)) {
+      const newPlayer = await checkRateLimit(`new-player:${sha256(clientIp)}:${payload.shoppingSlug}`, NEW_PLAYER_LIMIT_PER_DAY, 24 * 60 * 60_000);
+      if (!newPlayer.allowed) {
+        await logSuspiciousPlay(payload.shoppingSlug, 'NEW_PLAYER_LIMIT', []);
+        return NextResponse.json(
+          { error: 'Se registraron demasiados participantes desde tu conexión hoy. Probá más tarde.', code: 'NEW_PLAYER_LIMIT' },
+          { status: 429 },
+        );
+      }
     }
 
     const result = await playCard({ ...payload, token, idempotencyKey: payload.idempotencyKey ?? randomUUID() });

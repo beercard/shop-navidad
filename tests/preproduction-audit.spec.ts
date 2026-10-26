@@ -98,7 +98,7 @@ test.afterAll(async () => {
   try {
     await prisma.event.deleteMany({ where: { campaignId: auditTestCampaignId } });
     await prisma.participation.deleteMany({ where: { campaignId: auditTestCampaignId } });
-    await prisma.collectionProgressCard.deleteMany({ where: { progress: { campaignId: auditTestCampaignId } } });
+    await prisma.collectionCard.deleteMany({ where: { progress: { campaignId: auditTestCampaignId } } });
     await prisma.collectionProgress.deleteMany({ where: { campaignId: auditTestCampaignId } });
     await prisma.inventoryMovement.deleteMany({ where: { campaignId: auditTestCampaignId } });
     await prisma.redeemCode.deleteMany({ where: { campaignId: auditTestCampaignId } });
@@ -311,6 +311,7 @@ test('5. Portal comercios: validación de comercio cruzado, canje duplicado y ex
         shoppingId: centenarioCampaign.shoppingId,
         campaignId: centenarioCampaign.id,
         participantId: part.id,
+        cardId: (await prisma.card.findFirstOrThrow({ where: { campaignId: centenarioCampaign.id } })).id,
         status: 'WON',
         prizeId: prize.id,
         idempotencyKey: randomUUID(),
@@ -324,7 +325,6 @@ test('5. Portal comercios: validación de comercio cruzado, canje duplicado y ex
         expiresAt: new Date(Date.now() + 86400_000),
         shoppingId: centenarioCampaign.shoppingId,
         campaignId: centenarioCampaign.id,
-        participantId: part.id,
         participationId: participation.id,
         prizeId: prize.id,
       },

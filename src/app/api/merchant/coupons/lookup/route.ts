@@ -1,3 +1,4 @@
+import { getClientIp } from '@/lib/client-ip';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authFailure } from '@/lib/admin';
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: failure.error }, { status: failure.statusCode });
     }
     if (input.merchantSlug && input.merchantSlug !== scope.merchant.slug) return NextResponse.json({ error: 'Esta cuenta no está habilitada para ese comercio.', code: 'FORBIDDEN' }, { status: 403 });
-    const clientIp = request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    const clientIp = getClientIp(request);
     const limit = await checkRateLimit(`merchant-lookup:${scope.merchant.id}:${sha256(clientIp)}`, 60, 15 * 60_000);
     if (!limit.allowed) return NextResponse.json({ error: 'Hubo muchos intentos. Esperá unos minutos y probá de nuevo.', code: 'RATE_LIMITED' }, { status: 429 });
     const { prisma } = await import('@/lib/db');

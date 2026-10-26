@@ -34,6 +34,7 @@ type PublicCampaign = {
   campaign?: { id: string; name: string; startsAt: string; endsAt: string; rulesUrl?: string | null; settings?: Record<string, unknown> } | null;
   prizes?: Prize[];
   cards?: PublicCard[];
+  cardCount?: number;
   clue?: { text: string; startsAt: string; endsAt: string } | null;
   collectionProgress?: { count: number; cardIds: string[] };
   completionReward?: CompletionRewardInfo | null;
@@ -148,7 +149,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
       : 'Al completar las 3 postas del recorrido habilitás el beneficio especial de temporada.';
   const unlockText = formatUnlockCopy(rawUnlockText, brand.name);
   const activeCompletionReward = result?.completionReward ?? campaign?.completionReward ?? null;
-  const collectionTarget = activeCompletionReward?.target ?? (typeof campaign?.campaign?.settings?.collectionTarget === 'number' ? campaign.campaign.settings.collectionTarget : (campaign?.cards?.length || 3));
+  const collectionTarget = activeCompletionReward?.target ?? (typeof campaign?.campaign?.settings?.collectionTarget === 'number' ? campaign.campaign.settings.collectionTarget : (campaign?.cardCount || 3));
   const collected = activeCompletionReward ? activeCompletionReward.completedCount : Math.min(collectedIds.length, collectionTarget);
   const raffleEntriesCount = activeCompletionReward?.totalRaffleEntriesCount ?? campaign?.raffleEntriesCount ?? collectedIds.length;
   const instantPrizeWon = campaign?.instantPrizeWon ?? (result?.status === 'won' && result.prize?.name ? { id: 'won', name: result.prize.name, status: 'WON' } : null);
@@ -156,8 +157,9 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
   const availablePrizes = campaign?.prizes?.filter((prize) => prize.available && prize.remainingStock > 0) ?? [];
   const featuredPrize = availablePrizes.slice().sort((a, b) => b.remainingStock - a.remainingStock)[0] ?? campaign?.prizes?.[0];
   const cardCode = cardId.trim().toUpperCase();
-  const codeStatus = !cardCode ? null : !campaign?.cards?.some((card) => card.publicId === cardCode) ? 'invalid' : collectedIds.includes(cardCode) ? 'repeated' : 'new';
-  const canSpin = Boolean(campaign?.campaign) && !participating && Boolean(cardCode) && codeStatus !== 'invalid';
+  // La validez del código la decide el servidor al participar; el cliente solo distingue repetidas de nuevas.
+  const codeStatus = !cardCode ? null : collectedIds.includes(cardCode) ? 'repeated' : 'new';
+  const canSpin = Boolean(campaign?.campaign) && !participating && Boolean(cardCode);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -284,7 +286,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
           <p className={styles.stageHeadline}>{brand.experience.heroTitle} <em>{brand.experience.heroEmphasis}</em></p>
           <p>{brand.experience.heroMessage}</p>
           <div className={styles.stageStats}>
-            <div><strong>{campaign?.cards?.length ?? 10}</strong><span>Postas QR/NFC activas</span></div>
+            <div><strong>{campaign?.cardCount ?? 10}</strong><span>Postas QR/NFC activas</span></div>
             <div><strong>{totalStock}</strong><span>Beneficios disponibles</span></div>
             <div><strong>{collected}/{collectionTarget}</strong><span>Tu pasaporte hoy</span></div>
           </div>
@@ -327,6 +329,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
               totalStock={totalStock}
               collectedIds={collectedIds}
               cards={campaign?.cards ?? []}
+              totalCards={campaign?.cardCount ?? 0}
               collected={collected}
               target={collectionTarget}
               raffleEntriesCount={raffleEntriesCount}
@@ -517,9 +520,9 @@ function CompletionRewardCredential({
 }
 
 function HomeScreen({
-  brandName, title, emphasis, message, primaryAction, shopping, featured, totalStock, collectedIds, cards, collected, target, raffleEntriesCount, instantPrizeWon, completionReward, campaignName, clueText, loading, error, onRetry, onGo, onOpenPrize,
+  brandName, title, emphasis, message, primaryAction, shopping, featured, totalStock, collectedIds, cards, totalCards, collected, target, raffleEntriesCount, instantPrizeWon, completionReward, campaignName, clueText, loading, error, onRetry, onGo, onOpenPrize,
 }: {
-  brandName: string; title: string; emphasis: string; message: string; primaryAction: string; shopping: ShoppingBrandId; featured?: Prize; totalStock: number; collectedIds: string[]; cards: PublicCard[]; collected: number; target: number; raffleEntriesCount: number; instantPrizeWon?: { id: string; name: string; status: string } | null; completionReward?: CompletionRewardInfo | null; campaignName?: string; clueText?: string; loading: boolean; error: string; onRetry: () => void; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void;
+  brandName: string; title: string; emphasis: string; message: string; primaryAction: string; shopping: ShoppingBrandId; featured?: Prize; totalStock: number; collectedIds: string[]; cards: PublicCard[]; totalCards: number; collected: number; target: number; raffleEntriesCount: number; instantPrizeWon?: { id: string; name: string; status: string } | null; completionReward?: CompletionRewardInfo | null; campaignName?: string; clueText?: string; loading: boolean; error: string; onRetry: () => void; onGo: (view: View) => void; onOpenPrize: (prize: Prize) => void;
 }) {
   const collectedCards = new Set(collectedIds);
   const centenario = shopping === 'centenario';
@@ -552,7 +555,7 @@ function HomeScreen({
                 <span aria-hidden="true">→</span>
               </button>
               <button type="button" className={styles.heroGhostAction} onClick={() => onGo('descubrir')}>
-                Explorar postas ({cards.length || 10})
+                Explorar postas ({totalCards || 10})
               </button>
             </div>
           </div>
@@ -699,7 +702,7 @@ function HomeScreen({
           <h1 id="home-title">{title} <em>{emphasis}</em></h1>
           <p className={styles.heroLead}>{message}</p>
           <div className={styles.uniplazaHeroMetrics}>
-            <div><b>{cards.length || 10}</b><span>Estaciones activas</span></div>
+            <div><b>{totalCards || 10}</b><span>Estaciones activas</span></div>
             <div><b>{totalStock}</b><span>Vouchers hoy</span></div>
           </div>
           <div className={styles.heroActionGroup}>
@@ -829,16 +832,14 @@ function PlayScreen(props: {
 }) {
   const { shopping, loading, hasCampaign, error, participating, spinPhase, wheelAngle, participationError, result, cardCode, codeStatus, canSpin, cards, collectedIds, collectedCount, raffleEntriesCount, instantPrizeWon, completionReward, target, onChange, onClearResult, onSpin, onRetry, onGo } = props;
   const demoCards = cards.filter((c) => /DEMO/i.test(c.publicId)).slice(0, 5);
-  const hint = codeStatus === 'invalid'
-    ? 'Ese código no pertenece a una posta activa de este shopping. Verificá los caracteres.'
-    : codeStatus === 'repeated'
+  const hint = codeStatus === 'repeated'
       ? 'Ya utilizaste esta posta en esta campaña. Consultar de nuevo recupera tu resultado previo sin sumar jugadas ni chances extra.'
       : codeStatus === 'new'
         ? instantPrizeWon
           ? `✓ Posta nueva verificada. Ya tenés tu premio instantáneo de campaña; activarla suma +1 participación al Sorteo Final.`
           : '✓ Posta verificada y nueva para tu pasaporte. ¡Lista para girar y sumar +1 chance al Sorteo Final!'
         : 'Ingresá el código impreso bajo el QR de la posta o seleccioná una tarjeta activa.';
-  const hintTone = codeStatus === 'invalid' ? styles.hintBad : codeStatus === 'repeated' ? styles.hintWarn : codeStatus === 'new' ? styles.hintGood : styles.hintNeutral;
+  const hintTone = codeStatus === 'repeated' ? styles.hintWarn : codeStatus === 'new' ? styles.hintGood : styles.hintNeutral;
   const wheelStatusText = participating
     ? spinPhase === 'accel'
       ? '¡Girando la ruleta! Verificando posta…'

@@ -125,7 +125,9 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sho
           remainingStock,
           available: remainingStock > 0 && (!startsAt || startsAt <= now) && (!endsAt || endsAt > now),
         })),
-        cards: campaign.cards,
+        // Solo se revelan ubicaciones de tarjetas ya descubiertas por esta persona; el resto queda oculto.
+        cards: campaign.cards.filter((card) => collectionProgress.cardIds.includes(card.publicId)),
+        cardCount: campaign.cards.length,
         clue: campaign.clues[0] ?? null,
         collectionProgress,
         completionReward,

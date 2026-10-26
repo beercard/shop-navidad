@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import QRCode from 'qrcode';
 
 type CardLink = { id: string; publicId: string; status: string; location: string | null; shoppingId: string; shoppingSlug: 'centenario' | 'uniplaza'; shoppingName: string };
@@ -90,7 +91,7 @@ export default function QACardLinks({ cards, baseUrl, baseUrlError }: { cards: C
     <div className="qa-nfc-help"><b>Cómo usar NFC</b><ol><li>En teléfonos compatibles, habilitá NFC y usá “Grabar URL”; acercá una etiqueta NFC vacía.</li><li>“Verificar etiqueta” compara el registro URL leído con el enlace registrado de esta tarjeta.</li><li>Web NFC suele requerir Chrome para Android y HTTPS. Para otros teléfonos o este HTTP de red local, copiá la URL y usá una app NFC externa para escribir un registro NDEF tipo URL.</li><li>Después de escribirla, acercá la etiqueta: debe abrir la ruta de la misma tarjeta y shopping.</li></ol></div>
     {message && <p className="qa-notice success" role="status">{message}</p>}
     <div className="qa-qr-grid">{urls.map(({ card, url }) => <article className="qa-qr-card" key={card.id}>
-      {qrs[card.id] ? <img src={qrs[card.id].dataUrl} width="168" height="168" alt={`Código QR para ${card.publicId}, ${card.shoppingName}`} /> : <div className="qa-qr-placeholder" aria-label="Generando código QR">QR</div>}
+      {qrs[card.id] ? <Image src={qrs[card.id].dataUrl} width={168} height={168} unoptimized alt={`Código QR para ${card.publicId}, ${card.shoppingName}`} /> : <div className="qa-qr-placeholder" aria-label="Generando código QR">QR</div>}
       <div className="qa-qr-info"><b>{card.shoppingName}</b><strong>{card.publicId}</strong><small>{card.location ?? 'Sin ubicación'} · {card.status} · {cardUrlCount(card)}</small>
         {url && <><code>{url}</code><div className="qa-qr-buttons"><Link href={url} target="_blank" rel="noreferrer">Probar enlace ↗</Link><button onClick={() => download(card, 'png')} disabled={!qrs[card.id]}>PNG</button><button onClick={() => download(card, 'svg')} disabled={!qrs[card.id]}>SVG</button><button onClick={() => void copyUrl(card, url)}>Copiar NFC</button><button onClick={() => void writeNfc(card, url)} disabled={busy !== ''}>{busy === card.id ? 'Acercá etiqueta…' : 'Grabar NFC'}</button><button onClick={() => void verifyNfc(card, url)} disabled={busy !== ''}>Verificar NFC</button></div></>}
       </div>
