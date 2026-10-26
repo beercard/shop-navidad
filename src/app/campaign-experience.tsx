@@ -317,9 +317,7 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
           <div className={styles.stageSwitcher}>
             <span>Experiencias del grupo:</span>
             <Link href="/centenario" className={shopping === 'centenario' ? styles.stageSwitchActive : ''}>Ir a Centenario</Link>
-            <Link href="/uniplaza" className={shopping === 'uniplaza' ? styles.stageSwitchActive : ''}>Ir a UniPlaza</Link>
-            <Link href="/merchant">Portal Comercios ↗</Link>
-          </div>
+            <Link href="/uniplaza" className={shopping === 'uniplaza' ? styles.stageSwitchActive : ''}>Ir a UniPlaza</Link>          </div>
         </div>
       </aside>
 
@@ -463,7 +461,6 @@ export function CampaignExperience({ initialShopping }: { initialShopping: Shopp
         {view === 'jugar' && (result?.status === 'won' || Boolean(result?.completionReward?.justUnlocked)) && <Confetti />}
         <footer className={styles.appFooter}>
           <span>{brand.name}</span>
-          <Link href="/merchant">Acceso Comercios</Link>
         </footer>
 
         <nav className={styles.tabbar} aria-label="Secciones de la campaña">
