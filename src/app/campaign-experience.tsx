@@ -629,7 +629,7 @@ function HomeScreen({
                   <b className={styles.postaTag}>SELLO 0{index + 1}</b>
                   <span className={styles.stampMedallion} aria-hidden="true">{foundId ? '✓' : `0${index + 1}`}</span>
                   <strong className={styles.stampStatus}>{foundId ? 'Sellado' : 'Disponible'}</strong>
-                  <small className={styles.stampLocation}>{foundId ? stationLabel : 'En recorrido'}</small>
+                  <small className={styles.stampLocation}>{stationLabel}</small>
                 </span>
               );
             })}
